@@ -1,0 +1,8 @@
+{
+  "segments": [
+    {"start": 0.0, "end": 20.0, "text": "Today, two releases matter for AI builders."},
+    {"start": 20.0, "end": 180.0, "text": "Acme AI published Builder Model 2 with documented tool-use support."},
+    {"start": 180.0, "end": 350.0, "text": "Forge Runtime added local structured-output validation and migration notes."},
+    {"start": 350.0, "end": 360.0, "text": "Source links are in the episode notes."}
+  ]
+}

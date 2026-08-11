@@ -1,0 +1,85 @@
+name: daily-ai-brief
+
+on:
+  schedule:
+    # GitHub cron is UTC. Cover both PST and PDT, then keep only 06/08/10 local.
+    - cron: "0 13-18 * * *"
+  workflow_dispatch:
+    inputs:
+      shadow:
+        description: Generate a private shadow episode without R2/RSS publication
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ai-builder-brief-publication
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.event_name != 'schedule' || vars.PUBLICATION_ENABLED == 'true'
+    runs-on: [self-hosted, macos]
+    env:
+      PY: .venv/bin/python
+      NOTEBOOKLM_NOTEBOOK_ID: ${{ secrets.NOTEBOOKLM_NOTEBOOK_ID }}
+      NOTEBOOKLM_AUDIO_LANGUAGE: en
+      NOTEBOOKLM_AUDIO_LENGTH: short
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+      WHISPER_MODEL: small.en
+    steps:
+      - name: Select Pacific attempt window
+        id: pacific_window
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" != "schedule" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            case "$(TZ=America/Los_Angeles date +%H)" in
+              06|08|10) echo "run=true" >> "$GITHUB_OUTPUT" ;;
+              *) echo "run=false" >> "$GITHUB_OUTPUT" ;;
+            esac
+          fi
+
+      - uses: actions/checkout@v5
+        if: steps.pacific_window.outputs.run == 'true'
+
+      - name: Install pinned pipeline
+        if: steps.pacific_window.outputs.run == 'true'
+        run: |
+          if [ ! -x .venv/bin/python ]; then python3 -m venv .venv; fi
+          $PY -m pip install -q -e ".[transcription]"
+
+      - name: Run daily episode
+        if: steps.pacific_window.outputs.run == 'true'
+        run: |
+          FLAGS=""
+          if [ "${{ inputs.shadow }}" = "true" ]; then FLAGS="--shadow"; fi
+          $PY -m ai_builder_brief run --date "$(TZ=America/Los_Angeles date +%F)" $FLAGS
+
+      - name: Validate public artifacts
+        if: steps.pacific_window.outputs.run == 'true' && inputs.shadow != true
+        run: $PY -m ai_builder_brief validate --date "$(TZ=America/Los_Angeles date +%F)" --check-public
+
+      - name: Commit source-transparent publication
+        if: steps.pacific_window.outputs.run == 'true' && inputs.shadow != true
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: publish AI Builder Brief $(TZ=America/Los_Angeles date +%F)"
+            git push
+          fi
+
+      - name: Retain run artifacts
+        if: always() && steps.pacific_window.outputs.run == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: ai-builder-brief-${{ github.run_id }}
+          path: build/
+          if-no-files-found: warn

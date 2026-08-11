@@ -1,0 +1,54 @@
+version: 1
+
+show:
+  slug: ai-builder-brief
+  title: AI Builder Brief
+  description: Three to five source-linked AI developments before stand-up, explained for builders.
+  language: en
+  author: AI Builder Brief
+  site_url: https://lifan-builds.github.io/ai-builder-brief/
+  feed_url: https://lifan-builds.github.io/ai-builder-brief/feed.xml
+  cover_art_url: https://lifan-builds.github.io/ai-builder-brief/cover.jpg
+  episode_guid_prefix: ai-builder-brief
+  episode_file_prefix: ai-builder-brief
+  cadence: daily
+  timezone: America/Los_Angeles
+  publication_hour: 6
+
+source:
+  fixture: build/incoming/sources.json
+
+selection:
+  max_stories: 5
+  max_per_organization: 1
+  max_per_category: 2
+  recent_days: 7
+
+audio:
+  provider: notebooklm
+  output_dir: build/audio
+  duration: 00:06:00
+  public_url_template: https://audio.aibuilderbrief.com/episodes/{filename}
+  language: en
+  audio_length: short
+  instructions: >-
+    Record a concise English dialogue for AI builders. Cover only the selected
+    stories and cited facts. For each story explain what happened, why a builder
+    should care, and what remains uncertain. Do not invent quotes, benchmarks,
+    dates, capabilities, or community reactions. Keep the complete episode near
+    six minutes and avoid generic introductions.
+
+publication:
+  provider: r2
+  bucket: ai-builder-brief
+  endpoint_url: https://ACCOUNT_ID.r2.cloudflarestorage.com
+  public_base_url: https://audio.aibuilderbrief.com
+  access_key_env: R2_ACCESS_KEY_ID
+  secret_key_env: R2_SECRET_ACCESS_KEY
+  download_url_prefix: https://op3.dev/e/
+
+outputs:
+  root: build
+  feed: docs/feed.xml
+  manifests: docs/manifests
+  sources: docs/sources

@@ -1,0 +1,40 @@
+{
+  "items": [
+    {
+      "authority": "primary",
+      "category": "models",
+      "id": "acme-model-release",
+      "metadata": {"score": 100, "selection_reason": "Primary model release"},
+      "organization": "Acme AI",
+      "published_at": "2026-08-11T12:00:00Z",
+      "source": "Acme AI",
+      "summary": "Acme AI released a smaller model with documented tool-use support and published evaluation details.",
+      "title": "Acme AI releases Builder Model 2",
+      "url": "https://example.com/acme-builder-model-2"
+    },
+    {
+      "authority": "primary",
+      "category": "developer tools",
+      "id": "forge-runtime-release",
+      "metadata": {"score": 90, "selection_reason": "Direct builder impact"},
+      "organization": "Forge Runtime",
+      "published_at": "2026-08-11T11:00:00Z",
+      "source": "Forge Runtime",
+      "summary": "Forge Runtime added local structured-output validation and published migration notes.",
+      "title": "Forge Runtime adds local structured output validation",
+      "url": "https://example.org/forge-runtime-4"
+    },
+    {
+      "authority": "signal",
+      "category": "trend",
+      "id": "unverified-rumor",
+      "metadata": {"score": 999},
+      "organization": "Social Feed",
+      "published_at": "2026-08-11T10:00:00Z",
+      "source": "Social Feed",
+      "summary": "An unattributed post claims a release is imminent.",
+      "title": "Unverified model rumor",
+      "url": "https://example.net/rumor"
+    }
+  ]
+}

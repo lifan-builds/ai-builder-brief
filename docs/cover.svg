@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 1400" role="img" aria-labelledby="title desc">
+  <title id="title">AI Builder Brief cover</title>
+  <desc id="desc">Green signal lines and the letters AI BB on a dark background.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#071018"/><stop offset="1" stop-color="#10271f"/></linearGradient>
+    <linearGradient id="signal" x1="0" x2="1"><stop stop-color="#42d996"/><stop offset="1" stop-color="#a7ffd5"/></linearGradient>
+  </defs>
+  <rect width="1400" height="1400" rx="120" fill="url(#bg)"/>
+  <path d="M120 300h390l95-130 160 330 120-205h395M120 1110h250l105-185 145 120 160-300 130 175h370" fill="none" stroke="url(#signal)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" opacity=".8"/>
+  <text x="120" y="760" fill="#f1fff8" font-family="ui-sans-serif,system-ui,sans-serif" font-size="360" font-weight="800" letter-spacing="-30">AI</text>
+  <text x="765" y="760" fill="#60e6a8" font-family="ui-monospace,monospace" font-size="210" font-weight="700">/BB</text>
+  <text x="130" y="1260" fill="#9db5a9" font-family="ui-sans-serif,system-ui,sans-serif" font-size="74" font-weight="650" letter-spacing="9">BUILDER BRIEF</text>
+</svg>

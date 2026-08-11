@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<rss xmlns:atom="http://www.w3.org/2005/Atom" xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd" xmlns:podcast="https://podcastindex.org/namespace/1.0" version="2.0">
+  <channel>
+    <title>AI Builder Brief</title>
+    <link>https://lifan-builds.github.io/ai-builder-brief/</link>
+    <description>Three to five source-linked AI developments before stand-up, explained for builders.</description>
+    <language>en</language>
+    <atom:link href="https://lifan-builds.github.io/ai-builder-brief/feed.xml" rel="self" type="application/rss+xml" />
+    <itunes:author>AI Builder Brief</itunes:author>
+    <itunes:summary>Three to five source-linked AI developments before stand-up, explained for builders.</itunes:summary>
+    <itunes:image href="https://lifan-builds.github.io/ai-builder-brief/cover.jpg" />
+    <itunes:category text="Technology" />
+  </channel>
+</rss>
