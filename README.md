@@ -55,7 +55,7 @@ Reddit and newsletter summaries are not ingested. RSS summaries and page metadat
 1. Install the show with transcription support: `pip install -e ".[transcription]"`. The project pins CastForge to the immutable `v0.1.1` GitHub release until PyPI publication is authorized.
 2. Complete `notebooklm login` on the self-hosted runner.
 3. Set `NOTEBOOKLM_NOTEBOOK_ID`, `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY` as GitHub secrets.
-4. Replace `ACCOUNT_ID` and the example public audio domain in [`podcast.yaml`](podcast.yaml) with the real R2 endpoint/domain.
+4. Keep the configured R2 endpoint and public audio origin in [`podcast.yaml`](podcast.yaml); replace them only when moving the show to another Cloudflare account or custom domain.
    The configured OP3 enclosure prefix provides aggregate, privacy-respecting download measurement while R2 remains the validated origin.
 5. Run seven `--shadow` dates and review duration, citations, and transcription before enabling the schedule.
 6. Set the repository variable `PUBLICATION_ENABLED` to `true`; scheduled jobs remain skipped until this explicit launch gate is enabled.

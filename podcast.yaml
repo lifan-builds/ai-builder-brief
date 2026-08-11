@@ -28,7 +28,7 @@ audio:
   provider: notebooklm
   output_dir: build/audio
   duration: 00:06:00
-  public_url_template: https://audio.aibuilderbrief.com/episodes/{filename}
+  public_url_template: https://pub-b23db26935fa4d4ab0d1ef718ad541ec.r2.dev/episodes/{filename}
   language: en
   audio_length: short
   instructions: >-
@@ -41,8 +41,8 @@ audio:
 publication:
   provider: r2
   bucket: ai-builder-brief
-  endpoint_url: https://ACCOUNT_ID.r2.cloudflarestorage.com
-  public_base_url: https://audio.aibuilderbrief.com
+  endpoint_url: https://28cb5fbc371569c6b3f3280983588c0a.r2.cloudflarestorage.com
+  public_base_url: https://pub-b23db26935fa4d4ab0d1ef718ad541ec.r2.dev
   access_key_env: R2_ACCESS_KEY_ID
   secret_key_env: R2_SECRET_ACCESS_KEY
   download_url_prefix: https://op3.dev/e/

@@ -1,0 +1,40 @@
+name: r2-smoke
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate-r2:
+    runs-on: ubuntu-latest
+    env:
+      R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+      R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install production dependencies
+        run: python -m pip install -e .
+
+      - name: Upload and validate public MP3
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          from castforge.publishers.r2 import R2Publisher
+
+          publisher = R2Publisher.from_env(
+              bucket="ai-builder-brief",
+              endpoint_url="https://28cb5fbc371569c6b3f3280983588c0a.r2.cloudflarestorage.com",
+              public_base_url="https://pub-b23db26935fa4d4ab0d1ef718ad541ec.r2.dev",
+              max_bucket_bytes=9_000_000_000,
+          )
+          url = publisher.publish(Path("fixtures/audio.mp3"), "smoke/r2-audio.mp3")
+          print(f"Validated {url}")
+          PY
