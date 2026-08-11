@@ -76,6 +76,7 @@ The ordinary test suite is offline. Live source, NotebookLM, transcription-model
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — boundaries and fail-closed data flow
 - [OPERATIONS.md](OPERATIONS.md) — shadow, publication, incident, and correction procedures
+- [SHADOW_RUNS.md](SHADOW_RUNS.md) — real production-shadow evidence and launch-gate status
 - [SOURCE_POLICY.md](SOURCE_POLICY.md) — source eligibility and content-use rules
 - [PROMOTION.md](PROMOTION.md) — staggered launch material and channel mapping
 - [METRICS.md](METRICS.md) — adoption, listener, and quality definitions
