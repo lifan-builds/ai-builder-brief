@@ -3,10 +3,17 @@ from __future__ import annotations
 import json
 import xml.etree.ElementTree as ET
 from datetime import date
+from pathlib import Path
 
+from castforge.config import load_config
 from castforge.models import EpisodeManifest
 
 from ai_builder_brief.pipeline import is_published, run_daily
+
+
+def test_production_config_caps_r2_below_free_allowance() -> None:
+    config = load_config(Path(__file__).resolve().parents[1] / "podcast.yaml")
+    assert config.publication.max_bucket_bytes == 9_000_000_000
 
 
 def test_fixture_pipeline_builds_complete_public_artifacts(show_project) -> None:

@@ -46,6 +46,7 @@ publication:
   access_key_env: R2_ACCESS_KEY_ID
   secret_key_env: R2_SECRET_ACCESS_KEY
   download_url_prefix: https://op3.dev/e/
+  max_bucket_bytes: 9000000000
 
 outputs:
   root: build

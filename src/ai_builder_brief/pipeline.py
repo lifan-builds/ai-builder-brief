@@ -172,6 +172,7 @@ def run_daily(
             public_base_url=public_config.publication.public_base_url,
             access_key_env=public_config.publication.access_key_env,
             secret_key_env=public_config.publication.secret_key_env,
+            max_bucket_bytes=public_config.publication.max_bucket_bytes,
         )
         origin_url = publisher.publish(audio_path, f"episodes/{filename}")
         prefix = public_config.publication.download_url_prefix

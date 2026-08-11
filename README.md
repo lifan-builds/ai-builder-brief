@@ -52,7 +52,7 @@ Reddit and newsletter summaries are not ingested. RSS summaries and page metadat
 
 ## Production setup
 
-1. Install the show with transcription support: `pip install -e ".[transcription]"`. The project pins CastForge to the immutable `v0.1.0` GitHub release until PyPI publication is authorized.
+1. Install the show with transcription support: `pip install -e ".[transcription]"`. The project pins CastForge to the immutable `v0.1.1` GitHub release until PyPI publication is authorized.
 2. Complete `notebooklm login` on the self-hosted runner.
 3. Set `NOTEBOOKLM_NOTEBOOK_ID`, `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY` as GitHub secrets.
 4. Replace `ACCOUNT_ID` and the example public audio domain in [`podcast.yaml`](podcast.yaml) with the real R2 endpoint/domain.
@@ -62,6 +62,7 @@ Reddit and newsletter summaries are not ingested. RSS summaries and page metadat
 7. Enable GitHub Pages from `docs/` and submit `docs/feed.xml` to podcast directories.
 
 Any evidence, audio, transcript, R2, public-MIME, or byte-length failure occurs before the RSS commit point.
+The R2 publisher also refuses any upload that would take the bucket above 9 GB, leaving a 1 GB margin below the free 10 GB allowance without deleting historical audio.
 
 ## Development
 

@@ -20,6 +20,7 @@ Scheduled workflow runs are disabled until the repository variable `PUBLICATION_
 - Same-date runs skip when the date GUID already exists in RSS.
 - R2 audio is immutable and date-keyed.
 - RSS moves only after source, manifest, audio, transcript, chapters, site, and public audio validation succeed.
+- The configured 9 GB bucket ceiling fails closed before upload and leaves a 1 GB margin below the R2 free allowance; historical episode objects are never auto-deleted.
 
 ## Failure handling
 
