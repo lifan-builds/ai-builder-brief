@@ -28,6 +28,9 @@ jobs:
       - name: Install pinned CastForge
         run: python -m pip install "castforge[r2]==0.1.1"
 
+      - name: Install audio transcoder
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+
       - name: Download immutable review audio
         run: |
           mkdir review-source review-audio
