@@ -12,3 +12,11 @@ def test_scheduled_publication_requires_explicit_repository_gate() -> None:
     assert 'TZ=America/Los_Angeles date +%H' in workflow
     assert "06|08|10" in workflow
     assert 'TZ=America/Los_Angeles date +%F' in workflow
+
+
+def test_manual_shadow_can_regenerate_an_existing_episode_date() -> None:
+    workflow = (
+        Path(__file__).resolve().parents[1] / ".github" / "workflows" / "daily.yml"
+    ).read_text(encoding="utf-8")
+    assert "episode_date:" in workflow
+    assert 'EPISODE_DATE="${{ inputs.episode_date }}"' in workflow

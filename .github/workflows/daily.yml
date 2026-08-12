@@ -6,6 +6,10 @@ on:
     - cron: "0 13-18 * * *"
   workflow_dispatch:
     inputs:
+      episode_date:
+        description: Episode date to generate; blank uses today's Pacific date
+        type: string
+        default: ""
       shadow:
         description: Generate a private shadow episode without R2/RSS publication
         type: boolean
@@ -70,14 +74,19 @@ jobs:
         if: steps.pacific_window.outputs.run == 'true'
         run: |
           FLAGS=""
+          EPISODE_DATE="${{ inputs.episode_date }}"
+          if [ -z "$EPISODE_DATE" ]; then EPISODE_DATE="$(TZ=America/Los_Angeles date +%F)"; fi
           if [ "${{ steps.pacific_window.outputs.shadow }}" = "true" ]; then FLAGS="--shadow"; fi
-          STATUS="$($PY -m ai_builder_brief run --date "$(TZ=America/Los_Angeles date +%F)" $FLAGS)"
+          STATUS="$($PY -m ai_builder_brief run --date "$EPISODE_DATE" $FLAGS)"
           echo "$STATUS"
           echo "status=$STATUS" >> "$GITHUB_OUTPUT"
 
       - name: Validate public artifacts
         if: steps.pacific_window.outputs.run == 'true' && steps.pacific_window.outputs.shadow != 'true' && steps.episode.outputs.status == 'published'
-        run: $PY -m ai_builder_brief validate --date "$(TZ=America/Los_Angeles date +%F)" --check-public
+        run: |
+          EPISODE_DATE="${{ inputs.episode_date }}"
+          if [ -z "$EPISODE_DATE" ]; then EPISODE_DATE="$(TZ=America/Los_Angeles date +%F)"; fi
+          $PY -m ai_builder_brief validate --date "$EPISODE_DATE" --check-public
 
       - name: Commit source-transparent publication
         if: steps.pacific_window.outputs.run == 'true' && steps.pacific_window.outputs.shadow != 'true' && steps.episode.outputs.status == 'published'
