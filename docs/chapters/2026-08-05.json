@@ -1,0 +1,30 @@
+{
+  "chapters": [
+    {
+      "startTime": 0.0,
+      "title": "Third-party cyber evaluations involving OpenAI models",
+      "url": "https://openai.com/index/third-party-cyber-evaluations-involving-openai-models"
+    },
+    {
+      "startTime": 62.032,
+      "title": "AI Leaders Propose SAFE Guidelines for Cybersecurity Transparency",
+      "url": "https://blogs.nvidia.com/blog/open-secure-ai-alliance-contributions/"
+    },
+    {
+      "startTime": 124.064,
+      "title": "The latest AI news we announced in July 2026",
+      "url": "https://blog.google/innovation-and-ai/technology/ai/google-ai-updates-july-2026/"
+    },
+    {
+      "startTime": 186.096,
+      "title": "deepgrove/maple-preview trends on Hugging Face",
+      "url": "https://huggingface.co/deepgrove/maple-preview"
+    },
+    {
+      "startTime": 248.128,
+      "title": "Ollama v0.32.6-rc0",
+      "url": "https://github.com/ollama/ollama/releases/tag/v0.32.6-rc0"
+    }
+  ],
+  "version": "1.2.0"
+}

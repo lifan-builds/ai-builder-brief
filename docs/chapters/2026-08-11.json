@@ -1,0 +1,30 @@
+{
+  "chapters": [
+    {
+      "startTime": 0.0,
+      "title": "Daybreak models are now available on AWS",
+      "url": "https://openai.com/index/daybreak-models-are-now-available-on-aws"
+    },
+    {
+      "startTime": 78.244,
+      "title": "On-Policy Self-Distillation without Any Supervision",
+      "url": "https://huggingface.co/papers/2608.06296"
+    },
+    {
+      "startTime": 156.488,
+      "title": "Ollama v0.32.8",
+      "url": "https://github.com/ollama/ollama/releases/tag/v0.32.8"
+    },
+    {
+      "startTime": 234.732,
+      "title": "ggml.org b10356",
+      "url": "https://github.com/ggml-org/llama.cpp/releases/tag/b10356"
+    },
+    {
+      "startTime": 312.976,
+      "title": "CMU-Drive and V2V-VLA: Cooperative Multi-agent Unified Driving with Reasoning Benchmark and Vehicle-to-Vehicle Vision-Language-Action Models",
+      "url": "https://arxiv.org/abs/2608.07621"
+    }
+  ],
+  "version": "1.2.0"
+}

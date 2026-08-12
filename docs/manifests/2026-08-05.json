@@ -1,0 +1,151 @@
+{
+  "audio_url": "https://op3.dev/e/https://pub-b23db26935fa4d4ab0d1ef718ad541ec.r2.dev/episodes/ai-builder-brief_2026-08-05.mp3",
+  "chapters_url": "https://lifan-builds.github.io/ai-builder-brief/chapters/2026-08-05.json",
+  "created_at": "2026-08-05T13:00:00Z",
+  "duration": "00:05:10",
+  "episode_date": "2026-08-05",
+  "episode_id": "ai-builder-brief-2026-08-05",
+  "pipeline_version": "0.1.0",
+  "schema_version": 1,
+  "show_slug": "ai-builder-brief",
+  "source_document": "docs/sources/2026-08-05.md",
+  "stories": [
+    {
+      "category": "models",
+      "id": "third-party-cyber-evaluations-involving-openai-models",
+      "organization": "OpenAI",
+      "selection_reason": "Fresh source within the rolling 24-hour window",
+      "sources": [
+        {
+          "authority": "primary",
+          "category": "models",
+          "id": "c99ec862b4e71599",
+          "metadata": {
+            "canonical_url": "https://openai.com/index/third-party-cyber-evaluations-involving-openai-models",
+            "cluster_id": "third-party-cyber-evaluations-involving-openai-models",
+            "score": 106.0,
+            "selection_reason": "Fresh source within the rolling 24-hour window"
+          },
+          "organization": "OpenAI",
+          "published_at": "2026-08-04T19:00:00Z",
+          "source": "OpenAI",
+          "summary": "OpenAI explains recent third-party cybersecurity evaluation incidents and outlines new safeguards to strengthen AI model testing and evaluation.",
+          "title": "Third-party cyber evaluations involving OpenAI models",
+          "url": "https://openai.com/index/third-party-cyber-evaluations-involving-openai-models"
+        }
+      ],
+      "summary": "OpenAI explains recent third-party cybersecurity evaluation incidents and outlines new safeguards to strengthen AI model testing and evaluation.",
+      "title": "Third-party cyber evaluations involving OpenAI models"
+    },
+    {
+      "category": "infrastructure",
+      "id": "ai-leaders-propose-safe-guidelines-for-cybersecurity-transparency",
+      "organization": "NVIDIA",
+      "selection_reason": "Fresh source within the rolling 24-hour window",
+      "sources": [
+        {
+          "authority": "primary",
+          "category": "infrastructure",
+          "id": "48933e8195256da4",
+          "metadata": {
+            "canonical_url": "https://blogs.nvidia.com/blog/open-secure-ai-alliance-contributions/",
+            "cluster_id": "ai-leaders-propose-safe-guidelines-for-cybersecurity-transparency",
+            "score": 93.0,
+            "selection_reason": "Fresh source within the rolling 24-hour window"
+          },
+          "organization": "NVIDIA",
+          "published_at": "2026-08-04T13:00:47Z",
+          "source": "NVIDIA",
+          "summary": "Members of the Open Secure AI Alliance — now more than 120 organizations strong — are developing new guidelines to strengthen agentic AI cybersecurity as the annual Black Hat conference begins in Las Vegas today. The Linux Foundation today shared a Request for Comments on Shared AI Findings Exchange (SAFE), a proposed set of guidelines […]",
+          "title": "AI Leaders Propose SAFE Guidelines for Cybersecurity Transparency",
+          "url": "https://blogs.nvidia.com/blog/open-secure-ai-alliance-contributions/"
+        }
+      ],
+      "summary": "Members of the Open Secure AI Alliance — now more than 120 organizations strong — are developing new guidelines to strengthen agentic AI cybersecurity as the annual Black Hat conference begins in Las Vegas today. The Linux Foundation today shared a Request for Comments on Shared AI Findings Exchange (SAFE), a proposed set of guidelines […]",
+      "title": "AI Leaders Propose SAFE Guidelines for Cybersecurity Transparency"
+    },
+    {
+      "category": "products",
+      "id": "the-latest-ai-news-we-announced-in-july-2026",
+      "organization": "Google",
+      "selection_reason": "Fresh source within the rolling 24-hour window",
+      "sources": [
+        {
+          "authority": "primary",
+          "category": "products",
+          "id": "58ba351a21396b43",
+          "metadata": {
+            "canonical_url": "https://blog.google/innovation-and-ai/technology/ai/google-ai-updates-july-2026/",
+            "cluster_id": "the-latest-ai-news-we-announced-in-july-2026",
+            "score": 65.0,
+            "selection_reason": "Fresh source within the rolling 24-hour window"
+          },
+          "organization": "Google",
+          "published_at": "2026-08-04T13:00:00Z",
+          "source": "Google AI",
+          "summary": "July AI recap header",
+          "title": "The latest AI news we announced in July 2026",
+          "url": "https://blog.google/innovation-and-ai/technology/ai/google-ai-updates-july-2026/"
+        }
+      ],
+      "summary": "July AI recap header",
+      "title": "The latest AI news we announced in July 2026"
+    },
+    {
+      "category": "models",
+      "id": "deepgrove-maple-preview-trends-on-hugging-face",
+      "organization": "deepgrove",
+      "selection_reason": "New model with strong open-source trend activity",
+      "sources": [
+        {
+          "authority": "primary",
+          "category": "models",
+          "id": "hf-model-2346614184850cdd",
+          "metadata": {
+            "canonical_url": "https://huggingface.co/deepgrove/maple-preview",
+            "cluster_id": "deepgrove-maple-preview-trends-on-hugging-face",
+            "score": 61.32,
+            "selection_reason": "New model with strong open-source trend activity"
+          },
+          "organization": "deepgrove",
+          "published_at": "2026-08-04T20:50:54Z",
+          "source": "Hugging Face model card",
+          "summary": "The model card reports 331 likes and tags: transformers, safetensors, text-generation, causal-lm, mixture-of-experts, reasoning.",
+          "title": "deepgrove/maple-preview trends on Hugging Face",
+          "url": "https://huggingface.co/deepgrove/maple-preview"
+        }
+      ],
+      "summary": "The model card reports 331 likes and tags: transformers, safetensors, text-generation, causal-lm, mixture-of-experts, reasoning.",
+      "title": "deepgrove/maple-preview trends on Hugging Face"
+    },
+    {
+      "category": "developer tools",
+      "id": "ollama-v0-32-6-rc0",
+      "organization": "Ollama",
+      "selection_reason": "Fresh source within the rolling 24-hour window",
+      "sources": [
+        {
+          "authority": "primary",
+          "category": "developer tools",
+          "id": "0974bc07c9f64683",
+          "metadata": {
+            "canonical_url": "https://github.com/ollama/ollama/releases/tag/v0.32.6-rc0",
+            "cluster_id": "ollama-v0-32-6-rc0",
+            "score": 60.0,
+            "selection_reason": "Fresh source within the rolling 24-hour window"
+          },
+          "organization": "Ollama",
+          "published_at": "2026-08-04T16:51:52Z",
+          "source": "Ollama releases",
+          "summary": "llama.cpp update ( #17545 )",
+          "title": "Ollama v0.32.6-rc0",
+          "url": "https://github.com/ollama/ollama/releases/tag/v0.32.6-rc0"
+        }
+      ],
+      "summary": "llama.cpp update ( #17545 )",
+      "title": "Ollama v0.32.6-rc0"
+    }
+  ],
+  "title": "AI Builder Brief — 2026-08-05",
+  "transcript_url": "https://lifan-builds.github.io/ai-builder-brief/transcripts/2026-08-05.vtt"
+}
