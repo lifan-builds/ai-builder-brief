@@ -8,7 +8,8 @@ from pathlib import Path
 from castforge.config import load_config
 from castforge.models import EpisodeManifest
 
-from ai_builder_brief.pipeline import is_published, run_daily
+from ai_builder_brief.pipeline import _apply_snapshot_deltas, is_published, run_daily
+from castforge.models import SourceItem
 
 
 def test_production_config_caps_r2_below_free_allowance() -> None:
@@ -33,6 +34,9 @@ def test_fixture_pipeline_builds_complete_public_artifacts(show_project) -> None
     chapters = json.loads((output / "chapters" / "2026-08-11.json").read_text(encoding="utf-8"))
     assert len(chapters["chapters"]) == 2
     assert (output / "index.html").is_file()
+    assert (output / "editorial" / "2026-08-11.json").is_file()
+    assert manifest.duration == "00:00:01"
+    assert manifest.metadata["editorial_ledger"] == "editorial/2026-08-11.json"
 
     root = ET.parse(output / "feed.xml").getroot()
     items = root.findall("./channel/item")
@@ -77,3 +81,33 @@ def test_zero_length_placeholder_is_not_considered_published(tmp_path) -> None:
         encoding="utf-8",
     )
     assert not is_published(feed, "ai-builder-brief-2026-08-11")
+
+
+def test_collector_failure_returns_no_episode_without_feed_mutation(show_project, monkeypatch) -> None:
+    feed = show_project / "docs" / "feed.xml"
+    feed.parent.mkdir(parents=True, exist_ok=True)
+    feed.write_text("existing-feed", encoding="utf-8")
+    monkeypatch.setattr("ai_builder_brief.pipeline.collect_sources", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("offline")))
+    status = run_daily(
+        config_path=show_project / "podcast.yaml",
+        sources_path=show_project / "sources.yaml",
+        episode_date=date(2026, 8, 11),
+    )
+    assert status == "no-episode"
+    assert feed.read_text(encoding="utf-8") == "existing-feed"
+
+
+def test_snapshot_deltas_measure_change_instead_of_lifetime_totals() -> None:
+    def snapshot(day: str, stars: int) -> SourceItem:
+        return SourceItem(
+            id="release", title="Release", url="https://github.com/acme/tool/releases/1",
+            source="GitHub", published_at="2026-08-11T12:00:00Z", summary="Release notes.",
+            authority="primary", organization="acme", category="developer tools",
+            metadata={"signal_key": "github:acme/tool", "snapshot_date": day, "repository_stars": stars},
+        )
+
+    enriched = _apply_snapshot_deltas([
+        snapshot("2026-08-04", 100), snapshot("2026-08-10", 125), snapshot("2026-08-11", 130),
+    ])
+    assert enriched[0].metadata["delta_24h"]["repository_stars"] == 5
+    assert enriched[0].metadata["delta_7d"]["repository_stars"] == 30

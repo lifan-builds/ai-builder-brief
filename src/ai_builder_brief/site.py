@@ -10,7 +10,7 @@ SITE_HTML = """<!doctype html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Three to five source-linked AI developments before stand-up.">
+  <meta name="description" content="Decision-changing, source-linked AI developments for builders.">
   <title>AI Builder Brief</title>
   <style>
     :root { color-scheme: dark; --bg:#090d12; --panel:#111923; --text:#eef6ff; --muted:#98a9bb; --accent:#60e6a8; --line:#263443; }
@@ -31,7 +31,7 @@ SITE_HTML = """<!doctype html>
 </head>
 <body><main>
   <header>
-    <div class="kicker">Daily · source transparent · ~6 minutes</div>
+    <div class="kicker">Monitored daily · published when warranted · usually 8–12 minutes</div>
     <h1>AI Builder Brief</h1>
     <p class="lede">The AI developments that matter to people building with models, agents, and open-source tools. Every story carries its primary source or independent corroboration.</p>
     <nav><a class="button primary" href="feed.xml">Subscribe via RSS</a><a class="button" href="https://github.com/lifan-builds/ai-builder-brief">Source &amp; manifests</a><a class="button" href="https://github.com/lifan-builds/castforge">Powered by CastForge</a></nav>
@@ -45,7 +45,7 @@ fetch('feed.xml').then(r=>{if(!r.ok)throw Error(`Feed returned ${r.status}`);ret
   const items=[...feed.querySelectorAll('channel > item')]; count.textContent=`${items.length} episodes`;
   for(const item of items){const guid=item.querySelector('guid')?.textContent||'',date=guid.slice(-10),card=document.createElement('article'),title=document.createElement('h3'),time=document.createElement('time'),audio=document.createElement('audio'),summary=document.createElement('p'),links=document.createElement('div');
     title.textContent=item.querySelector('title')?.textContent||'AI Builder Brief'; time.textContent=new Date(item.querySelector('pubDate')?.textContent||'').toLocaleDateString(undefined,{dateStyle:'long'}); audio.controls=true;audio.preload='none';audio.src=item.querySelector('enclosure')?.getAttribute('url')||''; summary.textContent=item.querySelector('description')?.textContent||'';links.className='links';
-    for(const [label,url] of [['Source manifest',`manifests/${date}.json`],['Transcript',`transcripts/${date}.vtt`],['Chapters',`chapters/${date}.json`]]){const a=document.createElement('a');a.textContent=label;a.href=url;links.append(a)} card.append(title,time,audio,summary,links);episodes.append(card)}
+    for(const [label,url] of [['Source manifest',`manifests/${date}.json`],['Editorial ledger',`editorial/${date}.json`],['Transcript',`transcripts/${date}.vtt`],['Chapters',`chapters/${date}.json`]]){const a=document.createElement('a');a.textContent=label;a.href=url;links.append(a)} card.append(title,time,audio,summary,links);episodes.append(card)}
 }).catch(e=>{count.textContent='Feed unavailable';episodes.textContent=e.message});
 </script></body></html>
 """

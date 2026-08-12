@@ -7,7 +7,9 @@ import html
 import json
 import logging
 import re
+import shutil
 import ssl
+import subprocess
 import xml.etree.ElementTree as ET
 from dataclasses import replace
 from datetime import UTC, datetime
@@ -372,6 +374,10 @@ def collect_hugging_face(
                     category="models",
                     metadata={
                         "canonical_url": url,
+                        "signal_key": f"hf-model:{model_id}",
+                        "hf_likes": int(model.get("likes", 0) or 0),
+                        "hf_downloads": int(model.get("downloads", 0) or 0),
+                        "hf_trending_score": float(model.get("trendingScore", 0) or 0),
                         "score": min(95, 55 + float(model.get("trendingScore", 0)) / 50),
                         "selection_reason": "New model with strong open-source trend activity",
                     },
@@ -399,7 +405,7 @@ def assign_story_clusters(items: list[SourceItem]) -> list[SourceItem]:
     ordered = sorted(
         items,
         key=lambda item: (
-            {"primary": 0, "independent": 1, "signal": 2}[item.authority],
+            {"primary": 0, "independent": 1, "analysis": 2, "signal": 3}[item.authority],
             -float(item.metadata.get("score", 0)),
             item.id,
         ),
@@ -467,9 +473,148 @@ def collect_sources(
             )
         except Exception as error:
             log.warning("source failed: Hugging Face: %s", error)
+    github = raw.get("github") or {}
+    if github.get("enabled") and github.get("repositories"):
+        collected.extend(
+            collect_github_momentum(
+                [str(repository) for repository in github.get("repositories", [])],
+                start=start,
+                end=end,
+                opener=opener,
+            )
+        )
+    x_panel = raw.get("x_panel") or {}
+    if x_panel.get("enabled") and x_panel.get("accounts"):
+        collected.extend(
+            collect_x_panel(
+                [str(account).lstrip("@").strip() for account in x_panel.get("accounts", [])],
+                start=start,
+                end=end,
+            )
+        )
     if not collected:
         raise RuntimeError("all configured sources failed or returned no items in the rolling window")
     return assign_story_clusters(collected)
+
+
+def collect_github_momentum(
+    repositories: list[str], *, start: datetime, end: datetime, opener: Callable[..., Any] = urlopen,
+) -> list[SourceItem]:
+    """Collect public GitHub release momentum as signal metadata."""
+
+    items: list[SourceItem] = []
+    for repository in repositories:
+        try:
+            raw = json.loads(_request(f"https://api.github.com/repos/{repository}/releases?per_page=10", opener=opener))
+            repo = json.loads(_request(f"https://api.github.com/repos/{repository}", opener=opener))
+        except Exception as error:
+            log.warning("source failed: GitHub %s: %s", repository, error)
+            continue
+        for release in raw:
+            published = _parse_datetime(str(release.get("published_at") or release.get("created_at") or ""))
+            if published is None or not start <= published <= end or release.get("draft"):
+                continue
+            tag = str(release.get("tag_name") or "").strip()
+            title = str(release.get("name") or tag or repository).strip()
+            body = _plain_text(str(release.get("body") or ""), limit=1200)
+            stars = int(repo.get("stargazers_count", 0) or 0)
+            forks = int(repo.get("forks_count", 0) or 0)
+            issues = int(repo.get("open_issues_count", 0) or 0)
+            momentum_score = min(4, max(0, round(stars / 25_000 + forks / 10_000 + issues / 2_000)))
+            items.append(SourceItem(
+                id=f"github-{_identifier(str(release.get('html_url') or repository))}",
+                title=f"{repository} {title}",
+                url=str(release.get("html_url") or f"https://github.com/{repository}/releases"),
+                source="GitHub releases",
+                published_at=published.isoformat().replace("+00:00", "Z"),
+                summary=body or f"GitHub release {tag} for {repository}.",
+                authority="primary",
+                organization=repository.split("/", 1)[0],
+                category="developer tools",
+                metadata={
+                    "canonical_url": str(release.get("html_url") or repository),
+                    "signal_key": f"github:{repository}",
+                    "momentum": True,
+                    "momentum_score": momentum_score,
+                    "repository_stars": stars,
+                    "repository_forks": forks,
+                    "repository_open_issues": issues,
+                    "score": 60 + momentum_score * 4,
+                },
+            ))
+    return items
+
+
+def collect_x_panel(
+    accounts: list[str], *, start: datetime, end: datetime, fetcher: Callable[[str], list[dict[str, Any]]] | None = None,
+) -> list[SourceItem]:
+    """Best-effort expert observations; X outages never block collection."""
+
+    if fetcher is None:
+        fetcher = _twitter_cli_fetcher
+    items: list[SourceItem] = []
+    for account in accounts:
+        try:
+            posts = fetcher(account)
+        except Exception as error:
+            log.warning("optional X panel source failed: %s: %s", account, error)
+            continue
+        for post in posts:
+            published = _parse_datetime(str(post.get("published_at") or ""))
+            if published is None:
+                # The compact twitter CLI omits the year for recent posts.
+                raw_time = str(post.get("published_at") or "").strip()
+                try:
+                    published = datetime.strptime(raw_time, "%b %d %H:%M").replace(year=end.year, tzinfo=UTC)
+                except ValueError:
+                    published = None
+            if published is None or not start <= published <= end:
+                continue
+            url = str(post.get("url") or "").strip()
+            text = _plain_text(str(post.get("text") or ""), limit=1200)
+            if not url or not text:
+                continue
+            items.append(SourceItem(
+                id=f"x-{_identifier(url)}", title=f"@{account}: {text[:100]}", url=url,
+                source="Approved X panel", published_at=published.isoformat().replace("+00:00", "Z"),
+                summary=text, authority="analysis", organization=account, category="expert analysis",
+                metadata={"canonical_url": url, "kind": "expert_analysis", "score": 35},
+            ))
+    return items
+
+
+def _twitter_cli_fetcher(account: str) -> list[dict[str, Any]]:
+    """Read approved-account posts through the installed read-only X CLI."""
+
+    executable = shutil.which("twitter")
+    if not executable:
+        raise RuntimeError("twitter CLI is not installed")
+    result = subprocess.run(
+        [executable, "--compact", "user-posts", account, "--max", "20", "--json"],
+        check=True,
+        capture_output=True,
+        text=True,
+        timeout=45,
+    )
+    payload = json.loads(result.stdout)
+    if isinstance(payload, dict) and payload.get("ok") is True:
+        payload = payload.get("data")
+    if not isinstance(payload, list):
+        raise ValueError("twitter CLI returned a non-list payload")
+    posts: list[dict[str, Any]] = []
+    for post in payload:
+        if not isinstance(post, dict):
+            continue
+        tweet_id = str(post.get("id") or "").strip()
+        raw_time = str(post.get("time") or "").strip()
+        if not tweet_id or not raw_time:
+            continue
+        posts.append({
+            "published_at": raw_time,
+            "url": f"https://x.com/{account}/status/{tweet_id}",
+            "text": str(post.get("text") or ""),
+        })
+    return posts
 
 
 def write_sources(items: list[SourceItem], path: Path) -> Path:
@@ -479,3 +624,11 @@ def write_sources(items: list[SourceItem], path: Path) -> Path:
         encoding="utf-8",
     )
     return path
+
+
+def read_sources(path: Path) -> list[SourceItem]:
+    raw = json.loads(Path(path).read_text(encoding="utf-8"))
+    records = raw.get("items", []) if isinstance(raw, dict) else raw
+    if not isinstance(records, list):
+        raise ValueError("source snapshot must contain an items list")
+    return [SourceItem.from_dict(record) for record in records]

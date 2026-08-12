@@ -3,7 +3,7 @@ version: 1
 show:
   slug: ai-builder-brief
   title: AI Builder Brief
-  description: Three to five source-linked AI developments before stand-up, explained for builders.
+  description: Decision-changing AI developments for builders, published only when the evidence warrants an episode.
   language: en
   author: AI Builder Brief
   site_url: https://lifan-builds.github.io/ai-builder-brief/
@@ -19,24 +19,26 @@ source:
   fixture: build/incoming/sources.json
 
 selection:
-  max_stories: 5
-  max_per_organization: 1
-  max_per_category: 2
+  max_stories: 6
+  min_stories: 3
+  max_per_organization: 6
+  max_per_category: 6
   recent_days: 7
 
 audio:
   provider: notebooklm
   output_dir: build/audio
-  duration: 00:06:00
+  duration: 00:10:00
   public_url_template: https://pub-b23db26935fa4d4ab0d1ef718ad541ec.r2.dev/episodes/{filename}
   language: en
-  audio_length: short
+  audio_length: default
   instructions: >-
     Record a concise English dialogue for AI builders. Cover only the selected
     stories and cited facts. For each story explain what happened, why a builder
-    should care, and what remains uncertain. Do not invent quotes, benchmarks,
-    dates, capabilities, or community reactions. Keep the complete episode near
-    six minutes and avoid generic introductions.
+    should care, what they should use, build, test, monitor, or reconsider, and
+    what remains uncertain. Give deeper treatment only to the item marked deep.
+    Do not invent quotes, benchmarks, dates, capabilities, or community reactions.
+    Aim for eight to twelve minutes without padding and never exceed fifteen.
 
 publication:
   provider: r2

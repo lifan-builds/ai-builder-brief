@@ -5,7 +5,7 @@ from email.message import Message
 
 from castforge.models import SourceItem
 
-from ai_builder_brief.collectors import assign_story_clusters, collect_feed
+from ai_builder_brief.collectors import assign_story_clusters, collect_feed, collect_x_panel
 
 
 class Response:
@@ -61,3 +61,19 @@ def test_headline_overlap_assigns_same_conservative_cluster() -> None:
         ]
     )
     assert clustered[0].metadata["cluster_id"] == clustered[1].metadata["cluster_id"]
+
+
+def test_x_panel_is_optional_attributed_analysis() -> None:
+    items = collect_x_panel(
+        ["builder"],
+        start=datetime(2026, 8, 10, tzinfo=UTC),
+        end=datetime(2026, 8, 12, tzinfo=UTC),
+        fetcher=lambda account: [{
+            "published_at": "2026-08-11T12:00:00Z",
+            "url": "https://x.com/builder/status/1",
+            "text": "A practical attributed observation about evaluation design.",
+        }],
+    )
+    assert len(items) == 1
+    assert items[0].authority == "analysis"
+    assert items[0].metadata["kind"] == "expert_analysis"

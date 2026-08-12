@@ -33,3 +33,30 @@ hugging_face:
   daily_papers: true
   trending_models: true
   limit: 10
+
+github:
+  enabled: true
+  repositories: [huggingface/transformers, vllm-project/vllm, ggml-org/llama.cpp, ollama/ollama]
+
+x_panel:
+  enabled: true
+  accounts:
+    - sama
+    - alexalbert__
+    - demishassabis
+    - NoamShazeer
+    - karpathy
+    - simonw
+    - swyx
+    - emollick
+    - Thom_Wolf
+    - ClementDelangue
+    - ggerganov
+    - ylecun
+    - percyliang
+    - DrJimFan
+    - lilianweng
+    - hwchase17
+    - jerryjliu0
+    - HamelHusain
+    - sh_reya

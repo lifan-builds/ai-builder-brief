@@ -25,10 +25,13 @@ jobs:
       PY: .venv/bin/python
       NOTEBOOKLM_NOTEBOOK_ID: ${{ secrets.NOTEBOOKLM_NOTEBOOK_ID }}
       NOTEBOOKLM_AUDIO_LANGUAGE: en
-      NOTEBOOKLM_AUDIO_LENGTH: short
+      NOTEBOOKLM_AUDIO_LENGTH: default
       R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
       R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
       WHISPER_MODEL: small.en
+      CLIPROXYAPI_URL: http://127.0.0.1:8317
+      CLIPROXYAPI_USAGE_GATE_COMMAND: ${{ vars.CLIPROXYAPI_USAGE_GATE_COMMAND }}
+      EDITORIAL_MODEL: gpt-5.6-terra
     steps:
       - name: Select Pacific attempt window
         id: pacific_window

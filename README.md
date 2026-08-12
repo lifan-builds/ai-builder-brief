@@ -1,6 +1,6 @@
 # AI Builder Brief
 
-Three to five source-linked AI developments before stand-up, produced as an approximately six-minute English NotebookLM dialogue every day.
+Three to six source-linked, decision-changing AI developments before stand-up, produced as an approximately six-minute English NotebookLM dialogue every day.
 
 AI Builder Brief is a production reference show for [CastForge](https://github.com/lifan-builds/castforge). Its differentiator is not generic AI-news generation: every selected story has an authoritative primary source or two independent reports, and every episode publishes its source manifest, transcript, and chapters.
 
@@ -52,7 +52,7 @@ Reddit and newsletter summaries are not ingested. RSS summaries and page metadat
 
 ## Production setup
 
-1. Install the show with transcription support: `pip install -e ".[transcription]"`. The project pins the published `castforge==0.1.1` package.
+1. Install the show with transcription support: `pip install -e ".[transcription]"`. The project pins the published `castforge==0.1.2` package.
 2. Complete `notebooklm login` on the self-hosted runner.
 3. Set `NOTEBOOKLM_NOTEBOOK_ID`, `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY` as GitHub secrets.
 4. Keep the configured R2 endpoint and public audio origin in [`podcast.yaml`](podcast.yaml); replace them only when moving the show to another Cloudflare account or custom domain.
