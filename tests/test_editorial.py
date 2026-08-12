@@ -7,6 +7,7 @@ import pytest
 from castforge.models import SourceItem, StoryCluster
 from ai_builder_brief.editorial import EditorialDecision, preprocess, select_clusters, validate_review
 from ai_builder_brief.editorial_client import EDITORIAL_SCHEMA, _client_key
+from ai_builder_brief.pipeline import _editorial_packet
 
 
 def _item(item_id: str, title: str, *, authority: str = "primary", category: str = "models", metadata=None, published_at: str = "2026-08-11T12:00:00Z", summary: str = "Documented API and inference details for builders.") -> SourceItem:
@@ -101,3 +102,17 @@ def test_proxy_key_can_be_loaded_from_runner_local_config(tmp_path, monkeypatch)
 def test_strict_schema_requires_every_declared_decision_property() -> None:
     decision = EDITORIAL_SCHEMA["properties"]["decisions"]["items"]
     assert set(decision["required"]) == set(decision["properties"])
+
+
+def test_editorial_packet_is_compact_and_auditable() -> None:
+    item = _item(
+        "candidate",
+        "A consequential API release",
+        metadata={"cluster_id": "candidate", "source_ids": ["a", "b"], "momentum_score": 3, "recency_score": 4},
+        summary="x" * 1000,
+    )
+    packet = _editorial_packet([item])[0]
+    assert packet["cluster_id"] == "candidate"
+    assert packet["source_ids"] == ["a", "b"]
+    assert len(packet["summary"]) == 700
+    assert "metadata" not in packet

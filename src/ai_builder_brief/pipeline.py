@@ -209,6 +209,28 @@ def _represent_candidates(candidates):
     return representatives, metadata
 
 
+def _editorial_packet(representatives):
+    """Keep model review bounded while retaining the evidence needed to judge impact."""
+
+    return [
+        {
+            "cluster_id": str(item.metadata.get("cluster_id") or item.id),
+            "title": item.title,
+            "summary": item.summary[:700],
+            "url": item.url,
+            "authority": item.authority,
+            "organization": item.organization,
+            "category": item.category,
+            "kind": str(item.metadata.get("kind", "development")),
+            "published_at": item.published_at,
+            "source_ids": list(item.metadata.get("source_ids", [item.id])),
+            "momentum_score": int(item.metadata.get("momentum_score", 0)),
+            "recency_score": int(item.metadata.get("recency_score", 0)),
+        }
+        for item in representatives
+    ]
+
+
 def _move(source: Path, destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     source.replace(destination)
@@ -302,7 +324,7 @@ def run_daily(
         response = {"decisions": [
             {"cluster_id": str(item.metadata.get("cluster_id") or item.id), "decision": "accept", "impact": 4, "actionability": 4, "novelty": 3, "evidence": 4, "audience_breadth": 3, "builder_actions": ["use"], "why_now": "fixture candidate", "rationale": "fixture candidate", "caveats": "", "depth_recommendation": "brief", "source_ids": list(item.metadata.get("source_ids", [item.id]))}
             for item in representatives
-        ]} if fixture else review_candidates([item.to_dict() for item in representatives])
+        ]} if fixture else review_candidates(_editorial_packet(representatives))
         decisions = validate_review(
             response,
             set(candidate_metadata),
