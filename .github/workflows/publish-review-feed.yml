@@ -33,13 +33,13 @@ jobs:
           mkdir review-source review-audio
           gh release download "${{ inputs.release_tag }}" \
             --repo "$GITHUB_REPOSITORY" \
-            --pattern 'ai-builder-brief_*.m4a' \
+            --pattern 'ai-builder-brief_*.mp3' \
             --dir review-source
 
       - name: Transcode reviewed audio to real MP3
         run: |
-          for source in review-source/*.m4a; do
-            filename="$(basename "$source" .m4a).mp3"
+          for source in review-source/*.mp3; do
+            filename="$(basename "$source")"
             ffmpeg -v error -i "$source" -codec:a libmp3lame -q:a 2 "review-audio/$filename"
             test "$(ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of csv=p=0 "review-audio/$filename")" = "mp3"
           done
