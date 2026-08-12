@@ -52,13 +52,13 @@ Reddit and newsletter summaries are not ingested. RSS summaries and page metadat
 
 ## Production setup
 
-1. Install the show with transcription support: `pip install -e ".[transcription]"`. The project pins CastForge to the immutable `v0.1.1` GitHub release until PyPI publication is authorized.
+1. Install the show with transcription support: `pip install -e ".[transcription]"`. The project pins the published `castforge==0.1.1` package.
 2. Complete `notebooklm login` on the self-hosted runner.
 3. Set `NOTEBOOKLM_NOTEBOOK_ID`, `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY` as GitHub secrets.
 4. Keep the configured R2 endpoint and public audio origin in [`podcast.yaml`](podcast.yaml); replace them only when moving the show to another Cloudflare account or custom domain.
    The configured OP3 enclosure prefix provides aggregate, privacy-respecting download measurement while R2 remains the validated origin.
-5. Run seven `--shadow` dates and review duration, citations, and transcription before enabling the schedule.
-6. Set the repository variable `PUBLICATION_ENABLED` to `true`; scheduled jobs remain skipped until this explicit launch gate is enabled.
+5. Leave `PUBLICATION_ENABLED` unset while the 6 AM Pacific schedule accumulates one private shadow per day.
+6. Review seven successful shadows, then set `PUBLICATION_ENABLED` to `true`; the same schedule switches to public 6/8/10 AM attempts.
 7. Enable GitHub Pages from `docs/` and submit `docs/feed.xml` to podcast directories.
 
 Any evidence, audio, transcript, R2, public-MIME, or byte-length failure occurs before the RSS commit point.

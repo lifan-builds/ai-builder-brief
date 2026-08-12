@@ -6,7 +6,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 dependencies = [
-  "castforge[notebooklm,r2] @ git+https://github.com/lifan-builds/castforge.git@v0.1.1",
+  "castforge[notebooklm,r2]==0.1.1",
   "PyYAML>=6",
   "certifi>=2024.8",
 ]

@@ -10,7 +10,7 @@ python -m ai_builder_brief run --date YYYY-MM-DD --shadow
 
 Review the generated `build/shadow/` artifacts for citation qualification, story duplication, transcript quality, and duration. Freeze the story count when the seven-run median is 5–7 minutes; adjust by one story at a time if it is outside the range.
 
-Scheduled workflow runs are disabled until the repository variable `PUBLICATION_ENABLED` is set to `true`. Manual workflow dispatch remains available for the seven shadow runs while the gate is closed.
+While `PUBLICATION_ENABLED` is unset, the scheduled workflow makes one private shadow attempt at 6 AM Pacific each day. Manual shadow dispatch remains available. After seven successful shadows are reviewed, setting `PUBLICATION_ENABLED=true` switches the schedule to public 6/8/10 AM attempts.
 
 ## Publication
 

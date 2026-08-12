@@ -20,7 +20,6 @@ concurrency:
 
 jobs:
   publish:
-    if: github.event_name != 'schedule' || vars.PUBLICATION_ENABLED == 'true'
     runs-on: [self-hosted, macos]
     env:
       PY: .venv/bin/python
@@ -35,14 +34,23 @@ jobs:
         id: pacific_window
         env:
           EVENT_NAME: ${{ github.event_name }}
+          PUBLICATION_ENABLED: ${{ vars.PUBLICATION_ENABLED }}
         run: |
           if [ "$EVENT_NAME" != "schedule" ]; then
             echo "run=true" >> "$GITHUB_OUTPUT"
-          else
+            echo "shadow=${{ inputs.shadow == true }}" >> "$GITHUB_OUTPUT"
+          elif [ "$PUBLICATION_ENABLED" = "true" ]; then
             case "$(TZ=America/Los_Angeles date +%H)" in
               06|08|10) echo "run=true" >> "$GITHUB_OUTPUT" ;;
               *) echo "run=false" >> "$GITHUB_OUTPUT" ;;
             esac
+            echo "shadow=false" >> "$GITHUB_OUTPUT"
+          else
+            case "$(TZ=America/Los_Angeles date +%H)" in
+              06) echo "run=true" >> "$GITHUB_OUTPUT" ;;
+              *) echo "run=false" >> "$GITHUB_OUTPUT" ;;
+            esac
+            echo "shadow=true" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: actions/checkout@v5
@@ -58,15 +66,15 @@ jobs:
         if: steps.pacific_window.outputs.run == 'true'
         run: |
           FLAGS=""
-          if [ "${{ inputs.shadow }}" = "true" ]; then FLAGS="--shadow"; fi
+          if [ "${{ steps.pacific_window.outputs.shadow }}" = "true" ]; then FLAGS="--shadow"; fi
           $PY -m ai_builder_brief run --date "$(TZ=America/Los_Angeles date +%F)" $FLAGS
 
       - name: Validate public artifacts
-        if: steps.pacific_window.outputs.run == 'true' && inputs.shadow != true
+        if: steps.pacific_window.outputs.run == 'true' && steps.pacific_window.outputs.shadow != 'true'
         run: $PY -m ai_builder_brief validate --date "$(TZ=America/Los_Angeles date +%F)" --check-public
 
       - name: Commit source-transparent publication
-        if: steps.pacific_window.outputs.run == 'true' && inputs.shadow != true
+        if: steps.pacific_window.outputs.run == 'true' && steps.pacific_window.outputs.shadow != 'true'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
