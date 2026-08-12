@@ -66,18 +66,21 @@ jobs:
           $PY -m pip install -q -e ".[transcription]"
 
       - name: Run daily episode
+        id: episode
         if: steps.pacific_window.outputs.run == 'true'
         run: |
           FLAGS=""
           if [ "${{ steps.pacific_window.outputs.shadow }}" = "true" ]; then FLAGS="--shadow"; fi
-          $PY -m ai_builder_brief run --date "$(TZ=America/Los_Angeles date +%F)" $FLAGS
+          STATUS="$($PY -m ai_builder_brief run --date "$(TZ=America/Los_Angeles date +%F)" $FLAGS)"
+          echo "$STATUS"
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
 
       - name: Validate public artifacts
-        if: steps.pacific_window.outputs.run == 'true' && steps.pacific_window.outputs.shadow != 'true'
+        if: steps.pacific_window.outputs.run == 'true' && steps.pacific_window.outputs.shadow != 'true' && steps.episode.outputs.status == 'published'
         run: $PY -m ai_builder_brief validate --date "$(TZ=America/Los_Angeles date +%F)" --check-public
 
       - name: Commit source-transparent publication
-        if: steps.pacific_window.outputs.run == 'true' && steps.pacific_window.outputs.shadow != 'true'
+        if: steps.pacific_window.outputs.run == 'true' && steps.pacific_window.outputs.shadow != 'true' && steps.episode.outputs.status == 'published'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

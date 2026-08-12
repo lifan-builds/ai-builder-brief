@@ -6,7 +6,7 @@ readme = "README.md"
 license = "MIT"
 requires-python = ">=3.10"
 dependencies = [
-  "castforge[notebooklm,r2]==0.1.2",
+  "castforge[notebooklm,r2]==0.1.3",
   "PyYAML>=6",
   "certifi>=2024.8",
 ]
