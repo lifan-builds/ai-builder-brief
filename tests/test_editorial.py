@@ -6,7 +6,7 @@ import pytest
 
 from castforge.models import SourceItem, StoryCluster
 from ai_builder_brief.editorial import EditorialDecision, preprocess, select_clusters, validate_review
-from ai_builder_brief.editorial_client import _client_key
+from ai_builder_brief.editorial_client import EDITORIAL_SCHEMA, _client_key
 
 
 def _item(item_id: str, title: str, *, authority: str = "primary", category: str = "models", metadata=None, published_at: str = "2026-08-11T12:00:00Z", summary: str = "Documented API and inference details for builders.") -> SourceItem:
@@ -96,3 +96,8 @@ def test_proxy_key_can_be_loaded_from_runner_local_config(tmp_path, monkeypatch)
     monkeypatch.delenv("CLIPROXYAPI_API_KEY", raising=False)
     monkeypatch.setenv("CLIPROXYAPI_CONFIG", str(config))
     assert _client_key() == "local-test-key"
+
+
+def test_strict_schema_requires_every_declared_decision_property() -> None:
+    decision = EDITORIAL_SCHEMA["properties"]["decisions"]["items"]
+    assert set(decision["required"]) == set(decision["properties"])

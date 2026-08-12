@@ -15,7 +15,7 @@ EDITORIAL_SCHEMA = {
     "type": "object", "additionalProperties": False, "required": ["decisions"],
     "properties": {"decisions": {"type": "array", "items": {
         "type": "object", "additionalProperties": False,
-        "required": ["cluster_id", "decision", "impact", "actionability", "novelty", "evidence", "audience_breadth", "builder_actions", "why_now", "rationale", "caveats", "depth_recommendation"],
+        "required": ["cluster_id", "decision", "impact", "actionability", "novelty", "evidence", "audience_breadth", "builder_actions", "why_now", "rationale", "caveats", "depth_recommendation", "source_ids"],
         "properties": {
             "cluster_id": {"type": "string"}, "decision": {"enum": ["accept", "reject"]},
             **{name: {"type": "integer", "minimum": 0, "maximum": 4} for name in ("impact", "actionability", "novelty", "evidence", "audience_breadth")},
