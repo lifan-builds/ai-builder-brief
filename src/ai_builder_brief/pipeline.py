@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import json
 import shutil
 import xml.etree.ElementTree as ET
 from dataclasses import replace
