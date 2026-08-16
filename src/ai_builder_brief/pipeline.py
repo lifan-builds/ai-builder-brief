@@ -18,7 +18,7 @@ from castforge.runner import run_episode
 
 from ai_builder_brief.collectors import collect_sources, read_sources, write_sources
 from ai_builder_brief.editorial import preprocess, select_clusters, validate_review, write_ledger
-from ai_builder_brief.editorial_client import review_candidates
+from ai_builder_brief.editorial_client import EditorialReviewError, review_candidates_batched
 from ai_builder_brief.site import render_site
 from ai_builder_brief.transcription import load_fixture, transcribe, write_chapters, write_vtt
 
@@ -323,14 +323,32 @@ def run_daily(
         response = {"decisions": [
             {"cluster_id": str(item.metadata.get("cluster_id") or item.id), "decision": "accept", "impact": 4, "actionability": 4, "novelty": 3, "evidence": 4, "audience_breadth": 3, "builder_actions": ["use"], "why_now": "fixture candidate", "rationale": "fixture candidate", "caveats": "", "depth_recommendation": "brief", "source_ids": list(item.metadata.get("source_ids", [item.id]))}
             for item in representatives
-        ]} if fixture else review_candidates(_editorial_packet(representatives))
+        ]} if fixture else review_candidates_batched(_editorial_packet(representatives))
         decisions = validate_review(
             response,
             set(candidate_metadata),
             candidate_metadata,
         )
+    except EditorialReviewError as error:
+        write_ledger(
+            deterministic,
+            ledger_path,
+            episode_date=episode_date.isoformat(),
+            status="no-episode-editorial-failure",
+            metadata=error.to_metadata(),
+        )
+        return "no-episode"
     except Exception:
-        write_ledger(deterministic, ledger_path, episode_date=episode_date.isoformat(), status="no-episode-editorial-failure")
+        # Validation errors are intentionally collapsed to the same safe
+        # category.  The raw model response and exception text never enter the
+        # ledger.
+        write_ledger(
+            deterministic,
+            ledger_path,
+            episode_date=episode_date.isoformat(),
+            status="no-episode-editorial-failure",
+            metadata={"failure_type": "invalid_response", "stage": "editorial_validation"},
+        )
         return "no-episode"
     write_ledger(_merge_editorial_ledger(deterministic, decisions), ledger_path, episode_date=episode_date.isoformat())
     selected = select_clusters(clusters, decisions, minimum=public_config.selection.min_stories, maximum=public_config.selection.max_stories)
@@ -338,7 +356,7 @@ def run_daily(
         write_ledger(_merge_editorial_ledger(deterministic, decisions), ledger_path, episode_date=episode_date.isoformat(), status="no-episode")
         return "no-episode"
     editorial_source = root / "build" / "editorial-input" / f"{episode_date.isoformat()}.json"
-    selected_sources = []
+    selected_sources: list[SourceItem] = []
     for cluster in selected:
         editorial = cluster.metadata.get("editorial", {})
         selected_sources.extend(replace(source, metadata={**source.metadata, "editorial": editorial}) for source in cluster.sources)

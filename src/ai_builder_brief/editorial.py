@@ -30,6 +30,11 @@ PRACTICAL_TERMS = {
     "developer", "migration", "license", "available", "research",
 }
 BUILDER_ACTIONS = frozenset({"use", "build", "test", "monitor", "reconsider"})
+EDITORIAL_FAILURE_TYPES = frozenset({"usage_gate", "timeout", "proxy", "invalid_response"})
+EDITORIAL_FAILURE_STAGES = frozenset({
+    "usage_gate", "proxy_config", "editorial_request", "editorial_response",
+    "editorial_coverage", "editorial_input", "editorial_batch", "editorial_validation",
+})
 
 
 @dataclass(frozen=True, slots=True)
@@ -203,9 +208,9 @@ def validate_review(
         raise ValueError("editorial response must be an object with decisions")
     decisions: list[EditorialDecision] = []
     seen: set[str] = set()
-    required = {"cluster_id", "decision", "impact", "actionability", "novelty", "evidence", "audience_breadth", "builder_actions", "why_now", "rationale", "caveats", "depth_recommendation"}
+    required = {"cluster_id", "decision", "impact", "actionability", "novelty", "evidence", "audience_breadth", "builder_actions", "why_now", "rationale", "caveats", "depth_recommendation", "source_ids"}
     for raw in payload["decisions"]:
-        if not isinstance(raw, dict) or not required.issubset(raw):
+        if not isinstance(raw, dict) or set(raw) != required:
             raise ValueError("editorial decision is missing strict-schema fields")
         cluster_id = str(raw["cluster_id"])
         if cluster_id not in candidate_ids or cluster_id in seen:
@@ -257,9 +262,31 @@ def select_clusters(clusters: Iterable[StoryCluster], decisions: Iterable[Editor
     return tuple(selected)
 
 
-def write_ledger(decisions: Iterable[EditorialDecision | dict[str, Any]], path: Path, *, episode_date: str, status: str = "reviewed") -> Path:
+def write_ledger(
+    decisions: Iterable[EditorialDecision | dict[str, Any]],
+    path: Path,
+    *,
+    episode_date: str,
+    status: str = "reviewed",
+    metadata: dict[str, Any] | None = None,
+) -> Path:
     records = [item.to_dict() if isinstance(item, EditorialDecision) else item for item in decisions]
     body = {"schema_version": 1, "episode_date": episode_date, "status": status, "decisions": records}
+    if metadata:
+        # Failure metadata is an operational diagnostic, not a second channel
+        # for proxy output.  Copy only the three controlled scalar fields.
+        safe: dict[str, str | int] = {}
+        failure_type = metadata.get("failure_type")
+        if isinstance(failure_type, str) and failure_type in EDITORIAL_FAILURE_TYPES:
+            safe["failure_type"] = failure_type
+        stage = metadata.get("stage")
+        if isinstance(stage, str) and stage in EDITORIAL_FAILURE_STAGES:
+            safe["stage"] = stage
+        batch_index = metadata.get("batch_index")
+        if isinstance(batch_index, int) and not isinstance(batch_index, bool) and batch_index > 0:
+            safe["batch_index"] = batch_index
+        if safe:
+            body["metadata"] = safe
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(body, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return path

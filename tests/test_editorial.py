@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 
 import pytest
 
 from castforge.models import SourceItem, StoryCluster
-from ai_builder_brief.editorial import EditorialDecision, preprocess, select_clusters, validate_review
-from ai_builder_brief.editorial_client import EDITORIAL_SCHEMA, _client_key
+from ai_builder_brief.editorial import EditorialDecision, preprocess, select_clusters, validate_review, write_ledger
+from ai_builder_brief import editorial_client
+from ai_builder_brief.editorial_client import EDITORIAL_SCHEMA, EditorialReviewError, _client_key, review_candidates_batched
 from ai_builder_brief.pipeline import _editorial_packet
 
 
@@ -116,3 +118,157 @@ def test_editorial_packet_is_compact_and_auditable() -> None:
     assert packet["source_ids"] == ["a", "b"]
     assert len(packet["summary"]) == 700
     assert "metadata" not in packet
+
+
+def _review_decision(cluster_id: str) -> dict:
+    return {
+        "cluster_id": cluster_id,
+        "decision": "accept",
+        "impact": 4,
+        "actionability": 4,
+        "novelty": 3,
+        "evidence": 4,
+        "audience_breadth": 3,
+        "builder_actions": ["use"],
+        "why_now": "now",
+        "rationale": "reason",
+        "caveats": "none",
+        "depth_recommendation": "brief",
+        "source_ids": [cluster_id],
+    }
+
+
+@pytest.mark.parametrize(
+    ("candidate_count", "expected_batch_sizes"),
+    [(23, [6, 6, 6, 5]), (24, [6, 6, 6, 6])],
+)
+def test_editorial_batches_are_bounded_and_merged_in_input_order(
+    monkeypatch,
+    candidate_count,
+    expected_batch_sizes,
+) -> None:
+    calls: list[list[str]] = []
+
+    def fake_review(packet):
+        ids = [item["cluster_id"] for item in packet]
+        calls.append(ids)
+        return {"decisions": [_review_decision(cluster_id) for cluster_id in reversed(ids)]}
+
+    monkeypatch.setattr(editorial_client, "review_candidates", fake_review)
+    candidates = [{"cluster_id": str(index)} for index in range(candidate_count)]
+    response = review_candidates_batched(candidates)
+
+    assert [len(call) for call in calls] == expected_batch_sizes
+    assert [item["cluster_id"] for item in response["decisions"]] == [
+        str(index) for index in range(candidate_count)
+    ]
+
+
+def test_editorial_batch_rejects_partial_coverage(monkeypatch) -> None:
+    def fake_review(packet):
+        return {"decisions": [_review_decision(packet[0]["cluster_id"])]}
+
+    monkeypatch.setattr(editorial_client, "review_candidates", fake_review)
+    with pytest.raises(EditorialReviewError) as caught:
+        review_candidates_batched([{"cluster_id": "one"}, {"cluster_id": "two"}])
+
+    assert caught.value.to_metadata() == {
+        "failure_type": "invalid_response",
+        "stage": "editorial_coverage",
+        "batch_index": 1,
+    }
+
+
+def test_editorial_request_timeout_is_safely_classified(monkeypatch) -> None:
+    monkeypatch.setattr(editorial_client, "_usage_gate", lambda: None)
+    monkeypatch.setattr(editorial_client, "_client_key", lambda: "local-test-key")
+
+    def timeout_opener(request, timeout):
+        assert timeout == 60
+        raise TimeoutError("secret upstream details")
+
+    with pytest.raises(EditorialReviewError) as caught:
+        editorial_client.review_candidates(
+            [{"cluster_id": "candidate"}],
+            opener=timeout_opener,
+        )
+
+    assert caught.value.to_metadata() == {
+        "failure_type": "timeout",
+        "stage": "editorial_request",
+    }
+    assert "secret upstream details" not in str(caught.value)
+
+
+def test_editorial_response_value_type_is_strictly_validated(monkeypatch) -> None:
+    monkeypatch.setattr(editorial_client, "_usage_gate", lambda: None)
+    monkeypatch.setattr(editorial_client, "_client_key", lambda: "local-test-key")
+
+    def invalid_opener(request, timeout):
+        class Response:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *args):
+                return False
+
+            def read(self):
+                body = {"choices": [{"message": {"content": json.dumps({"decisions": [{**_review_decision("candidate"), "impact": "4"}]})}}]}
+                return json.dumps(body).encode("utf-8")
+
+        return Response()
+
+    with pytest.raises(EditorialReviewError) as caught:
+        editorial_client.review_candidates(
+            [{"cluster_id": "candidate"}],
+            opener=invalid_opener,
+        )
+
+    assert caught.value.to_metadata() == {
+        "failure_type": "invalid_response",
+        "stage": "editorial_response",
+    }
+
+
+def test_editorial_batch_failure_is_indexed_without_raw_details(monkeypatch) -> None:
+    def fake_review(packet):
+        if packet[0]["cluster_id"] == "6":
+            raise RuntimeError("https://localhost/proxy?api_key=secret-response")
+        return {"decisions": [_review_decision(item["cluster_id"]) for item in packet]}
+
+    monkeypatch.setattr(editorial_client, "review_candidates", fake_review)
+    with pytest.raises(EditorialReviewError) as caught:
+        review_candidates_batched([{"cluster_id": str(index)} for index in range(8)])
+
+    error = caught.value
+    assert error.category == "proxy"
+    assert error.batch_index == 2
+    assert "secret-response" not in str(error)
+    assert error.to_metadata() == {
+        "failure_type": "proxy",
+        "stage": "editorial_batch",
+        "batch_index": 2,
+    }
+
+
+def test_editorial_failure_ledger_metadata_is_allowlisted(tmp_path) -> None:
+    path = write_ledger(
+        [],
+        tmp_path / "ledger.json",
+        episode_date="2026-08-16",
+        status="no-episode-editorial-failure",
+        metadata={
+            "failure_type": "timeout",
+            "stage": "editorial_request",
+            "batch_index": 2,
+            "response_body": "Bearer super-secret",
+            "url": "http://localhost/?key=secret",
+        },
+    )
+    body = json.loads(path.read_text(encoding="utf-8"))
+    assert body["metadata"] == {
+        "failure_type": "timeout",
+        "stage": "editorial_request",
+        "batch_index": 2,
+    }
+    assert "secret" not in path.read_text(encoding="utf-8")
