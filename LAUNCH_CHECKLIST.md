@@ -2,13 +2,12 @@
 
 ## Public-beta gate
 
-- [x] CastForge 0.1.1 published to PyPI through Trusted Publishing.
 - [x] Production R2 bucket and bucket-scoped credentials configured.
 - [x] Public R2 MIME and byte-length smoke check passed.
 - [x] R2 uploads fail closed above 9,000,000,000 bytes.
 - [x] Daily prelaunch shadow schedule enabled while public publication remains off.
 - [ ] Seven successful real NotebookLM shadows reviewed.
-- [ ] Seven-run median is 5–7 minutes and at least 90% are 4–8 minutes.
+- [ ] Seven-run median is 8–12 minutes and no episode exceeds 15 minutes.
 - [ ] Every selected story has qualifying citations; transcripts and chapters are present.
 - [ ] Set `PUBLICATION_ENABLED=true` only after the preceding checks pass.
 - [ ] Validate the first public MP3, manifest, transcript, chapters, feed GUID, OP3 enclosure, and R2 origin.

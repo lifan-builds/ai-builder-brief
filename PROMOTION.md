@@ -12,7 +12,7 @@ Promotion starts only after CastForge is installable and AI Builder Brief passes
 ## Draft angles
 
 - “What 18 automated podcast episodes taught us about RSS contracts.”
-- “Show HN: an open, source-transparent six-minute AI briefing.”
+- “Show HN: an open, source-transparent AI briefing.”
 - “How an AI podcast fails closed when NotebookLM or object storage fails.”
 - “From one opinionated forum show to a reusable Python framework.”
 

@@ -291,7 +291,6 @@ def run_daily(
             write_ledger([], root / "build" / "editorial" / f"{episode_date.isoformat()}.json", episode_date=episode_date.isoformat(), status="no-episode-collector-failure")
             return "no-episode"
 
-    from castforge.models import SourceItem
     normalized = read_sources(public_config.source.fixture)
     if not fixture:
         snapshot_dir = root / "build" / "snapshots"

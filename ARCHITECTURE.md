@@ -4,7 +4,7 @@ AI Builder Brief owns source selection, editorial instructions, scheduling, show
 
 ## Boundaries
 
-1. Collectors read RSS/Atom, official announcement-page metadata, Hacker News JSON, and Hugging Face JSON for the 24 hours ending at 6 AM Pacific.
+1. Collectors read RSS/Atom, official announcement-page metadata, Hacker News JSON, and Hugging Face JSON for the seven days ending at 6 AM Pacific.
 2. Show-owned clustering groups exact canonical URLs or headlines with at least three shared meaningful tokens and at least 60% token similarity.
 3. CastForge rejects any cluster without a primary source or two independent publications, applies recent-story and diversity limits, and writes the source document and manifest.
 4. NotebookLM generates local audio from only that document and deletes its temporary notebook source in `finally`.

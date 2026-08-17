@@ -10,7 +10,7 @@
 
 - At least 95% of episodes publish within two hours of the first scheduled attempt.
 - Every story has a primary source or two independent reports.
-- Median duration is 5–7 minutes and at least 90% of episodes are 4–8 minutes.
+- Median duration is 8–12 minutes and no episode exceeds 15 minutes.
 - Fewer than two material corrections per rolling 30 days.
 - No feed item exists without publicly validated positive-length `audio/mpeg`.
 
