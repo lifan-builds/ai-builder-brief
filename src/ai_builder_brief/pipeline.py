@@ -19,6 +19,7 @@ from castforge.runner import run_episode
 from ai_builder_brief.collectors import collect_sources, read_sources, write_sources
 from ai_builder_brief.editorial import preprocess, select_clusters, validate_review, write_ledger
 from ai_builder_brief.editorial_client import EditorialReviewError, review_candidates_batched
+from ai_builder_brief.review import write_review_artifacts
 from ai_builder_brief.site import render_site
 from ai_builder_brief.transcription import load_fixture, transcribe, write_chapters, write_vtt
 
@@ -242,11 +243,12 @@ def run_daily(
     episode_date: date,
     fixture: bool = False,
     shadow: bool = False,
+    review_only: bool = False,
 ) -> str:
     root = Path(config_path).resolve().parent
     public_config = load_config(config_path)
     episode_id = _episode_id(public_config.show.episode_guid_prefix, episode_date)
-    if not fixture and not shadow and is_published(public_config.outputs.feed, episode_id):
+    if not fixture and not shadow and not review_only and is_published(public_config.outputs.feed, episode_id):
         return "already-published"
 
     if fixture:
@@ -351,6 +353,15 @@ def run_daily(
         )
         return "no-episode"
     write_ledger(_merge_editorial_ledger(deterministic, decisions), ledger_path, episode_date=episode_date.isoformat())
+    if review_only:
+        write_review_artifacts(
+            episode_date,
+            representatives,
+            candidates,
+            decisions,
+            root / "build" / "review",
+        )
+        return "review-ready"
     selected = select_clusters(clusters, decisions, minimum=public_config.selection.min_stories, maximum=public_config.selection.max_stories)
     if len(selected) < public_config.selection.min_stories:
         write_ledger(_merge_editorial_ledger(deterministic, decisions), ledger_path, episode_date=episode_date.isoformat(), status="no-episode")

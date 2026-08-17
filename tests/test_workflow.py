@@ -4,12 +4,18 @@ from datetime import date
 from ai_builder_brief.schedule import scheduled_attempt
 
 
-def test_scheduled_publication_requires_explicit_repository_gate() -> None:
+def test_scheduled_job_is_review_only_and_cannot_publish() -> None:
     workflow = (
         Path(__file__).resolve().parents[1] / ".github" / "workflows" / "daily.yml"
     ).read_text(encoding="utf-8")
-    assert "PUBLICATION_ENABLED: ${{ vars.PUBLICATION_ENABLED }}" in workflow
-    assert 'if [ "$PUBLICATION_ENABLED" = "true" ]' in workflow
+    assert "contents: read" in workflow
+    assert "--review-only" in workflow
+    assert "PUBLICATION_ENABLED" not in workflow
+    assert "NOTEBOOKLM_NOTEBOOK_ID" not in workflow
+    assert "R2_ACCESS_KEY_ID" not in workflow
+    assert "--check-public" not in workflow
+    assert "git push" not in workflow
+    assert "inputs.shadow" not in workflow
     assert 'github.event.schedule' in workflow
     assert 'scripts/select_schedule_slot.py' in workflow
     assert 'cron: "0 13 * * *"' in workflow
@@ -20,9 +26,10 @@ def test_scheduled_publication_requires_explicit_repository_gate() -> None:
     assert 'cron: "0 18 * * *"' in workflow
     assert 'caffeinate -dimsu' in workflow
     assert 'TZ=America/Los_Angeles date +%F' in workflow
+    assert "if: always() && steps.pacific_window.outputs.run == 'true'" in workflow
 
 
-def test_manual_shadow_can_regenerate_an_existing_episode_date() -> None:
+def test_manual_review_can_use_an_explicit_date() -> None:
     workflow = (
         Path(__file__).resolve().parents[1] / ".github" / "workflows" / "daily.yml"
     ).read_text(encoding="utf-8")

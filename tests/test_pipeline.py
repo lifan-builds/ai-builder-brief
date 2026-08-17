@@ -74,6 +74,32 @@ def test_fixture_shadow_never_mutates_docs(show_project) -> None:
     assert (docs / "index.html").read_text(encoding="utf-8") == "public-site"
 
 
+def test_review_only_writes_review_and_stops_before_episode(show_project, monkeypatch) -> None:
+    def fail_if_called(*args, **kwargs):
+        raise AssertionError("review-only mode reached episode generation")
+
+    monkeypatch.setattr("ai_builder_brief.pipeline.run_episode", fail_if_called)
+    status = run_daily(
+        config_path=show_project / "podcast.yaml",
+        sources_path=show_project / "sources.yaml",
+        episode_date=date(2026, 8, 11),
+        fixture=True,
+        review_only=True,
+    )
+
+    assert status == "review-ready"
+    review_root = show_project / "build" / "review"
+    review = json.loads((review_root / "2026-08-11.json").read_text(encoding="utf-8"))
+    assert review["candidate_count"] == 2
+    assert review["podcast_ready_count"] == 2
+    assert [item["rank"] for item in review["candidates"]] == [1, 2]
+    assert (review_root / "2026-08-11.md").is_file()
+    assert (show_project / "build" / "editorial" / "2026-08-11.json").is_file()
+    assert not (show_project / "build" / "fixture" / "manifests").exists()
+    assert not (show_project / "build" / "fixture" / "feed.xml").exists()
+    assert not (show_project / "docs").exists()
+
+
 def test_zero_length_placeholder_is_not_considered_published(tmp_path) -> None:
     feed = tmp_path / "feed.xml"
     feed.write_text(
@@ -95,6 +121,26 @@ def test_collector_failure_returns_no_episode_without_feed_mutation(show_project
     )
     assert status == "no-episode"
     assert feed.read_text(encoding="utf-8") == "existing-feed"
+
+
+def test_review_only_collector_failure_keeps_ledger_without_partial_review(show_project, monkeypatch) -> None:
+    monkeypatch.setattr(
+        "ai_builder_brief.pipeline.collect_sources",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("offline")),
+    )
+    status = run_daily(
+        config_path=show_project / "podcast.yaml",
+        sources_path=show_project / "sources.yaml",
+        episode_date=date(2026, 8, 17),
+        review_only=True,
+    )
+
+    assert status == "no-episode"
+    ledger_path = show_project / "build" / "editorial" / "2026-08-17.json"
+    ledger = json.loads(ledger_path.read_text(encoding="utf-8"))
+    assert ledger["status"] == "no-episode-collector-failure"
+    assert not (show_project / "build" / "review" / "2026-08-17.json").exists()
+    assert not (show_project / "build" / "review" / "2026-08-17.md").exists()
 
 
 def test_snapshot_deltas_measure_change_instead_of_lifetime_totals() -> None:

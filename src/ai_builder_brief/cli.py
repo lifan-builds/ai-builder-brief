@@ -24,6 +24,7 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--date", dest="episode_date", type=date.fromisoformat, default=date.today())
     run.add_argument("--fixture", action="store_true")
     run.add_argument("--shadow", action="store_true")
+    run.add_argument("--review-only", action="store_true")
     validate = subparsers.add_parser("validate")
     validate.add_argument("--config", type=Path, default=Path("podcast.yaml"))
     validate.add_argument("--date", dest="episode_date", default=None)
@@ -42,6 +43,7 @@ def main(argv: list[str] | None = None) -> int:
                 episode_date=args.episode_date,
                 fixture=args.fixture,
                 shadow=args.shadow,
+                review_only=args.review_only,
             )
             print(status)
             return 0

@@ -237,7 +237,7 @@ def select_clusters(clusters: Iterable[StoryCluster], decisions: Iterable[Editor
     ranked: list[tuple[float, StoryCluster, EditorialDecision]] = []
     for cluster in clusters:
         decision = by_id.get(cluster.id)
-        if not decision or decision.decision != "accept" or decision.score < 70 or decision.impact < 3 or decision.evidence < 3:
+        if not decision or not is_podcast_ready(decision):
             continue
         ranked.append((decision.score, cluster, decision))
     selected: list[StoryCluster] = []
@@ -260,6 +260,17 @@ def select_clusters(clusters: Iterable[StoryCluster], decisions: Iterable[Editor
                 deep_claimed = True
         selected.append(replace(cluster, metadata={**cluster.metadata, "editorial": {**decision.to_dict(), "diversity_penalty": penalty, "adjusted_score": adjusted}}))
     return tuple(selected)
+
+
+def is_podcast_ready(decision: EditorialDecision) -> bool:
+    """Return whether a reviewed candidate passes the episode evidence gate."""
+
+    return (
+        decision.decision == "accept"
+        and decision.score >= 70
+        and decision.impact >= 3
+        and decision.evidence >= 3
+    )
 
 
 def write_ledger(

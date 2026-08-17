@@ -1,5 +1,17 @@
 # Operations
 
+## Editorial review period
+
+The scheduled workflow currently runs one review-only job at 6 AM Pacific. It produces `build/review/YYYY-MM-DD.json`, the matching Markdown summary, and the full editorial ledger without invoking NotebookLM, transcription, R2, RSS, or public-site mutation.
+
+Run the same path manually with:
+
+```bash
+python -m ai_builder_brief run --date YYYY-MM-DD --review-only
+```
+
+Review artifacts rank up to ten model-reviewed candidates, including rejects. Only entries with `podcast_ready: true` pass the unchanged evidence and score gate. A completed review is valid even when fewer than three candidates are podcast-ready.
+
 ## Shadow gate
 
 Before public launch, run seven consecutive production-source shadow dates:
@@ -10,7 +22,7 @@ python -m ai_builder_brief run --date YYYY-MM-DD --shadow
 
 Review the generated `build/shadow/` artifacts for citation qualification, story duplication, transcript quality, and duration. Freeze the story count when the seven-run median is 5–7 minutes; adjust by one story at a time if it is outside the range.
 
-While `PUBLICATION_ENABLED` is unset, the scheduled workflow makes one private shadow attempt at 6 AM Pacific each day. Manual shadow dispatch remains available. After seven successful shadows are reviewed, setting `PUBLICATION_ENABLED=true` switches the schedule to public 6/8/10 AM attempts.
+The shadow command remains available locally, but the scheduled workflow cannot invoke it during the editorial review period. Restoring scheduled audio requires an explicit workflow change and a fresh review of the seven-shadow gate; setting `PUBLICATION_ENABLED` alone has no effect.
 
 ## Publication
 

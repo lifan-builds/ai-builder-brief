@@ -4,7 +4,7 @@ Three to six source-linked, decision-changing AI developments before stand-up, p
 
 AI Builder Brief is a production reference show for [CastForge](https://github.com/lifan-builds/castforge). Its differentiator is not generic AI-news generation: every selected story has an authoritative primary source or two independent reports, and every episode publishes its source manifest, transcript, and chapters.
 
-The public feed opens after seven successful production shadow runs. The repository can already run its complete fixture pipeline offline.
+The public feed remains closed. During the current editorial-tuning period, the scheduled job produces review artifacts only and cannot invoke NotebookLM, transcription, R2, RSS, or episode publication.
 
 ## Offline proof
 
@@ -16,7 +16,7 @@ python3 -m venv .venv
 
 This writes a local feed, source document, qualified episode manifest, transcript, chapters, and site under `build/fixture/`. The unverified trend-only fixture is excluded.
 
-## Production flow
+## Current review flow
 
 ```mermaid
 flowchart LR
@@ -24,20 +24,20 @@ flowchart LR
   N[Independent news] --> C
   S[HN and HF signals] --> C
   C --> D[Deduplicate and qualify]
-  D --> M[Source document + manifest]
-  M --> A[NotebookLM dialogue]
-  A --> T[Whisper transcript + chapters]
-  T --> R[R2 audio upload + public HEAD]
-  R --> F[Atomic RSS + site commit]
+  D --> E[Strict batched editorial review]
+  E --> J[Full editorial ledger]
+  E --> R[Ranked top-10 JSON + Markdown]
 ```
 
-The production command is:
+The review-only command is:
 
 ```bash
-.venv/bin/python -m ai_builder_brief run --date YYYY-MM-DD
+.venv/bin/python -m ai_builder_brief run --date YYYY-MM-DD --review-only
 ```
 
-GitHub Actions makes three effective attempts at 6, 8, and 10 AM Pacific, with a local-time gate that handles daylight saving changes. The feed GUID and R2 object key are date-based, so the first success publishes and later attempts skip.
+It writes `build/review/YYYY-MM-DD.json`, a matching Markdown summary, and the complete `build/editorial/YYYY-MM-DD.json` ledger. The top ten includes accepted and rejected model-reviewed candidates; `podcast_ready` identifies items that pass the unchanged episode evidence gate.
+
+GitHub Actions runs one review at 6 AM Pacific, with a schedule-slot gate that handles daylight saving changes and delayed self-hosted runners. Manual dispatch accepts an explicit review date. The workflow has read-only repository permission, no audio or R2 credentials, and no publication steps.
 
 ## Sources
 
@@ -57,9 +57,9 @@ Reddit and newsletter summaries are not ingested. RSS summaries and page metadat
 3. Set `NOTEBOOKLM_NOTEBOOK_ID`, `R2_ACCESS_KEY_ID`, and `R2_SECRET_ACCESS_KEY` as GitHub secrets.
 4. Keep the configured R2 endpoint and public audio origin in [`podcast.yaml`](podcast.yaml); replace them only when moving the show to another Cloudflare account or custom domain.
    The configured OP3 enclosure prefix provides aggregate, privacy-respecting download measurement while R2 remains the validated origin.
-5. Leave `PUBLICATION_ENABLED` unset while the 6 AM Pacific schedule accumulates one private shadow per day.
-6. Review seven successful shadows, then set `PUBLICATION_ENABLED` to `true`; the same schedule switches to public 6/8/10 AM attempts.
-7. Enable GitHub Pages from `docs/` and submit `docs/feed.xml` to podcast directories.
+5. Review the daily top-10 JSON and Markdown artifacts until the editorial policy is ready for a new shadow gate.
+6. Restore an explicitly reviewed audio workflow before resuming the seven-shadow launch gate; repository variables alone cannot enable publication in the current workflow.
+7. Enable GitHub Pages and submit `docs/feed.xml` to podcast directories only after that gate passes.
 
 Any evidence, audio, transcript, R2, public-MIME, or byte-length failure occurs before the RSS commit point.
 The R2 publisher also refuses any upload that would take the bucket above 9 GB, leaving a 1 GB margin below the free 10 GB allowance without deleting historical audio.
