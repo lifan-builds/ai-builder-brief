@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 from urllib.parse import urljoin, urlparse
 from urllib.request import Request, urlopen
 
@@ -213,6 +213,7 @@ def collect_feed(
                 category=category,
                 metadata={
                     "canonical_url": url,
+                    "source_kind": str(definition.get("source_kind", "feed")),
                     "score": score,
                     "selection_reason": "Fresh source within the rolling 24-hour window",
                     **(
@@ -318,6 +319,7 @@ def collect_page_index(
                 category=str(definition.get("category", "models")),
                 metadata={
                     "canonical_url": url,
+                    "source_kind": "announcement",
                     "score": float(definition.get("score", 90)),
                     "selection_reason": "Official announcement within the rolling window",
                 },
@@ -357,6 +359,7 @@ def collect_hacker_news(
                 category="trend",
                 metadata={
                     "canonical_url": url,
+                    "source_kind": "community_discussion",
                     "discussion_url": f"https://news.ycombinator.com/item?id={story_id}",
                     "community_signal": True,
                     "community_signal_type": "hacker_news",
@@ -414,6 +417,7 @@ def collect_hugging_face(
                     category="research",
                     metadata={
                         "canonical_url": url,
+                        "source_kind": "daily_paper",
                         "community_signal": True,
                         "community_signal_type": "hugging_face",
                         "hf_upvotes": int(paper.get("upvotes", 0) or 0),
@@ -447,6 +451,7 @@ def collect_hugging_face(
                     category="models",
                     metadata={
                         "canonical_url": url,
+                        "source_kind": "model_card",
                         "signal_key": f"hf-model:{model_id}",
                         "community_signal": True,
                         "community_signal_type": "hugging_face",
@@ -466,6 +471,13 @@ STOP_WORDS = {
     "release", "releases", "says", "that", "their", "this", "using", "with", "your",
 }
 
+TOPIC_STOP_WORDS = STOP_WORDS | {
+    "agent", "agents", "artificial", "available", "builder", "builders", "company",
+    "developer", "developers", "latest", "model", "models", "open", "research",
+    "first", "good", "great", "people", "really", "today", "tool", "tools",
+    "update", "version", "work",
+}
+
 PRODUCT_FAMILY_PATTERNS = {
     "ollama": (r"\bollama\b",),
     "vllm": (r"\bvllm\b",),
@@ -482,6 +494,32 @@ def _title_tokens(title: str) -> set[str]:
     }
 
 
+def _topic_tokens(item: SourceItem) -> set[str]:
+    tokens: set[str] = set()
+    for raw in re.findall(r"[a-z0-9][a-z0-9.+-]+", f"{item.title} {item.summary}".casefold()):
+        token = raw
+        if token.endswith("ing") and len(token) > 6:
+            token = token[:-3]
+        elif token.endswith("ed") and len(token) > 5:
+            token = token[:-2]
+        if len(token) > 3 and token not in TOPIC_STOP_WORDS:
+            tokens.add(token)
+    return tokens
+
+
+def _organization_key(value: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", value.casefold()).strip("-")
+
+
+def _item_organizations(item: SourceItem, organizations: dict[str, str]) -> set[str]:
+    found = {_organization_key(item.organization)} if item.organization else set()
+    text = f"{item.title} {item.summary}".casefold()
+    for name, key in organizations.items():
+        if re.search(rf"(?<![a-z0-9]){re.escape(name)}(?![a-z0-9])", text):
+            found.add(key)
+    return {value for value in found if value}
+
+
 def _product_family(item: SourceItem) -> str:
     configured = str(item.metadata.get("product_family") or "").strip().casefold()
     if configured:
@@ -493,7 +531,9 @@ def _product_family(item: SourceItem) -> str:
     return ""
 
 
-def assign_story_clusters(items: list[SourceItem]) -> list[SourceItem]:
+def assign_story_clusters(
+    items: list[SourceItem], *, organizations: Iterable[str] = (),
+) -> list[SourceItem]:
     """Group explicit product families before URL/headline similarity."""
     ordered = sorted(
         items,
@@ -503,29 +543,45 @@ def assign_story_clusters(items: list[SourceItem]) -> list[SourceItem]:
             item.id,
         ),
     )
-    representatives: list[tuple[str, str, set[str]]] = []
+    organization_map = {
+        name.casefold(): _organization_key(name)
+        for name in organizations if name.strip()
+    }
+    representatives: list[tuple[str, str, set[str], set[str], set[str]]] = []
     result: list[SourceItem] = []
     for item in ordered:
         canonical = str(item.metadata.get("canonical_url") or item.url).rstrip("/")
         tokens = _title_tokens(item.title)
+        topic_tokens = _topic_tokens(item)
+        item_organizations = _item_organizations(item, organization_map)
         product_family = _product_family(item)
         cluster_id = (
             f"product-{re.sub(r'[^a-z0-9]+', '-', product_family).strip('-')}"
             if product_family else ""
         )
         if not cluster_id:
-            for existing_id, existing_url, existing_tokens in representatives:
+            for existing_id, existing_url, existing_tokens, existing_topics, existing_organizations in representatives:
                 overlap = len(tokens & existing_tokens)
                 union = len(tokens | existing_tokens) or 1
-                if canonical == existing_url or (overlap >= 3 and overlap / union >= 0.6):
+                shared_topics = topic_tokens & existing_topics
+                same_theme = bool(
+                    item_organizations & existing_organizations
+                    and any(len(topic) >= 6 for topic in shared_topics)
+                )
+                if canonical == existing_url or same_theme or (overlap >= 3 and overlap / union >= 0.6):
                     cluster_id = existing_id
                     break
         if not cluster_id:
             cluster_id = re.sub(r"[^a-z0-9]+", "-", item.title.casefold()).strip("-")[:80] or item.id
-        if not any(existing_id == cluster_id for existing_id, _, _ in representatives):
-            representatives.append((cluster_id, canonical, tokens))
+        if not any(existing_id == cluster_id for existing_id, *_ in representatives):
+            representatives.append((
+                cluster_id, canonical, tokens, topic_tokens, item_organizations,
+            ))
         metadata = dict(item.metadata)
         metadata["cluster_id"] = cluster_id
+        metadata["theme_key"] = cluster_id
+        metadata["mentioned_organizations"] = sorted(item_organizations)
+        metadata["topic_tokens"] = sorted(topic_tokens)
         if product_family:
             metadata["product_family"] = product_family
         result.append(replace(item, metadata=metadata))
@@ -588,7 +644,7 @@ def collect_sources(
     x_health = XPanelHealth(0, 0, 0, 0)
     if x_panel.get("enabled") and x_panel.get("accounts"):
         x_result = collect_x_panel(
-            [str(account).lstrip("@").strip() for account in x_panel.get("accounts", [])],
+            list(x_panel.get("accounts", [])),
             start=start,
             end=end,
         )
@@ -596,7 +652,21 @@ def collect_sources(
         x_health = x_result.health
     if not collected:
         raise RuntimeError("all configured sources failed or returned no items in the rolling window")
-    return CollectionResult(tuple(assign_story_clusters(collected)), x_health)
+    configured_organizations = {
+        str(definition.get("organization") or definition.get("name") or "")
+        for section in ("feeds", "page_indexes")
+        for definition in raw.get(section, [])
+        if isinstance(definition, dict)
+    }
+    configured_organizations.update(
+        str(account.get("organization") or "")
+        for account in x_panel.get("accounts", [])
+        if isinstance(account, dict)
+    )
+    return CollectionResult(
+        tuple(assign_story_clusters(collected, organizations=configured_organizations)),
+        x_health,
+    )
 
 
 def collect_github_momentum(
@@ -643,6 +713,7 @@ def collect_github_momentum(
                 category="developer tools",
                 metadata={
                     "canonical_url": str(release.get("html_url") or repository),
+                    "source_kind": "release_feed",
                     "signal_key": f"github:{repository}",
                     "community_signal_candidate": True,
                     "community_signal_type": "github",
@@ -659,7 +730,7 @@ def collect_github_momentum(
 
 
 def collect_x_panel(
-    accounts: list[str], *, start: datetime, end: datetime, fetcher: Callable[[str], list[dict[str, Any]]] | None = None,
+    accounts: list[Any], *, start: datetime, end: datetime, fetcher: Callable[[str], list[dict[str, Any]]] | None = None,
 ) -> XPanelResult:
     """Collect approved-account observations with one bounded retry."""
 
@@ -668,7 +739,17 @@ def collect_x_panel(
     items: list[SourceItem] = []
     successful_accounts = 0
     failed_accounts: list[str] = []
-    for account in accounts:
+    normalized_accounts: list[tuple[str, str]] = []
+    for configured in accounts:
+        if isinstance(configured, dict):
+            account = str(configured.get("account") or "").lstrip("@").strip()
+            organization = str(configured.get("organization") or account).strip()
+        else:
+            account = str(configured).lstrip("@").strip()
+            organization = account
+        if account:
+            normalized_accounts.append((account, organization))
+    for account, organization in normalized_accounts:
         posts: list[dict[str, Any]] | None = None
         for attempt in range(2):
             try:
@@ -712,9 +793,10 @@ def collect_x_panel(
             items.append(SourceItem(
                 id=f"x-{_identifier(url)}", title=f"@{account}: {text[:100]}", url=url,
                 source="Approved X panel", published_at=published.isoformat().replace("+00:00", "Z"),
-                summary=text, authority="analysis", organization=account, category="expert analysis",
+                summary=text, authority="analysis", organization=organization, category="expert analysis",
                 metadata={
                     "canonical_url": url,
+                    "source_kind": "x_post",
                     "kind": "expert_analysis",
                     "community_signal": True,
                     "community_signal_type": "x",
@@ -729,8 +811,8 @@ def collect_x_panel(
     return XPanelResult(
         items=tuple(items),
         health=XPanelHealth(
-            configured_accounts=len(accounts),
-            attempted_accounts=len(accounts),
+            configured_accounts=len(normalized_accounts),
+            attempted_accounts=len(normalized_accounts),
             successful_accounts=successful_accounts,
             in_window_posts=len(items),
             failed_accounts=tuple(failed_accounts),

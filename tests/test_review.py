@@ -6,7 +6,7 @@ from datetime import date
 from castforge.models import SourceItem
 
 from ai_builder_brief.editorial import EditorialDecision
-from ai_builder_brief.review import build_review_items, write_review_artifacts
+from ai_builder_brief.review import build_review_items, review_priority, write_review_artifacts
 
 
 def _source(index: int) -> SourceItem:
@@ -71,6 +71,7 @@ def test_json_and_markdown_render_the_same_top_ten(tmp_path) -> None:
         sources,
         [_decision(index) for index in range(12)],
         tmp_path,
+        window_start="2026-08-14T13:00:00Z",
     )
 
     payload = json.loads(json_path.read_text(encoding="utf-8"))
@@ -79,12 +80,15 @@ def test_json_and_markdown_render_the_same_top_ten(tmp_path) -> None:
     assert payload["podcast_ready_count"] == 9
     assert payload["actual_mix"] == {"community_led": 6, "major_primary": 4}
     assert payload["mix_shortfall"] == {"community_led": 0, "major_primary": 0}
+    assert payload["window_start"] == "2026-08-14T13:00:00Z"
+    assert payload["quality_exclusion_count"] == 0
     assert markdown.count("\n## ") == 10
     for item in payload["candidates"]:
         assert item["title"] in markdown
         assert item["cluster_id"] in markdown
         assert item["sources"][0]["url"] in markdown
     assert "café" in markdown
+    assert "Strict review window starts: 2026-08-14T13:00:00Z" in markdown
 
 
 def test_review_selection_enforces_organization_and_product_diversity() -> None:
@@ -106,3 +110,96 @@ def test_review_selection_enforces_organization_and_product_diversity() -> None:
     assert len(organizations) == len(set(organizations))
     assert len(products) == len(set(products))
     assert "candidate-01" not in {item["cluster_id"] for item in items}
+
+
+def test_routine_release_cannot_outrank_consequential_development() -> None:
+    routine = SourceItem.from_dict({
+        **_source(0).to_dict(),
+        "metadata": {**_source(0).metadata, "editorial_class": "maintenance_release"},
+    })
+    consequential = SourceItem.from_dict({
+        **_source(1).to_dict(),
+        "metadata": {**_source(1).metadata, "editorial_class": "major_development"},
+    })
+    routine_decision = EditorialDecision(
+        cluster_id="candidate-00", decision="accept", impact=4, actionability=4,
+        novelty=3, evidence=4, audience_breadth=4, builder_actions=("use",),
+    )
+    consequential_decision = EditorialDecision(
+        cluster_id="candidate-01", decision="accept", impact=3, actionability=3,
+        novelty=3, evidence=3, audience_breadth=4, builder_actions=("reconsider",),
+    )
+
+    items = build_review_items(
+        [routine, consequential], [routine, consequential],
+        [routine_decision, consequential_decision],
+    )
+
+    assert [item["cluster_id"] for item in items] == ["candidate-01"]
+    assert review_priority(routine_decision, routine)[0] is False
+
+
+def test_exceptional_release_keeps_its_priority_penalty() -> None:
+    release = SourceItem.from_dict({
+        **_source(0).to_dict(),
+        "metadata": {**_source(0).metadata, "editorial_class": "maintenance_release"},
+    })
+    development = SourceItem.from_dict({
+        **_source(1).to_dict(),
+        "metadata": {**_source(1).metadata, "editorial_class": "major_development"},
+    })
+    release_decision = EditorialDecision(
+        cluster_id="candidate-00", decision="accept", impact=4, actionability=4,
+        novelty=4, evidence=4, audience_breadth=4, builder_actions=("use",),
+    )
+    development_decision = EditorialDecision(
+        cluster_id="candidate-01", decision="accept", impact=4, actionability=4,
+        novelty=4, evidence=3, audience_breadth=4, builder_actions=("reconsider",),
+    )
+
+    items = build_review_items(
+        [release, development], [release, development],
+        [release_decision, development_decision],
+    )
+
+    assert [item["cluster_id"] for item in items] == ["candidate-01", "candidate-00"]
+
+
+def test_research_requires_exceptional_editorial_judgment() -> None:
+    paper = SourceItem.from_dict({
+        **_source(2).to_dict(),
+        "category": "research",
+        "metadata": {**_source(2).metadata, "editorial_class": "research"},
+    })
+    ordinary = EditorialDecision(
+        cluster_id="candidate-02", decision="accept", impact=3, actionability=3,
+        novelty=4, evidence=3, audience_breadth=3, builder_actions=("test",),
+    )
+    exceptional = EditorialDecision(
+        cluster_id="candidate-02", decision="accept", impact=4, actionability=4,
+        novelty=4, evidence=4, audience_breadth=4, builder_actions=("test",),
+    )
+
+    assert review_priority(ordinary, paper)[0] is False
+    assert review_priority(exceptional, paper)[0] is True
+
+
+def test_review_artifact_reports_quality_exclusions(tmp_path) -> None:
+    paper = SourceItem.from_dict({
+        **_source(2).to_dict(),
+        "category": "research",
+        "metadata": {**_source(2).metadata, "editorial_class": "research"},
+    })
+    ordinary = EditorialDecision(
+        cluster_id="candidate-02", decision="accept", impact=3, actionability=3,
+        novelty=4, evidence=3, audience_breadth=3, builder_actions=("test",),
+    )
+
+    json_path, _ = write_review_artifacts(
+        date(2026, 8, 17), [paper], [paper], [ordinary], tmp_path,
+    )
+    payload = json.loads(json_path.read_text(encoding="utf-8"))
+
+    assert payload["candidate_count"] == 0
+    assert payload["quality_exclusion_count"] == 1
+    assert payload["quality_exclusions"][0]["cluster_id"] == "candidate-02"

@@ -2,20 +2,21 @@ from __future__ import annotations
 
 import json
 import xml.etree.ElementTree as ET
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 from castforge.config import load_config
 from castforge.models import EpisodeManifest
 
 from ai_builder_brief.collectors import CollectionResult, XPanelHealth
-from ai_builder_brief.pipeline import _apply_snapshot_deltas, is_published, run_daily
+from ai_builder_brief.pipeline import _apply_snapshot_deltas, _eligible_editorial_items, is_published, run_daily
 from castforge.models import SourceItem
 
 
 def test_production_config_caps_r2_below_free_allowance() -> None:
     config = load_config(Path(__file__).resolve().parents[1] / "podcast.yaml")
     assert config.publication.max_bucket_bytes == 9_000_000_000
+    assert config.selection.recent_days == 3
 
 
 def test_fixture_pipeline_builds_complete_public_artifacts(show_project) -> None:
@@ -200,3 +201,25 @@ def test_snapshot_deltas_measure_change_instead_of_lifetime_totals() -> None:
     assert enriched[0].metadata["delta_7d"]["repository_stars"] == 30
     assert enriched[0].metadata["momentum_score"] == 2
     assert enriched[0].metadata["community_signal"] is True
+
+
+def test_editorial_window_is_strict_and_deduplicates_historical_snapshots() -> None:
+    def source(item_id: str, published_at: str, snapshot_date: str) -> SourceItem:
+        return SourceItem(
+            id=item_id, title=item_id, url=f"https://example.com/{item_id}",
+            source="Example", published_at=published_at, summary="Builder impact.",
+            authority="primary", organization="Example", category="developer tools",
+            metadata={"snapshot_date": snapshot_date},
+        )
+
+    start = datetime(2026, 8, 14, 13, tzinfo=UTC)
+    end = datetime(2026, 8, 17, 13, tzinfo=UTC)
+    eligible = _eligible_editorial_items([
+        source("boundary", "2026-08-14T13:00:00Z", "2026-08-16"),
+        source("duplicate", "2026-08-16T12:00:00Z", "2026-08-16"),
+        source("duplicate", "2026-08-16T12:00:00Z", "2026-08-17"),
+        source("stale", "2026-08-14T12:59:59Z", "2026-08-17"),
+    ], start=start, end=end)
+
+    assert {item.id for item in eligible} == {"boundary", "duplicate"}
+    assert next(item for item in eligible if item.id == "duplicate").metadata["snapshot_date"] == "2026-08-17"

@@ -98,6 +98,45 @@ def test_preprocess_reserves_twelve_community_and_twelve_primary_clusters() -> N
     assert sum(cluster_id.startswith("primary-") for cluster_id in cluster_ids) == 12
 
 
+def test_preprocess_caps_maintenance_and_research_admission() -> None:
+    items = []
+    for index in range(5):
+        items.append(_item(
+            f"release-{index}", f"Runtime v1.{index}.0",
+            metadata={
+                "cluster_id": f"release-{index}", "score": 100 - index,
+                "source_kind": "release_feed",
+            },
+        ))
+        items.append(_item(
+            f"paper-{index}", f"Research finding {index}", category="research",
+            metadata={
+                "cluster_id": f"paper-{index}", "score": 100 - index,
+                "source_kind": "daily_paper", "community_signal": True,
+                "community_signal_type": "hugging_face",
+            },
+        ))
+    for index in range(12):
+        items.append(_item(
+            f"major-{index}", f"Major API capability {index}",
+            metadata={"cluster_id": f"major-{index}", "score": 70 - index},
+        ))
+        items.append(_item(
+            f"community-theme-{index}", f"Provider policy discussion {index}",
+            authority="analysis",
+            metadata={
+                "cluster_id": f"community-theme-{index}", "score": 70 - index,
+                "community_signal": True, "community_signal_type": "x",
+            },
+        ))
+
+    candidates, _ = preprocess(items)
+    classes = [str(item.metadata["editorial_class"]) for item in candidates]
+
+    assert classes.count("maintenance_release") <= 2
+    assert classes.count("research") <= 2
+
+
 def test_signal_only_candidate_is_never_podcast_ready() -> None:
     signal = _item(
         "community",

@@ -35,6 +35,7 @@ EDITORIAL_FAILURE_STAGES = frozenset({
     "usage_gate", "proxy_config", "editorial_request", "editorial_response",
     "editorial_coverage", "editorial_input", "editorial_batch", "editorial_validation",
 })
+EDITORIAL_CLASS_CAPS = {"maintenance_release": 2, "research": 2}
 
 
 @dataclass(frozen=True, slots=True)
@@ -173,10 +174,38 @@ def _has_qualifying_evidence(items: Iterable[SourceItem]) -> bool:
     )
 
 
+def _editorial_class(items: Iterable[SourceItem]) -> str:
+    sources = list(items)
+    source_kinds = {str(item.metadata.get("source_kind") or "") for item in sources}
+    if "daily_paper" in source_kinds or any(item.category == "research" for item in sources):
+        return "research"
+    release_sources = [
+        item for item in sources
+        if item.metadata.get("source_kind") == "release_feed"
+        or item.source.casefold().endswith(" releases")
+    ]
+    substantive_non_release = any(
+        item.authority in {"primary", "independent"} and item not in release_sources
+        for item in sources
+    )
+    if release_sources and not substantive_non_release:
+        return "maintenance_release"
+    if not _has_qualifying_evidence(sources):
+        return "community_theme"
+    return "major_development"
+
+
+def _admission_adjustment(editorial_class: str) -> int:
+    return {
+        "maintenance_release": -30,
+        "research": -15,
+    }.get(editorial_class, 0)
+
+
 def preprocess(
     items: Iterable[SourceItem], *, limit: int = 24, as_of: datetime | None = None,
 ) -> tuple[list[SourceItem], list[dict[str, Any]]]:
-    prepared: list[tuple[str, list[SourceItem], bool, float]] = []
+    prepared: list[tuple[str, list[SourceItem], bool, str, float]] = []
     decisions_by_id: dict[str, dict[str, Any]] = {}
     grouped: dict[str, list[SourceItem]] = {}
     for item in items:
@@ -208,6 +237,7 @@ def preprocess(
             }
             continue
         community_led = any(_is_community_signal(item) for item in kept)
+        editorial_class = _editorial_class(kept)
         signal_types = sorted({
             str(item.metadata.get("community_signal_type"))
             for item in kept if item.metadata.get("community_signal_type")
@@ -219,29 +249,50 @@ def preprocess(
                 "community_led": community_led,
                 "community_signal_types": signal_types,
                 "qualifying_evidence": qualifying_evidence,
+                "editorial_class": editorial_class,
             })
             for item in kept
         ]
         admission_score = (
             max(float(item.metadata.get("score", 0)) for item in enriched)
             + max(_momentum_score(item) for item in enriched) * 5
+            + _admission_adjustment(editorial_class)
         )
-        prepared.append((cluster_id, enriched, community_led, admission_score))
+        prepared.append((cluster_id, enriched, community_led, editorial_class, admission_score))
 
     community_slots = limit // 2
     primary_slots = limit - community_slots
-    community = sorted(
+    community_ranked = sorted(
         (record for record in prepared if record[2]),
-        key=lambda record: (-record[3], record[0]),
-    )[:community_slots]
-    primary = sorted(
+        key=lambda record: (-record[4], record[0]),
+    )
+    primary_ranked = sorted(
         (record for record in prepared if not record[2]),
-        key=lambda record: (-record[3], record[0]),
-    )[:primary_slots]
+        key=lambda record: (-record[4], record[0]),
+    )
+    class_counts: dict[str, int] = {}
+
+    def admit_balanced(
+        ranked: list[tuple[str, list[SourceItem], bool, str, float]], slots: int,
+    ) -> list[tuple[str, list[SourceItem], bool, str, float]]:
+        admitted = []
+        for record in ranked:
+            editorial_class = record[3]
+            cap = EDITORIAL_CLASS_CAPS.get(editorial_class)
+            if cap is not None and class_counts.get(editorial_class, 0) >= cap:
+                continue
+            admitted.append(record)
+            class_counts[editorial_class] = class_counts.get(editorial_class, 0) + 1
+            if len(admitted) >= slots:
+                break
+        return admitted
+
+    community = admit_balanced(community_ranked, community_slots)
+    primary = admit_balanced(primary_ranked, primary_slots)
     selected_ids = {record[0] for record in (*community, *primary)}
     accepted = [item for record in (*community, *primary) for item in record[1]]
 
-    for cluster_id, kept, community_led, _ in prepared:
+    for cluster_id, kept, community_led, editorial_class, _ in prepared:
         admitted = cluster_id in selected_ids
         kept_ids = {item.id for item in kept}
         decisions_by_id[cluster_id] = {
@@ -255,6 +306,7 @@ def preprocess(
                 else "excluded by balanced editorial pool quota"
             ),
             "community_led": community_led,
+            "editorial_class": editorial_class,
             "source_ids": [item.id for item in kept],
             "rejected_source_ids": [item.id for item in grouped[cluster_id] if item.id not in kept_ids],
         }

@@ -120,3 +120,51 @@ def test_explicit_product_family_collapses_versioned_releases() -> None:
     clustered = assign_story_clusters([first, second])
 
     assert {item.metadata["cluster_id"] for item in clustered} == {"product-ollama"}
+
+
+def test_affiliation_and_topic_overlap_consolidate_one_event() -> None:
+    commentary = SourceItem(
+        id="commentary", title="Acme's watermark policy draws developer concern",
+        url="https://news.example/watermark", source="Community discussion",
+        published_at="2026-08-17T12:00:00Z", summary="Builders debate Acme watermark behavior.",
+        authority="signal", organization="news.example", category="trend",
+        metadata={"score": 70, "community_signal": True},
+    )
+    representative = SourceItem(
+        id="representative", title="FAQ about watermarking",
+        url="https://x.com/representative/status/1", source="Approved X panel",
+        published_at="2026-08-17T11:00:00Z", summary="We explain how watermarking works.",
+        authority="analysis", organization="Acme", category="expert analysis",
+        metadata={"score": 60, "community_signal": True},
+    )
+    unrelated = SourceItem(
+        id="unrelated", title="Acme changes API pricing",
+        url="https://x.com/representative/status/2", source="Approved X panel",
+        published_at="2026-08-17T10:00:00Z", summary="New token pricing begins today.",
+        authority="analysis", organization="Acme", category="expert analysis",
+        metadata={"score": 60, "community_signal": True},
+    )
+
+    clustered = assign_story_clusters(
+        [commentary, representative, unrelated], organizations=["Acme"],
+    )
+    by_id = {item.id: item for item in clustered}
+
+    assert by_id["commentary"].metadata["cluster_id"] == by_id["representative"].metadata["cluster_id"]
+    assert by_id["unrelated"].metadata["cluster_id"] != by_id["representative"].metadata["cluster_id"]
+
+
+def test_x_account_affiliation_is_preserved_as_organization() -> None:
+    result = collect_x_panel(
+        [{"account": "representative", "organization": "Acme"}],
+        start=datetime(2026, 8, 16, tzinfo=UTC),
+        end=datetime(2026, 8, 18, tzinfo=UTC),
+        fetcher=lambda account: [{
+            "published_at": "2026-08-17T12:00:00Z",
+            "url": "https://x.com/representative/status/1",
+            "text": "A consequential provider policy update.",
+        }],
+    )
+
+    assert result.items[0].organization == "Acme"
+    assert result.items[0].metadata["x_account"] == "representative"

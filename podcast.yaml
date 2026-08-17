@@ -23,7 +23,7 @@ selection:
   min_stories: 3
   max_per_organization: 6
   max_per_category: 6
-  recent_days: 7
+  recent_days: 3
 
 audio:
   provider: notebooklm

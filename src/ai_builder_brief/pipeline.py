@@ -12,7 +12,7 @@ from zoneinfo import ZoneInfo
 
 from castforge.audio import format_duration, probe_audio_duration
 from castforge.config import AudioConfig, OutputConfig, PublicationConfig, load_config
-from castforge.models import EpisodeManifest, StoryCluster
+from castforge.models import EpisodeManifest, SourceItem, StoryCluster
 from castforge.publishers.r2 import R2Publisher
 from castforge.rss import write_episode
 from castforge.runner import run_episode
@@ -179,6 +179,25 @@ def _apply_snapshot_deltas(items):
     return enriched
 
 
+def _eligible_editorial_items(items, *, start: datetime, end: datetime):
+    """Keep one current copy of each source inside the strict review window."""
+
+    eligible: dict[str, SourceItem] = {}
+    for item in items:
+        try:
+            published = datetime.fromisoformat(item.published_at.replace("Z", "+00:00"))
+        except ValueError:
+            continue
+        if published.tzinfo is None:
+            published = published.replace(tzinfo=UTC)
+        if not start <= published.astimezone(UTC) <= end:
+            continue
+        existing = eligible.get(item.id)
+        if existing is None or str(item.metadata.get("snapshot_date", "")) > str(existing.metadata.get("snapshot_date", "")):
+            eligible[item.id] = item
+    return list(eligible.values())
+
+
 def _ledger_evidence(deterministic, candidates):
     grouped = {}
     for item in candidates:
@@ -250,6 +269,8 @@ def _represent_candidates(candidates):
             "source_types": sorted({item.source for item in group}),
             "source_authorities": sorted({item.authority for item in group}),
             "community_led": community_led,
+            "editorial_class": str(lead.metadata.get("editorial_class", "major_development")),
+            "theme_key": str(lead.metadata.get("theme_key") or cluster_id),
             "community_signal_types": signal_types,
             "community_signal_count": sum(bool(item.metadata.get("community_signal")) for item in group),
             "x_post_count": sum(item.metadata.get("community_signal_type") == "x" for item in group),
@@ -302,6 +323,8 @@ def _editorial_packet(representatives):
             "source_types": list(item.metadata.get("source_types", [item.source])),
             "source_authorities": list(item.metadata.get("source_authorities", [item.authority])),
             "community_led": bool(item.metadata.get("community_led")),
+            "editorial_class": str(item.metadata.get("editorial_class", "major_development")),
+            "theme_key": str(item.metadata.get("theme_key") or item.metadata.get("cluster_id") or item.id),
             "community_signal_types": list(item.metadata.get("community_signal_types", [])),
             "community_signal_count": int(item.metadata.get("community_signal_count", 0)),
             "x_post_count": int(item.metadata.get("x_post_count", 0)),
@@ -384,7 +407,11 @@ def run_daily(
             tzinfo=ZoneInfo(public_config.show.timezone),
         ).astimezone(UTC)
         try:
-            collection_result = collect_sources(sources_path, start=end - timedelta(days=7), end=end)
+            collection_result = collect_sources(
+                sources_path,
+                start=end - timedelta(days=public_config.selection.recent_days),
+                end=end,
+            )
             write_sources(list(collection_result.items), public_config.source.fixture)
             _write_source_health(root, episode_date, collection_result)
         except Exception:
@@ -399,14 +426,17 @@ def run_daily(
             tzinfo=ZoneInfo(public_config.show.timezone),
         ).astimezone(UTC)
         try:
-            collection_result = collect_sources(sources_path, start=end - timedelta(days=7), end=end)
+            collection_result = collect_sources(
+                sources_path,
+                start=end - timedelta(days=public_config.selection.recent_days),
+                end=end,
+            )
             write_sources(list(collection_result.items), public_config.source.fixture)
             _write_source_health(root, episode_date, collection_result)
         except Exception:
             write_ledger([], root / "build" / "editorial" / f"{episode_date.isoformat()}.json", episode_date=episode_date.isoformat(), status="no-episode-collector-failure")
             return "no-episode"
 
-    from castforge.models import SourceItem
     normalized = read_sources(public_config.source.fixture)
     if not fixture:
         snapshot_dir = root / "build" / "snapshots"
@@ -431,7 +461,11 @@ def run_daily(
                     replace(item, metadata={**item.metadata, "snapshot_date": snapshot_date.isoformat()})
                     for item in read_sources(snapshot)
                 )
-        normalized = _apply_snapshot_deltas(historical)
+        normalized = _eligible_editorial_items(
+            _apply_snapshot_deltas(historical),
+            start=end - timedelta(days=public_config.selection.recent_days),
+            end=end,
+        )
     end = datetime(
         episode_date.year, episode_date.month, episode_date.day,
         public_config.show.publication_hour,
@@ -481,6 +515,7 @@ def run_daily(
             candidates,
             decisions,
             root / "build" / "review",
+            window_start=(end - timedelta(days=public_config.selection.recent_days)).isoformat().replace("+00:00", "Z"),
             source_health=(
                 collection_result.health_dict()
                 if collection_result is not None

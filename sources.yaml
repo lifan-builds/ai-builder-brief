@@ -15,10 +15,10 @@ feeds:
   - {name: MIT Technology Review, url: "https://www.technologyreview.com/topic/artificial-intelligence/feed", authority: independent, organization: MIT Technology Review, category: industry, score: 80}
   - {name: The Verge AI, url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", authority: independent, organization: The Verge, category: products, score: 70}
   - {name: Techmeme, url: "https://www.techmeme.com/feed.xml", authority: signal, organization: Techmeme, category: trend, score: 35}
-  - {name: Transformers releases, url: "https://github.com/huggingface/transformers/releases.atom", authority: primary, organization: Hugging Face, product_family: transformers, category: developer tools, score: 85}
-  - {name: vLLM releases, url: "https://github.com/vllm-project/vllm/releases.atom", authority: primary, organization: vLLM, product_family: vllm, category: developer tools, score: 85}
-  - {name: llama.cpp releases, url: "https://github.com/ggml-org/llama.cpp/releases.atom", authority: primary, organization: ggml.org, product_family: llama.cpp, category: developer tools, score: 85}
-  - {name: Ollama releases, url: "https://github.com/ollama/ollama/releases.atom", authority: primary, organization: Ollama, product_family: ollama, category: developer tools, score: 85}
+  - {name: Transformers releases, url: "https://github.com/huggingface/transformers/releases.atom", authority: primary, organization: Hugging Face, product_family: transformers, source_kind: release_feed, category: developer tools, score: 85}
+  - {name: vLLM releases, url: "https://github.com/vllm-project/vllm/releases.atom", authority: primary, organization: vLLM, product_family: vllm, source_kind: release_feed, category: developer tools, score: 85}
+  - {name: llama.cpp releases, url: "https://github.com/ggml-org/llama.cpp/releases.atom", authority: primary, organization: ggml.org, product_family: llama.cpp, source_kind: release_feed, category: developer tools, score: 85}
+  - {name: Ollama releases, url: "https://github.com/ollama/ollama/releases.atom", authority: primary, organization: Ollama, product_family: ollama, source_kind: release_feed, category: developer tools, score: 85}
 
 page_indexes:
   - {name: Anthropic, url: "https://www.anthropic.com/news", link_prefix: "https://www.anthropic.com/news/", organization: Anthropic, category: models, score: 100}
@@ -45,22 +45,22 @@ github:
 x_panel:
   enabled: true
   accounts:
-    - sama
-    - alexalbert__
-    - demishassabis
+    - {account: sama, organization: OpenAI}
+    - {account: alexalbert__, organization: Anthropic}
+    - {account: demishassabis, organization: Google}
     - NoamShazeer
     - karpathy
     - simonw
     - swyx
     - emollick
-    - Thom_Wolf
-    - ClementDelangue
-    - ggerganov
-    - ylecun
-    - percyliang
-    - DrJimFan
+    - {account: Thom_Wolf, organization: Hugging Face}
+    - {account: ClementDelangue, organization: Hugging Face}
+    - {account: ggerganov, organization: ggml.org}
+    - {account: ylecun, organization: Meta}
+    - {account: percyliang, organization: Stanford}
+    - {account: DrJimFan, organization: NVIDIA}
     - lilianweng
-    - hwchase17
-    - jerryjliu0
+    - {account: hwchase17, organization: LangChain}
+    - {account: jerryjliu0, organization: LlamaIndex}
     - HamelHusain
     - sh_reya
