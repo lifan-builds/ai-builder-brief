@@ -5,16 +5,16 @@ feeds:
   - {name: Google DeepMind, url: "https://deepmind.google/blog/rss.xml", authority: primary, organization: Google DeepMind, category: research, score: 95}
   - {name: Google AI, url: "https://blog.google/technology/ai/rss/", authority: primary, organization: Google, category: products, score: 90}
   - {name: Microsoft Research, url: "https://www.microsoft.com/en-us/research/feed/", authority: primary, organization: Microsoft, category: research, score: 85}
-  - {name: NVIDIA, url: "https://blogs.nvidia.com/feed/", authority: primary, organization: NVIDIA, category: infrastructure, score: 90}
+  - {name: NVIDIA, url: "https://blogs.nvidia.com/feed/", authority: primary, organization: NVIDIA, topic_filter: ai, category: infrastructure, score: 90}
   - {name: Hugging Face, url: "https://huggingface.co/blog/feed.xml", authority: primary, organization: Hugging Face, category: open source, score: 90}
   - {name: arXiv cs.AI, url: "https://rss.arxiv.org/rss/cs.AI", authority: primary, organization: arXiv, category: research, score: 65}
   - {name: arXiv cs.CL, url: "https://rss.arxiv.org/rss/cs.CL", authority: primary, organization: arXiv, category: research, score: 65}
   - {name: arXiv cs.LG, url: "https://rss.arxiv.org/rss/cs.LG", authority: primary, organization: arXiv, category: research, score: 65}
   - {name: TechCrunch AI, url: "https://techcrunch.com/category/artificial-intelligence/feed/", authority: independent, organization: TechCrunch, category: industry, score: 75}
-  - {name: Ars Technica, url: "https://feeds.arstechnica.com/arstechnica/technology-lab", authority: independent, organization: Ars Technica, category: industry, score: 75}
+  - {name: Ars Technica, url: "https://feeds.arstechnica.com/arstechnica/technology-lab", authority: independent, organization: Ars Technica, topic_filter: ai, category: industry, score: 75}
   - {name: MIT Technology Review, url: "https://www.technologyreview.com/topic/artificial-intelligence/feed", authority: independent, organization: MIT Technology Review, category: industry, score: 80}
   - {name: The Verge AI, url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", authority: independent, organization: The Verge, category: products, score: 70}
-  - {name: Techmeme, url: "https://www.techmeme.com/feed.xml", authority: signal, organization: Techmeme, category: trend, score: 35}
+  - {name: Techmeme, url: "https://www.techmeme.com/feed.xml", authority: signal, organization: Techmeme, topic_filter: ai, category: trend, score: 35}
   - {name: Transformers releases, url: "https://github.com/huggingface/transformers/releases.atom", authority: primary, organization: Hugging Face, product_family: transformers, source_kind: release_feed, category: developer tools, score: 85}
   - {name: vLLM releases, url: "https://github.com/vllm-project/vllm/releases.atom", authority: primary, organization: vLLM, product_family: vllm, source_kind: release_feed, category: developer tools, score: 85}
   - {name: llama.cpp releases, url: "https://github.com/ggml-org/llama.cpp/releases.atom", authority: primary, organization: ggml.org, product_family: llama.cpp, source_kind: release_feed, category: developer tools, score: 85}
@@ -28,6 +28,7 @@ page_indexes:
 hacker_news:
   enabled: true
   limit: 20
+  topic_filter: ai
 
 hugging_face:
   daily_papers: true
@@ -44,6 +45,7 @@ github:
 
 x_panel:
   enabled: true
+  topic_filter: ai
   accounts:
     - {account: sama, organization: OpenAI}
     - {account: alexalbert__, organization: Anthropic}

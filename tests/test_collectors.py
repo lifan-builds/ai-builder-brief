@@ -38,6 +38,25 @@ def test_feed_collector_keeps_only_rolling_window() -> None:
     assert items[0].authority == "primary"
 
 
+def test_feed_topic_filter_rejects_general_technology_news() -> None:
+    xml = b"""<rss><channel>
+      <item><title>Mac screen sharing vulnerability</title><link>https://example.com/mac</link><pubDate>Tue, 11 Aug 2026 12:00:00 GMT</pubDate><description>Attackers can access a workstation.</description></item>
+      <item><title>New AI model security guidance</title><link>https://example.com/ai</link><pubDate>Tue, 11 Aug 2026 12:00:00 GMT</pubDate><description>Threat modeling for agent deployments.</description></item>
+    </channel></rss>"""
+    items = collect_feed(
+        {
+            "name": "Broad technology feed", "url": "https://example.com/feed",
+            "authority": "independent", "organization": "Example",
+            "topic_filter": "ai", "category": "industry", "score": 75,
+        },
+        start=datetime(2026, 8, 10, 13, tzinfo=UTC),
+        end=datetime(2026, 8, 11, 13, tzinfo=UTC),
+        opener=lambda request, timeout: Response(xml),
+    )
+
+    assert [item.title for item in items] == ["New AI model security guidance"]
+
+
 def _item(item_id: str, title: str, url: str, source: str) -> SourceItem:
     return SourceItem(
         id=item_id,
@@ -122,6 +141,21 @@ def test_explicit_product_family_collapses_versioned_releases() -> None:
     assert {item.metadata["cluster_id"] for item in clustered} == {"product-ollama"}
 
 
+def test_controlled_product_family_collapses_cross_source_qwen_posts() -> None:
+    announcement = _item(
+        "qwen-announcement", "Qwen3.8 27B open weights released",
+        "https://x.com/example/status/1", "Approved X panel",
+    )
+    local_test = _item(
+        "qwen-test", "Testing Qwen 3.8 27B locally",
+        "https://example.com/qwen-test", "Independent review",
+    )
+
+    clustered = assign_story_clusters([announcement, local_test])
+
+    assert {item.metadata["cluster_id"] for item in clustered} == {"product-qwen"}
+
+
 def test_affiliation_and_topic_overlap_consolidate_one_event() -> None:
     commentary = SourceItem(
         id="commentary", title="Acme's watermark policy draws developer concern",
@@ -135,14 +169,20 @@ def test_affiliation_and_topic_overlap_consolidate_one_event() -> None:
         url="https://x.com/representative/status/1", source="Approved X panel",
         published_at="2026-08-17T11:00:00Z", summary="We explain how watermarking works.",
         authority="analysis", organization="Acme", category="expert analysis",
-        metadata={"score": 60, "community_signal": True},
+        metadata={
+            "score": 60, "community_signal": True,
+            "affiliated_organization": "Acme",
+        },
     )
     unrelated = SourceItem(
         id="unrelated", title="Acme changes API pricing",
         url="https://x.com/representative/status/2", source="Approved X panel",
         published_at="2026-08-17T10:00:00Z", summary="New token pricing begins today.",
         authority="analysis", organization="Acme", category="expert analysis",
-        metadata={"score": 60, "community_signal": True},
+        metadata={
+            "score": 60, "community_signal": True,
+            "affiliated_organization": "Acme",
+        },
     )
 
     clustered = assign_story_clusters(
@@ -152,6 +192,50 @@ def test_affiliation_and_topic_overlap_consolidate_one_event() -> None:
 
     assert by_id["commentary"].metadata["cluster_id"] == by_id["representative"].metadata["cluster_id"]
     assert by_id["unrelated"].metadata["cluster_id"] != by_id["representative"].metadata["cluster_id"]
+
+
+def test_affiliation_name_cannot_satisfy_topic_overlap() -> None:
+    security = SourceItem(
+        id="security", title="Acme publishes defender guidance",
+        url="https://acme.example/security", source="Acme",
+        published_at="2026-08-17T12:00:00Z", summary="Acme discusses cyber defense.",
+        authority="primary", organization="Acme", category="security",
+        metadata={"score": 90},
+    )
+    pricing = SourceItem(
+        id="pricing", title="Acme changes API pricing",
+        url="https://acme.example/pricing", source="Acme",
+        published_at="2026-08-17T11:00:00Z", summary="Acme announces token prices.",
+        authority="primary", organization="Acme", category="models",
+        metadata={"score": 90},
+    )
+
+    clustered = assign_story_clusters([security, pricing], organizations=["Acme"])
+
+    assert len({item.metadata["cluster_id"] for item in clustered}) == 2
+
+
+def test_independent_publisher_is_not_treated_as_story_subject() -> None:
+    first = SourceItem(
+        id="first", title="Acme explains invisible AI watermarks",
+        url="https://press.example/acme", source="Press",
+        published_at="2026-08-17T12:00:00Z", summary="Acme describes watermark behavior.",
+        authority="independent", organization="Press", category="models",
+        metadata={"score": 80},
+    )
+    second = SourceItem(
+        id="second", title="Beta removes visible AI watermarks",
+        url="https://press.example/beta", source="Press",
+        published_at="2026-08-17T11:00:00Z", summary="Beta changes watermark controls.",
+        authority="independent", organization="Press", category="models",
+        metadata={"score": 80},
+    )
+
+    clustered = assign_story_clusters(
+        [first, second], organizations=["Acme", "Beta", "Press"],
+    )
+
+    assert len({item.metadata["cluster_id"] for item in clustered}) == 2
 
 
 def test_x_account_affiliation_is_preserved_as_organization() -> None:

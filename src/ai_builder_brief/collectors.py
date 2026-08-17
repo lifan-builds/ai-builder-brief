@@ -134,6 +134,26 @@ BUILDER_TERMS = {
     "model", "open source", "release", "research", "sdk", "serving", "tool", "training",
 }
 NON_BUILDER_TERMS = {"ad campaign", "advertising", "marketing", "shopping"}
+AI_TOPIC_TERMS = {
+    "ai", "agent", "agents", "anthropic", "artificial intelligence", "benchmark",
+    "benchmarks", "chatgpt", "claude", "deepmind", "embedding", "eval", "evals", "gemini",
+    "generative ai", "genai", "gpt", "gpu", "hugging face", "inference", "language model",
+    "language models", "llama", "llm", "machine learning", "ml", "model", "models", "neural",
+    "open weights", "openai", "prompt", "qwen", "rag", "token", "tokens", "training",
+    "transformer", "transformers", "watermark", "weights",
+}
+
+
+def _matches_topic_filter(title: str, summary: str, topic_filter: str) -> bool:
+    if not topic_filter:
+        return True
+    if topic_filter != "ai":
+        raise ValueError(f"unsupported topic filter: {topic_filter}")
+    text = f"{title} {summary}".casefold()
+    return any(
+        re.search(rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])", text)
+        for term in AI_TOPIC_TERMS
+    )
 
 
 def _builder_adjustment(title: str, summary: str) -> float:
@@ -194,6 +214,12 @@ def collect_feed(
         title = _plain_text(_child_text(entry, "title"), limit=300)
         summary = _plain_text(_child_text(entry, "description", "summary", "content"))
         if not url or not title or not summary:
+            continue
+        if not _matches_topic_filter(
+            title,
+            summary,
+            str(definition.get("topic_filter") or ""),
+        ):
             continue
         organization = str(definition.get("organization", definition["name"]))
         category = _infer_category(str(definition.get("category", "industry")), title, summary)
@@ -333,6 +359,7 @@ def collect_hacker_news(
     start: datetime,
     end: datetime,
     limit: int,
+    topic_filter: str = "",
     opener: Callable[..., Any] = urlopen,
 ) -> list[SourceItem]:
     ids = json.loads(_request("https://hacker-news.firebaseio.com/v0/topstories.json", opener=opener))[:limit]
@@ -340,6 +367,8 @@ def collect_hacker_news(
     for story_id in ids:
         raw = json.loads(_request(f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json", opener=opener))
         if raw.get("type") != "story" or not raw.get("url") or not raw.get("title"):
+            continue
+        if not _matches_topic_filter(str(raw["title"]), "", topic_filter):
             continue
         published = datetime.fromtimestamp(int(raw.get("time", 0)), tz=UTC)
         if not start <= published <= end:
@@ -482,6 +511,7 @@ PRODUCT_FAMILY_PATTERNS = {
     "ollama": (r"\bollama\b",),
     "vllm": (r"\bvllm\b",),
     "llama.cpp": (r"\bllama\.cpp\b", r"github\.com/ggml-org/llama\.cpp"),
+    "qwen": (r"\bqwen(?:\d+(?:\.\d+)*)?\b",),
     "transformers": (r"github\.com/huggingface/transformers",),
 }
 
@@ -512,12 +542,29 @@ def _organization_key(value: str) -> str:
 
 
 def _item_organizations(item: SourceItem, organizations: dict[str, str]) -> set[str]:
-    found = {_organization_key(item.organization)} if item.organization else set()
+    affiliation = str(item.metadata.get("affiliated_organization") or "").strip()
+    found = {_organization_key(affiliation)} if affiliation else set()
+    if item.authority == "primary" and item.organization:
+        found.add(_organization_key(item.organization))
     text = f"{item.title} {item.summary}".casefold()
     for name, key in organizations.items():
         if re.search(rf"(?<![a-z0-9]){re.escape(name)}(?![a-z0-9])", text):
             found.add(key)
     return {value for value in found if value}
+
+
+def _without_entity_topics(
+    topics: set[str], item: SourceItem, item_organizations: set[str],
+) -> set[str]:
+    entity_tokens = {
+        token
+        for organization in item_organizations
+        for token in re.findall(r"[a-z0-9]+", organization)
+    }
+    entity_tokens.update(
+        re.findall(r"[a-z0-9]+", str(item.metadata.get("x_account") or "").casefold())
+    )
+    return topics - entity_tokens
 
 
 def _product_family(item: SourceItem) -> str:
@@ -552,8 +599,10 @@ def assign_story_clusters(
     for item in ordered:
         canonical = str(item.metadata.get("canonical_url") or item.url).rstrip("/")
         tokens = _title_tokens(item.title)
-        topic_tokens = _topic_tokens(item)
         item_organizations = _item_organizations(item, organization_map)
+        topic_tokens = _without_entity_topics(
+            _topic_tokens(item), item, item_organizations,
+        )
         product_family = _product_family(item)
         cluster_id = (
             f"product-{re.sub(r'[^a-z0-9]+', '-', product_family).strip('-')}"
@@ -612,7 +661,13 @@ def collect_sources(
     hn = raw.get("hacker_news") or {}
     if hn.get("enabled"):
         try:
-            collected.extend(collect_hacker_news(start=start, end=end, limit=int(hn.get("limit", 20)), opener=opener))
+            collected.extend(collect_hacker_news(
+                start=start,
+                end=end,
+                limit=int(hn.get("limit", 20)),
+                topic_filter=str(hn.get("topic_filter") or ""),
+                opener=opener,
+            ))
         except Exception as error:
             log.warning("source failed: Hacker News: %s", error)
     hf = raw.get("hugging_face") or {}
@@ -647,6 +702,7 @@ def collect_sources(
             list(x_panel.get("accounts", [])),
             start=start,
             end=end,
+            topic_filter=str(x_panel.get("topic_filter") or ""),
         )
         collected.extend(x_result.items)
         x_health = x_result.health
@@ -730,7 +786,8 @@ def collect_github_momentum(
 
 
 def collect_x_panel(
-    accounts: list[Any], *, start: datetime, end: datetime, fetcher: Callable[[str], list[dict[str, Any]]] | None = None,
+    accounts: list[Any], *, start: datetime, end: datetime, topic_filter: str = "",
+    fetcher: Callable[[str], list[dict[str, Any]]] | None = None,
 ) -> XPanelResult:
     """Collect approved-account observations with one bounded retry."""
 
@@ -780,6 +837,8 @@ def collect_x_panel(
             text = _plain_text(str(post.get("text") or ""), limit=1200)
             if not url or not text:
                 continue
+            if not _matches_topic_filter(text, "", topic_filter):
+                continue
             likes = max(0, int(post.get("likes", 0) or 0))
             retweets = max(0, int(post.get("retweets", post.get("rts", 0)) or 0))
             engagement = likes + 2 * retweets
@@ -797,6 +856,7 @@ def collect_x_panel(
                 metadata={
                     "canonical_url": url,
                     "source_kind": "x_post",
+                    "affiliated_organization": organization,
                     "kind": "expert_analysis",
                     "community_signal": True,
                     "community_signal_type": "x",
