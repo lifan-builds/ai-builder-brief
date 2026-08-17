@@ -13,6 +13,8 @@ def test_scheduled_job_is_review_only_and_cannot_publish() -> None:
     assert "PUBLICATION_ENABLED" not in workflow
     assert "NOTEBOOKLM_NOTEBOOK_ID" not in workflow
     assert "R2_ACCESS_KEY_ID" not in workflow
+    assert "TWITTER_AUTH_TOKEN: ${{ secrets.TWITTER_AUTH_TOKEN }}" in workflow
+    assert "TWITTER_CT0: ${{ secrets.TWITTER_CT0 }}" in workflow
     assert "--check-public" not in workflow
     assert "git push" not in workflow
     assert "inputs.shadow" not in workflow

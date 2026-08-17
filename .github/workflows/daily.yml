@@ -64,6 +64,9 @@ jobs:
       - name: Run daily editorial review
         id: editorial_review
         if: steps.pacific_window.outputs.run == 'true'
+        env:
+          TWITTER_AUTH_TOKEN: ${{ secrets.TWITTER_AUTH_TOKEN }}
+          TWITTER_CT0: ${{ secrets.TWITTER_CT0 }}
         run: |
           # Manual inputs remain explicit; scheduled runs use the helper's
           # intended slot date even when the runner started late.
