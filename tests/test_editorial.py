@@ -6,7 +6,7 @@ from datetime import UTC, datetime
 import pytest
 
 from castforge.models import SourceItem, StoryCluster
-from ai_builder_brief.editorial import EditorialDecision, preprocess, select_clusters, validate_review, write_ledger
+from ai_builder_brief.editorial import EditorialDecision, is_podcast_ready, preprocess, select_clusters, validate_review, write_ledger
 from ai_builder_brief import editorial_client
 from ai_builder_brief.editorial_client import EDITORIAL_SCHEMA, EditorialReviewError, _client_key, review_candidates_batched
 from ai_builder_brief.pipeline import _editorial_packet
@@ -69,6 +69,51 @@ def test_momentum_and_recency_are_carried_into_score() -> None:
     assert decision.score == 100
 
 
+def test_preprocess_reserves_twelve_community_and_twelve_primary_clusters() -> None:
+    items = []
+    for index in range(14):
+        items.append(_item(
+            f"community-{index:02d}",
+            f"Builder evaluation pattern {index}",
+            authority="analysis",
+            metadata={
+                "cluster_id": f"community-{index:02d}",
+                "score": 30 + index,
+                "community_signal": True,
+                "community_signal_type": "x",
+                "momentum_score": index % 5,
+            },
+        ))
+        items.append(_item(
+            f"primary-{index:02d}",
+            f"Builder API capability {index}",
+            metadata={"cluster_id": f"primary-{index:02d}", "score": 80 + index},
+        ))
+
+    candidates, _ = preprocess(items)
+    cluster_ids = {str(item.metadata["cluster_id"]) for item in candidates}
+
+    assert len(cluster_ids) == 24
+    assert sum(cluster_id.startswith("community-") for cluster_id in cluster_ids) == 12
+    assert sum(cluster_id.startswith("primary-") for cluster_id in cluster_ids) == 12
+
+
+def test_signal_only_candidate_is_never_podcast_ready() -> None:
+    signal = _item(
+        "community",
+        "Builders discuss a new evaluation pattern",
+        authority="analysis",
+        metadata={"community_signal": True, "community_signal_type": "x"},
+    )
+    decision = EditorialDecision(
+        cluster_id="community", decision="accept", impact=4, actionability=4,
+        novelty=4, evidence=4, audience_breadth=4, builder_actions=("test",),
+    )
+
+    assert is_podcast_ready(decision, [signal]) is False
+    assert is_podcast_ready(decision, [_item("primary", "Primary API evidence")]) is True
+
+
 def test_selection_applies_diversity_penalty_iteratively_and_one_deep() -> None:
     source = _item("one", "One", metadata={"score": 90})
     clusters = tuple(
@@ -110,12 +155,26 @@ def test_editorial_packet_is_compact_and_auditable() -> None:
     item = _item(
         "candidate",
         "A consequential API release",
-        metadata={"cluster_id": "candidate", "source_ids": ["a", "b"], "momentum_score": 3, "recency_score": 4},
+        metadata={
+            "cluster_id": "candidate", "source_ids": ["a", "b"],
+            "momentum_score": 3, "recency_score": 4, "community_led": True,
+            "community_signal_types": ["x"],
+            "community_context": [{
+                "source_id": "b", "source": "Approved X panel", "account": "builder",
+                "summary": "Builders are changing how they evaluate agents.",
+                "likes": 200, "retweets": 20, "hn_points": 0, "hn_comments": 0,
+            }],
+            "qualifying_evidence": True,
+            "qualifying_source_ids": ["a"],
+        },
         summary="x" * 1000,
     )
     packet = _editorial_packet([item])[0]
     assert packet["cluster_id"] == "candidate"
     assert packet["source_ids"] == ["a", "b"]
+    assert packet["community_led"] is True
+    assert packet["community_context"][0]["likes"] == 200
+    assert packet["qualifying_source_ids"] == ["a"]
     assert len(packet["summary"]) == 700
     assert "metadata" not in packet
 

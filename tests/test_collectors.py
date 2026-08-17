@@ -63,17 +63,60 @@ def test_headline_overlap_assigns_same_conservative_cluster() -> None:
     assert clustered[0].metadata["cluster_id"] == clustered[1].metadata["cluster_id"]
 
 
-def test_x_panel_is_optional_attributed_analysis() -> None:
-    items = collect_x_panel(
-        ["builder"],
-        start=datetime(2026, 8, 10, tzinfo=UTC),
-        end=datetime(2026, 8, 12, tzinfo=UTC),
-        fetcher=lambda account: [{
+def test_x_panel_retries_and_preserves_engagement_and_health() -> None:
+    calls = 0
+
+    def fetcher(account):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise TimeoutError("transient")
+        return [{
             "published_at": "2026-08-11T12:00:00Z",
             "url": "https://x.com/builder/status/1",
             "text": "A practical attributed observation about evaluation design.",
-        }],
+            "likes": 420,
+            "rts": 40,
+        }]
+
+    result = collect_x_panel(
+        ["builder"],
+        start=datetime(2026, 8, 10, tzinfo=UTC),
+        end=datetime(2026, 8, 12, tzinfo=UTC),
+        fetcher=fetcher,
     )
+    items = result.items
+    assert calls == 2
     assert len(items) == 1
     assert items[0].authority == "analysis"
     assert items[0].metadata["kind"] == "expert_analysis"
+    assert items[0].metadata["x_likes"] == 420
+    assert items[0].metadata["x_retweets"] == 40
+    assert items[0].metadata["momentum_score"] == 3
+    assert result.health.healthy is True
+    assert result.health.successful_accounts == 1
+
+
+def test_x_panel_health_fails_below_coverage_without_raw_errors() -> None:
+    result = collect_x_panel(
+        ["one", "two"],
+        start=datetime(2026, 8, 10, tzinfo=UTC),
+        end=datetime(2026, 8, 12, tzinfo=UTC),
+        fetcher=lambda account: (_ for _ in ()).throw(RuntimeError("secret response")),
+    )
+
+    assert result.items == ()
+    assert result.health.healthy is False
+    assert result.health.failed_accounts == ("one", "two")
+    assert "secret" not in str(result.health.to_dict())
+
+
+def test_explicit_product_family_collapses_versioned_releases() -> None:
+    first = _item("ollama-1", "Ollama v0.12.1", "https://github.com/ollama/ollama/releases/1", "Ollama")
+    second = _item("ollama-2", "Ollama v0.12.2", "https://github.com/ollama/ollama/releases/2", "Ollama")
+    first = SourceItem.from_dict({**first.to_dict(), "metadata": {**first.metadata, "product_family": "ollama"}})
+    second = SourceItem.from_dict({**second.to_dict(), "metadata": {**second.metadata, "product_family": "ollama"}})
+
+    clustered = assign_story_clusters([first, second])
+
+    assert {item.metadata["cluster_id"] for item in clustered} == {"product-ollama"}

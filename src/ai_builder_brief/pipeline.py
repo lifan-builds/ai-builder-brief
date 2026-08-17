@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import shutil
 import xml.etree.ElementTree as ET
 from dataclasses import replace
@@ -16,7 +17,7 @@ from castforge.publishers.r2 import R2Publisher
 from castforge.rss import write_episode
 from castforge.runner import run_episode
 
-from ai_builder_brief.collectors import collect_sources, read_sources, write_sources
+from ai_builder_brief.collectors import CollectionResult, collect_sources, read_sources, write_sources
 from ai_builder_brief.editorial import preprocess, select_clusters, validate_review, write_ledger
 from ai_builder_brief.editorial_client import EditorialReviewError, review_candidates_batched
 from ai_builder_brief.review import write_review_artifacts
@@ -116,7 +117,10 @@ def _cluster(items):
 
 def _merge_editorial_ledger(deterministic, decisions):
     reviewed = {decision.cluster_id: decision.to_dict() for decision in decisions}
-    return [reviewed.get(str(record.get("cluster_id", "")), record) for record in deterministic]
+    return [
+        {**record, **reviewed.get(str(record.get("cluster_id", "")), {})}
+        for record in deterministic
+    ]
 
 
 def _apply_snapshot_deltas(items):
@@ -156,11 +160,21 @@ def _apply_snapshot_deltas(items):
         delta_7 = deltas(baseline_7)
         positive = sum(max(value, 0) for value in (*delta_24.values(), *delta_7.values()))
         measured_momentum = min(4, int(positive > 0) + int(positive >= 10) + int(positive >= 100) + int(positive >= 1000))
+        is_github = str(latest.metadata.get("signal_key", "")).startswith("github:")
         enriched.append(replace(latest, metadata={
             **latest.metadata,
             "delta_24h": delta_24,
             "delta_7d": delta_7,
-            "momentum_score": max(int(latest.metadata.get("momentum_score", 0) or 0), measured_momentum),
+            "momentum_score": (
+                measured_momentum
+                if is_github
+                else max(int(latest.metadata.get("momentum_score", 0) or 0), measured_momentum)
+            ),
+            "community_signal": (
+                measured_momentum > 0
+                if is_github
+                else bool(latest.metadata.get("community_signal"))
+            ),
         }))
     return enriched
 
@@ -184,7 +198,13 @@ def _ledger_evidence(deterministic, candidates):
                     "published_at": item.published_at,
                     "signals": {
                         key: item.metadata[key]
-                        for key in ("delta_24h", "delta_7d", "momentum_score", "recency_score")
+                        for key in (
+                            "delta_24h", "delta_7d", "momentum_score", "recency_score",
+                            "x_likes", "x_retweets", "x_engagement", "hn_points",
+                            "hn_comments", "hf_upvotes", "hf_likes", "hf_downloads",
+                            "hf_trending_score", "repository_stars", "repository_forks",
+                            "repository_open_issues",
+                        )
                         if key in item.metadata
                     },
                 }
@@ -201,11 +221,65 @@ def _represent_candidates(candidates):
     representatives = []
     metadata = {}
     for cluster_id, group in grouped.items():
-        lead = group[0]
+        lead = min(
+            group,
+            key=lambda item: (
+                {"primary": 0, "independent": 1, "analysis": 2, "signal": 3}[item.authority],
+                -float(item.metadata.get("score", 0)),
+                item.id,
+            ),
+        )
         momentum = max(int(item.metadata.get("momentum_score", 0)) for item in group)
         recency = max(int(item.metadata.get("recency_score", 0)) for item in group)
-        representatives.append(replace(lead, metadata={**lead.metadata, "source_ids": [item.id for item in group], "momentum_score": momentum, "recency_score": recency}))
-        metadata[cluster_id] = {"momentum_score": momentum, "recency_score": recency}
+        community_led = any(bool(item.metadata.get("community_led")) for item in group)
+        signal_types = sorted({
+            str(signal_type)
+            for item in group
+            for signal_type in item.metadata.get("community_signal_types", [])
+        })
+        product_family = next(
+            (str(item.metadata["product_family"]) for item in group if item.metadata.get("product_family")),
+            "",
+        )
+        community_sources = sorted(
+            (item for item in group if item.metadata.get("community_signal")),
+            key=lambda item: (-int(item.metadata.get("momentum_score", 0) or 0), item.id),
+        )
+        aggregate = {
+            "source_ids": [item.id for item in group],
+            "source_types": sorted({item.source for item in group}),
+            "source_authorities": sorted({item.authority for item in group}),
+            "community_led": community_led,
+            "community_signal_types": signal_types,
+            "community_signal_count": sum(bool(item.metadata.get("community_signal")) for item in group),
+            "x_post_count": sum(item.metadata.get("community_signal_type") == "x" for item in group),
+            "x_likes": sum(int(item.metadata.get("x_likes", 0) or 0) for item in group),
+            "x_retweets": sum(int(item.metadata.get("x_retweets", 0) or 0) for item in group),
+            "hn_points": sum(int(item.metadata.get("hn_points", 0) or 0) for item in group),
+            "hn_comments": sum(int(item.metadata.get("hn_comments", 0) or 0) for item in group),
+            "momentum_score": momentum,
+            "recency_score": recency,
+            "qualifying_evidence": any(bool(item.metadata.get("qualifying_evidence")) for item in group),
+            "qualifying_source_ids": [
+                item.id for item in group if item.authority in {"primary", "independent"}
+            ],
+            "community_context": [
+                {
+                    "source_id": item.id,
+                    "source": item.source,
+                    "account": str(item.metadata.get("x_account", "")),
+                    "summary": item.summary[:280],
+                    "likes": int(item.metadata.get("x_likes", 0) or 0),
+                    "retweets": int(item.metadata.get("x_retweets", 0) or 0),
+                    "hn_points": int(item.metadata.get("hn_points", 0) or 0),
+                    "hn_comments": int(item.metadata.get("hn_comments", 0) or 0),
+                }
+                for item in community_sources[:3]
+            ],
+            **({"product_family": product_family} if product_family else {}),
+        }
+        representatives.append(replace(lead, metadata={**lead.metadata, **aggregate}))
+        metadata[cluster_id] = aggregate
     return representatives, metadata
 
 
@@ -222,8 +296,22 @@ def _editorial_packet(representatives):
             "organization": item.organization,
             "category": item.category,
             "kind": str(item.metadata.get("kind", "development")),
+            "product_family": str(item.metadata.get("product_family", "")),
             "published_at": item.published_at,
             "source_ids": list(item.metadata.get("source_ids", [item.id])),
+            "source_types": list(item.metadata.get("source_types", [item.source])),
+            "source_authorities": list(item.metadata.get("source_authorities", [item.authority])),
+            "community_led": bool(item.metadata.get("community_led")),
+            "community_signal_types": list(item.metadata.get("community_signal_types", [])),
+            "community_signal_count": int(item.metadata.get("community_signal_count", 0)),
+            "x_post_count": int(item.metadata.get("x_post_count", 0)),
+            "x_likes": int(item.metadata.get("x_likes", 0)),
+            "x_retweets": int(item.metadata.get("x_retweets", 0)),
+            "hn_points": int(item.metadata.get("hn_points", 0)),
+            "hn_comments": int(item.metadata.get("hn_comments", 0)),
+            "qualifying_evidence": bool(item.metadata.get("qualifying_evidence")),
+            "qualifying_source_ids": list(item.metadata.get("qualifying_source_ids", [])),
+            "community_context": list(item.metadata.get("community_context", [])),
             "momentum_score": int(item.metadata.get("momentum_score", 0)),
             "recency_score": int(item.metadata.get("recency_score", 0)),
         }
@@ -234,6 +322,25 @@ def _editorial_packet(representatives):
 def _move(source: Path, destination: Path) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True)
     source.replace(destination)
+
+
+def _write_source_health(root: Path, episode_date: date, result: CollectionResult) -> Path:
+    path = root / "build" / "source-health" / f"{episode_date.isoformat()}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "review_date": episode_date.isoformat(),
+                **result.health_dict(),
+            },
+            ensure_ascii=False,
+            indent=2,
+            sort_keys=True,
+        ) + "\n",
+        encoding="utf-8",
+    )
+    return path
 
 
 def run_daily(
@@ -248,9 +355,13 @@ def run_daily(
     root = Path(config_path).resolve().parent
     public_config = load_config(config_path)
     episode_id = _episode_id(public_config.show.episode_guid_prefix, episode_date)
+    if review_only:
+        for suffix in ("json", "md"):
+            (root / "build" / "review" / f"{episode_date.isoformat()}.{suffix}").unlink(missing_ok=True)
     if not fixture and not shadow and not review_only and is_published(public_config.outputs.feed, episode_id):
         return "already-published"
 
+    collection_result: CollectionResult | None = None
     if fixture:
         public_config = _fixture_config(public_config, root)
     elif shadow:
@@ -273,8 +384,9 @@ def run_daily(
             tzinfo=ZoneInfo(public_config.show.timezone),
         ).astimezone(UTC)
         try:
-            items = collect_sources(sources_path, start=end - timedelta(days=7), end=end)
-            write_sources(items, public_config.source.fixture)
+            collection_result = collect_sources(sources_path, start=end - timedelta(days=7), end=end)
+            write_sources(list(collection_result.items), public_config.source.fixture)
+            _write_source_health(root, episode_date, collection_result)
         except Exception:
             write_ledger([], root / "build" / "editorial" / f"{episode_date.isoformat()}.json", episode_date=episode_date.isoformat(), status="no-episode-collector-failure")
             return "no-episode"
@@ -287,8 +399,9 @@ def run_daily(
             tzinfo=ZoneInfo(public_config.show.timezone),
         ).astimezone(UTC)
         try:
-            items = collect_sources(sources_path, start=end - timedelta(days=7), end=end)
-            write_sources(items, public_config.source.fixture)
+            collection_result = collect_sources(sources_path, start=end - timedelta(days=7), end=end)
+            write_sources(list(collection_result.items), public_config.source.fixture)
+            _write_source_health(root, episode_date, collection_result)
         except Exception:
             write_ledger([], root / "build" / "editorial" / f"{episode_date.isoformat()}.json", episode_date=episode_date.isoformat(), status="no-episode-collector-failure")
             return "no-episode"
@@ -299,6 +412,14 @@ def run_daily(
         snapshot_dir = root / "build" / "snapshots"
         snapshot_dir.mkdir(parents=True, exist_ok=True)
         write_sources(normalized, snapshot_dir / f"{episode_date.isoformat()}.json")
+        if review_only and collection_result is not None and not collection_result.healthy:
+            write_ledger(
+                [],
+                root / "build" / "editorial" / f"{episode_date.isoformat()}.json",
+                episode_date=episode_date.isoformat(),
+                status="no-review-source-failure",
+            )
+            return "no-episode"
         historical: list[SourceItem] = []
         for snapshot in sorted(snapshot_dir.glob("*.json")):
             try:
@@ -360,6 +481,11 @@ def run_daily(
             candidates,
             decisions,
             root / "build" / "review",
+            source_health=(
+                collection_result.health_dict()
+                if collection_result is not None
+                else {"healthy": True, "mode": "fixture"}
+            ),
         )
         return "review-ready"
     selected = select_clusters(clusters, decisions, minimum=public_config.selection.min_stories, maximum=public_config.selection.max_stories)

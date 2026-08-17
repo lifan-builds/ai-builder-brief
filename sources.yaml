@@ -15,10 +15,10 @@ feeds:
   - {name: MIT Technology Review, url: "https://www.technologyreview.com/topic/artificial-intelligence/feed", authority: independent, organization: MIT Technology Review, category: industry, score: 80}
   - {name: The Verge AI, url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", authority: independent, organization: The Verge, category: products, score: 70}
   - {name: Techmeme, url: "https://www.techmeme.com/feed.xml", authority: signal, organization: Techmeme, category: trend, score: 35}
-  - {name: Transformers releases, url: "https://github.com/huggingface/transformers/releases.atom", authority: primary, organization: Hugging Face, category: developer tools, score: 85}
-  - {name: vLLM releases, url: "https://github.com/vllm-project/vllm/releases.atom", authority: primary, organization: vLLM, category: developer tools, score: 85}
-  - {name: llama.cpp releases, url: "https://github.com/ggml-org/llama.cpp/releases.atom", authority: primary, organization: ggml.org, category: developer tools, score: 85}
-  - {name: Ollama releases, url: "https://github.com/ollama/ollama/releases.atom", authority: primary, organization: Ollama, category: developer tools, score: 85}
+  - {name: Transformers releases, url: "https://github.com/huggingface/transformers/releases.atom", authority: primary, organization: Hugging Face, product_family: transformers, category: developer tools, score: 85}
+  - {name: vLLM releases, url: "https://github.com/vllm-project/vllm/releases.atom", authority: primary, organization: vLLM, product_family: vllm, category: developer tools, score: 85}
+  - {name: llama.cpp releases, url: "https://github.com/ggml-org/llama.cpp/releases.atom", authority: primary, organization: ggml.org, product_family: llama.cpp, category: developer tools, score: 85}
+  - {name: Ollama releases, url: "https://github.com/ollama/ollama/releases.atom", authority: primary, organization: Ollama, product_family: ollama, category: developer tools, score: 85}
 
 page_indexes:
   - {name: Anthropic, url: "https://www.anthropic.com/news", link_prefix: "https://www.anthropic.com/news/", organization: Anthropic, category: models, score: 100}
@@ -36,7 +36,11 @@ hugging_face:
 
 github:
   enabled: true
-  repositories: [huggingface/transformers, vllm-project/vllm, ggml-org/llama.cpp, ollama/ollama]
+  repositories:
+    - {repository: huggingface/transformers, product_family: transformers}
+    - {repository: vllm-project/vllm, product_family: vllm}
+    - {repository: ggml-org/llama.cpp, product_family: llama.cpp}
+    - {repository: ollama/ollama, product_family: ollama}
 
 x_panel:
   enabled: true

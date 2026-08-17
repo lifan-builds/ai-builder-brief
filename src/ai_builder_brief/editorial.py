@@ -161,23 +161,33 @@ def _momentum_score(item: SourceItem) -> int:
     return max(0, min(4, int(round(value / 25))))
 
 
+def _is_community_signal(item: SourceItem) -> bool:
+    return bool(item.metadata.get("community_signal"))
+
+
+def _has_qualifying_evidence(items: Iterable[SourceItem]) -> bool:
+    sources = list(items)
+    return (
+        any(item.authority == "primary" for item in sources)
+        or sum(item.authority == "independent" for item in sources) >= 2
+    )
+
+
 def preprocess(
     items: Iterable[SourceItem], *, limit: int = 24, as_of: datetime | None = None,
 ) -> tuple[list[SourceItem], list[dict[str, Any]]]:
-    accepted: list[SourceItem] = []
-    decisions: list[dict[str, Any]] = []
+    prepared: list[tuple[str, list[SourceItem], bool, float]] = []
+    decisions_by_id: dict[str, dict[str, Any]] = {}
     grouped: dict[str, list[SourceItem]] = {}
     for item in items:
         grouped.setdefault(str(item.metadata.get("cluster_id") or item.id), []).append(item)
-    ordered_groups = sorted(
-        grouped.items(),
-        key=lambda pair: (-max(float(value.metadata.get("score", 0)) for value in pair[1]), pair[0]),
-    )
-    for cluster_id, group in ordered_groups:
+    for cluster_id, group in sorted(grouped.items()):
         kept: list[SourceItem] = []
         rejected_reasons: list[str] = []
         for item in sorted(group, key=lambda value: (-float(value.metadata.get("score", 0)), value.id)):
             reason = reject_reason(item)
+            if reason == "signal-only evidence cannot qualify a story" and _is_community_signal(item):
+                reason = None
             if reason:
                 rejected_reasons.append(f"{item.id}: {reason}")
                 continue
@@ -190,12 +200,65 @@ def preprocess(
             })
             kept.append(replace(item, metadata=metadata))
         if not kept:
-            decisions.append({"cluster_id": cluster_id, "decision": "reject", "rationale": "; ".join(rejected_reasons) or "deterministically rejected", "source_ids": [item.id for item in group]})
+            decisions_by_id[cluster_id] = {
+                "cluster_id": cluster_id,
+                "decision": "reject",
+                "rationale": "; ".join(rejected_reasons) or "deterministically rejected",
+                "source_ids": [item.id for item in group],
+            }
             continue
-        accepted.extend(kept)
-        decisions.append({"cluster_id": cluster_id, "decision": "candidate", "rationale": "passed deterministic preprocessing", "source_ids": [item.id for item in kept], "rejected_source_ids": [item.id for item in group if item not in kept]})
-        if len({str(item.metadata.get("cluster_id") or item.id) for item in accepted}) >= limit:
-            break
+        community_led = any(_is_community_signal(item) for item in kept)
+        signal_types = sorted({
+            str(item.metadata.get("community_signal_type"))
+            for item in kept if item.metadata.get("community_signal_type")
+        })
+        qualifying_evidence = _has_qualifying_evidence(kept)
+        enriched = [
+            replace(item, metadata={
+                **item.metadata,
+                "community_led": community_led,
+                "community_signal_types": signal_types,
+                "qualifying_evidence": qualifying_evidence,
+            })
+            for item in kept
+        ]
+        admission_score = (
+            max(float(item.metadata.get("score", 0)) for item in enriched)
+            + max(_momentum_score(item) for item in enriched) * 5
+        )
+        prepared.append((cluster_id, enriched, community_led, admission_score))
+
+    community_slots = limit // 2
+    primary_slots = limit - community_slots
+    community = sorted(
+        (record for record in prepared if record[2]),
+        key=lambda record: (-record[3], record[0]),
+    )[:community_slots]
+    primary = sorted(
+        (record for record in prepared if not record[2]),
+        key=lambda record: (-record[3], record[0]),
+    )[:primary_slots]
+    selected_ids = {record[0] for record in (*community, *primary)}
+    accepted = [item for record in (*community, *primary) for item in record[1]]
+
+    for cluster_id, kept, community_led, _ in prepared:
+        admitted = cluster_id in selected_ids
+        kept_ids = {item.id for item in kept}
+        decisions_by_id[cluster_id] = {
+            "cluster_id": cluster_id,
+            "decision": "candidate" if admitted else "reject",
+            "rationale": (
+                "admitted to balanced community editorial pool"
+                if admitted and community_led
+                else "admitted to balanced primary editorial pool"
+                if admitted
+                else "excluded by balanced editorial pool quota"
+            ),
+            "community_led": community_led,
+            "source_ids": [item.id for item in kept],
+            "rejected_source_ids": [item.id for item in grouped[cluster_id] if item.id not in kept_ids],
+        }
+    decisions = [decisions_by_id[cluster_id] for cluster_id in sorted(decisions_by_id)]
     return accepted, decisions
 
 
@@ -237,7 +300,7 @@ def select_clusters(clusters: Iterable[StoryCluster], decisions: Iterable[Editor
     ranked: list[tuple[float, StoryCluster, EditorialDecision]] = []
     for cluster in clusters:
         decision = by_id.get(cluster.id)
-        if not decision or not is_podcast_ready(decision):
+        if not decision or not is_podcast_ready(decision, cluster.sources):
             continue
         ranked.append((decision.score, cluster, decision))
     selected: list[StoryCluster] = []
@@ -262,7 +325,10 @@ def select_clusters(clusters: Iterable[StoryCluster], decisions: Iterable[Editor
     return tuple(selected)
 
 
-def is_podcast_ready(decision: EditorialDecision) -> bool:
+def is_podcast_ready(
+    decision: EditorialDecision,
+    sources: Iterable[SourceItem] | None = None,
+) -> bool:
     """Return whether a reviewed candidate passes the episode evidence gate."""
 
     return (
@@ -270,6 +336,8 @@ def is_podcast_ready(decision: EditorialDecision) -> bool:
         and decision.score >= 70
         and decision.impact >= 3
         and decision.evidence >= 3
+        and sources is not None
+        and _has_qualifying_evidence(sources)
     )
 
 

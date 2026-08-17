@@ -204,7 +204,7 @@ def review_candidates(candidates: list[dict], *, opener=urlopen) -> dict:
         payload = {
             "model": model, "temperature": 0, "response_format": {"type": "json_schema", "json_schema": {"name": "editorial_review", "strict": True, "schema": EDITORIAL_SCHEMA}},
             "messages": [
-                {"role": "system", "content": "Review candidates for developments that change what AI builders should use, build, test, monitor, or reconsider. Expert posts may qualify as attributed analysis, but any technical claim must be backed by an attached primary artifact or two independent credible reports. Reject filler, routine releases, cloud availability wrappers, roundups, weak model cards, and research without a practical changed assumption. Return strict JSON matching the schema."},
+                {"role": "system", "content": "Review candidates for developments and community themes that change what AI builders should use, build, test, monitor, or reconsider. Treat the supplied X, Hacker News, Hugging Face, and GitHub context as evidence of community attention and momentum, not as proof of technical claims. Expert posts may qualify as attributed analysis, but any technical claim must be backed by an attached primary artifact or two independent credible reports. Reject filler, routine releases, cloud availability wrappers, roundups, weak model cards, and research without a practical changed assumption. Return strict JSON matching the schema."},
                 {"role": "user", "content": json.dumps(candidates, ensure_ascii=False, sort_keys=True)},
             ],
         }

@@ -8,6 +8,7 @@ from pathlib import Path
 from castforge.config import load_config
 from castforge.models import EpisodeManifest
 
+from ai_builder_brief.collectors import CollectionResult, XPanelHealth
 from ai_builder_brief.pipeline import _apply_snapshot_deltas, is_published, run_daily
 from castforge.models import SourceItem
 
@@ -143,6 +144,46 @@ def test_review_only_collector_failure_keeps_ledger_without_partial_review(show_
     assert not (show_project / "build" / "review" / "2026-08-17.md").exists()
 
 
+def test_unhealthy_x_retains_snapshot_and_health_but_emits_no_review(show_project, monkeypatch) -> None:
+    source = SourceItem(
+        id="primary", title="Primary builder API", url="https://example.com/primary",
+        source="Example", published_at="2026-08-17T12:00:00Z",
+        summary="Documented API and inference details.", authority="primary",
+        organization="Example", category="developer tools",
+        metadata={"cluster_id": "primary", "score": 90},
+    )
+    monkeypatch.setattr(
+        "ai_builder_brief.pipeline.collect_sources",
+        lambda *args, **kwargs: CollectionResult(
+            items=(source,),
+            x_panel=XPanelHealth(
+                configured_accounts=19,
+                attempted_accounts=19,
+                successful_accounts=14,
+                in_window_posts=0,
+                failed_accounts=("one", "two", "three", "four", "five"),
+            ),
+        ),
+    )
+
+    status = run_daily(
+        config_path=show_project / "podcast.yaml",
+        sources_path=show_project / "sources.yaml",
+        episode_date=date(2026, 8, 17),
+        review_only=True,
+    )
+
+    assert status == "no-episode"
+    health = json.loads((show_project / "build" / "source-health" / "2026-08-17.json").read_text(encoding="utf-8"))
+    assert health["healthy"] is False
+    assert health["x_panel"]["successful_accounts"] == 14
+    assert (show_project / "build" / "snapshots" / "2026-08-17.json").is_file()
+    ledger = json.loads((show_project / "build" / "editorial" / "2026-08-17.json").read_text(encoding="utf-8"))
+    assert ledger["status"] == "no-review-source-failure"
+    assert not (show_project / "build" / "review" / "2026-08-17.json").exists()
+    assert not (show_project / "build" / "review" / "2026-08-17.md").exists()
+
+
 def test_snapshot_deltas_measure_change_instead_of_lifetime_totals() -> None:
     def snapshot(day: str, stars: int) -> SourceItem:
         return SourceItem(
@@ -157,3 +198,5 @@ def test_snapshot_deltas_measure_change_instead_of_lifetime_totals() -> None:
     ])
     assert enriched[0].metadata["delta_24h"]["repository_stars"] == 5
     assert enriched[0].metadata["delta_7d"]["repository_stars"] == 30
+    assert enriched[0].metadata["momentum_score"] == 2
+    assert enriched[0].metadata["community_signal"] is True

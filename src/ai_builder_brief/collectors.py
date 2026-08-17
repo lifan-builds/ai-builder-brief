@@ -11,7 +11,7 @@ import shutil
 import ssl
 import subprocess
 import xml.etree.ElementTree as ET
-from dataclasses import replace
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
@@ -28,6 +28,60 @@ from castforge.models import SourceItem
 log = logging.getLogger(__name__)
 USER_AGENT = "AIBuilderBrief/0.1 (+https://github.com/lifan-builds/ai-builder-brief)"
 SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
+
+
+@dataclass(frozen=True, slots=True)
+class XPanelHealth:
+    """Sanitized health summary for the approved read-only X panel."""
+
+    configured_accounts: int
+    attempted_accounts: int
+    successful_accounts: int
+    in_window_posts: int
+    failed_accounts: tuple[str, ...] = ()
+    required_success_ratio: float = 0.8
+
+    @property
+    def healthy(self) -> bool:
+        return (
+            self.configured_accounts > 0
+            and self.successful_accounts / self.configured_accounts >= self.required_success_ratio
+            and self.in_window_posts > 0
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "configured_accounts": self.configured_accounts,
+            "attempted_accounts": self.attempted_accounts,
+            "successful_accounts": self.successful_accounts,
+            "success_ratio": (
+                self.successful_accounts / self.configured_accounts
+                if self.configured_accounts else 0.0
+            ),
+            "required_success_ratio": self.required_success_ratio,
+            "in_window_posts": self.in_window_posts,
+            "failed_accounts": list(self.failed_accounts),
+            "healthy": self.healthy,
+        }
+
+
+@dataclass(frozen=True, slots=True)
+class XPanelResult:
+    items: tuple[SourceItem, ...]
+    health: XPanelHealth
+
+
+@dataclass(frozen=True, slots=True)
+class CollectionResult:
+    items: tuple[SourceItem, ...]
+    x_panel: XPanelHealth
+
+    @property
+    def healthy(self) -> bool:
+        return self.x_panel.healthy
+
+    def health_dict(self) -> dict[str, Any]:
+        return {"healthy": self.healthy, "x_panel": self.x_panel.to_dict()}
 
 
 def _request(url: str, *, opener: Callable[..., Any] = urlopen) -> bytes:
@@ -161,6 +215,10 @@ def collect_feed(
                     "canonical_url": url,
                     "score": score,
                     "selection_reason": "Fresh source within the rolling 24-hour window",
+                    **(
+                        {"product_family": str(definition["product_family"])}
+                        if definition.get("product_family") else {}
+                    ),
                 },
             )
         )
@@ -300,6 +358,17 @@ def collect_hacker_news(
                 metadata={
                     "canonical_url": url,
                     "discussion_url": f"https://news.ycombinator.com/item?id={story_id}",
+                    "community_signal": True,
+                    "community_signal_type": "hacker_news",
+                    "hn_points": int(raw.get("score", 0) or 0),
+                    "hn_comments": int(raw.get("descendants", 0) or 0),
+                    "momentum_score": min(
+                        4,
+                        int(int(raw.get("score", 0) or 0) >= 20)
+                        + int(int(raw.get("score", 0) or 0) >= 75)
+                        + int(int(raw.get("descendants", 0) or 0) >= 40)
+                        + int(int(raw.get("score", 0) or 0) >= 250),
+                    ),
                     "score": score,
                     "selection_reason": "Strong developer-community attention",
                 },
@@ -345,6 +414,10 @@ def collect_hugging_face(
                     category="research",
                     metadata={
                         "canonical_url": url,
+                        "community_signal": True,
+                        "community_signal_type": "hugging_face",
+                        "hf_upvotes": int(paper.get("upvotes", 0) or 0),
+                        "momentum_score": min(4, int(int(paper.get("upvotes", 0) or 0) / 10)),
                         "score": 60 + int(paper.get("upvotes", 0)),
                         "selection_reason": "Fresh primary research selected by the Hugging Face community",
                     },
@@ -375,6 +448,8 @@ def collect_hugging_face(
                     metadata={
                         "canonical_url": url,
                         "signal_key": f"hf-model:{model_id}",
+                        "community_signal": True,
+                        "community_signal_type": "hugging_face",
                         "hf_likes": int(model.get("likes", 0) or 0),
                         "hf_downloads": int(model.get("downloads", 0) or 0),
                         "hf_trending_score": float(model.get("trendingScore", 0) or 0),
@@ -391,6 +466,13 @@ STOP_WORDS = {
     "release", "releases", "says", "that", "their", "this", "using", "with", "your",
 }
 
+PRODUCT_FAMILY_PATTERNS = {
+    "ollama": (r"\bollama\b",),
+    "vllm": (r"\bvllm\b",),
+    "llama.cpp": (r"\bllama\.cpp\b", r"github\.com/ggml-org/llama\.cpp"),
+    "transformers": (r"github\.com/huggingface/transformers",),
+}
+
 
 def _title_tokens(title: str) -> set[str]:
     return {
@@ -400,8 +482,19 @@ def _title_tokens(title: str) -> set[str]:
     }
 
 
+def _product_family(item: SourceItem) -> str:
+    configured = str(item.metadata.get("product_family") or "").strip().casefold()
+    if configured:
+        return configured
+    text = f"{item.title} {item.summary} {item.url}".casefold()
+    for product_family, patterns in PRODUCT_FAMILY_PATTERNS.items():
+        if any(re.search(pattern, text) for pattern in patterns):
+            return product_family
+    return ""
+
+
 def assign_story_clusters(items: list[SourceItem]) -> list[SourceItem]:
-    """Conservatively group matching URLs or strongly overlapping headlines."""
+    """Group explicit product families before URL/headline similarity."""
     ordered = sorted(
         items,
         key=lambda item: (
@@ -415,18 +508,26 @@ def assign_story_clusters(items: list[SourceItem]) -> list[SourceItem]:
     for item in ordered:
         canonical = str(item.metadata.get("canonical_url") or item.url).rstrip("/")
         tokens = _title_tokens(item.title)
-        cluster_id = ""
-        for existing_id, existing_url, existing_tokens in representatives:
-            overlap = len(tokens & existing_tokens)
-            union = len(tokens | existing_tokens) or 1
-            if canonical == existing_url or (overlap >= 3 and overlap / union >= 0.6):
-                cluster_id = existing_id
-                break
+        product_family = _product_family(item)
+        cluster_id = (
+            f"product-{re.sub(r'[^a-z0-9]+', '-', product_family).strip('-')}"
+            if product_family else ""
+        )
+        if not cluster_id:
+            for existing_id, existing_url, existing_tokens in representatives:
+                overlap = len(tokens & existing_tokens)
+                union = len(tokens | existing_tokens) or 1
+                if canonical == existing_url or (overlap >= 3 and overlap / union >= 0.6):
+                    cluster_id = existing_id
+                    break
         if not cluster_id:
             cluster_id = re.sub(r"[^a-z0-9]+", "-", item.title.casefold()).strip("-")[:80] or item.id
+        if not any(existing_id == cluster_id for existing_id, _, _ in representatives):
             representatives.append((cluster_id, canonical, tokens))
         metadata = dict(item.metadata)
         metadata["cluster_id"] = cluster_id
+        if product_family:
+            metadata["product_family"] = product_family
         result.append(replace(item, metadata=metadata))
     return result
 
@@ -437,7 +538,7 @@ def collect_sources(
     start: datetime,
     end: datetime,
     opener: Callable[..., Any] = urlopen,
-) -> list[SourceItem]:
+) -> CollectionResult:
     raw = yaml.safe_load(Path(config_path).read_text(encoding="utf-8"))
     if int(raw.get("version", 0)) != 1:
         raise ValueError("sources config version must be 1")
@@ -477,33 +578,42 @@ def collect_sources(
     if github.get("enabled") and github.get("repositories"):
         collected.extend(
             collect_github_momentum(
-                [str(repository) for repository in github.get("repositories", [])],
+                list(github.get("repositories", [])),
                 start=start,
                 end=end,
                 opener=opener,
             )
         )
     x_panel = raw.get("x_panel") or {}
+    x_health = XPanelHealth(0, 0, 0, 0)
     if x_panel.get("enabled") and x_panel.get("accounts"):
-        collected.extend(
-            collect_x_panel(
-                [str(account).lstrip("@").strip() for account in x_panel.get("accounts", [])],
-                start=start,
-                end=end,
-            )
+        x_result = collect_x_panel(
+            [str(account).lstrip("@").strip() for account in x_panel.get("accounts", [])],
+            start=start,
+            end=end,
         )
+        collected.extend(x_result.items)
+        x_health = x_result.health
     if not collected:
         raise RuntimeError("all configured sources failed or returned no items in the rolling window")
-    return assign_story_clusters(collected)
+    return CollectionResult(tuple(assign_story_clusters(collected)), x_health)
 
 
 def collect_github_momentum(
-    repositories: list[str], *, start: datetime, end: datetime, opener: Callable[..., Any] = urlopen,
+    repositories: list[Any], *, start: datetime, end: datetime, opener: Callable[..., Any] = urlopen,
 ) -> list[SourceItem]:
     """Collect public GitHub release momentum as signal metadata."""
 
     items: list[SourceItem] = []
-    for repository in repositories:
+    for configured in repositories:
+        if isinstance(configured, dict):
+            repository = str(configured.get("repository") or "")
+            product_family = str(configured.get("product_family") or "")
+        else:
+            repository = str(configured)
+            product_family = ""
+        if not repository:
+            continue
         try:
             raw = json.loads(_request(f"https://api.github.com/repos/{repository}/releases?per_page=10", opener=opener))
             repo = json.loads(_request(f"https://api.github.com/repos/{repository}", opener=opener))
@@ -534,12 +644,15 @@ def collect_github_momentum(
                 metadata={
                     "canonical_url": str(release.get("html_url") or repository),
                     "signal_key": f"github:{repository}",
+                    "community_signal_candidate": True,
+                    "community_signal_type": "github",
                     "momentum": True,
                     "momentum_score": momentum_score,
                     "repository_stars": stars,
                     "repository_forks": forks,
                     "repository_open_issues": issues,
                     "score": 60 + momentum_score * 4,
+                    **({"product_family": product_family} if product_family else {}),
                 },
             ))
     return items
@@ -547,18 +660,30 @@ def collect_github_momentum(
 
 def collect_x_panel(
     accounts: list[str], *, start: datetime, end: datetime, fetcher: Callable[[str], list[dict[str, Any]]] | None = None,
-) -> list[SourceItem]:
-    """Best-effort expert observations; X outages never block collection."""
+) -> XPanelResult:
+    """Collect approved-account observations with one bounded retry."""
 
     if fetcher is None:
         fetcher = _twitter_cli_fetcher
     items: list[SourceItem] = []
+    successful_accounts = 0
+    failed_accounts: list[str] = []
     for account in accounts:
-        try:
-            posts = fetcher(account)
-        except Exception as error:
-            log.warning("optional X panel source failed: %s: %s", account, error)
+        posts: list[dict[str, Any]] | None = None
+        for attempt in range(2):
+            try:
+                payload = fetcher(account)
+                if not isinstance(payload, list):
+                    raise ValueError("X account payload is not a list")
+                posts = payload
+                break
+            except Exception:
+                if attempt == 1:
+                    log.warning("X panel account failed after retry: %s", account)
+        if posts is None:
+            failed_accounts.append(account)
             continue
+        successful_accounts += 1
         for post in posts:
             published = _parse_datetime(str(post.get("published_at") or ""))
             if published is None:
@@ -574,13 +699,43 @@ def collect_x_panel(
             text = _plain_text(str(post.get("text") or ""), limit=1200)
             if not url or not text:
                 continue
+            likes = max(0, int(post.get("likes", 0) or 0))
+            retweets = max(0, int(post.get("retweets", post.get("rts", 0)) or 0))
+            engagement = likes + 2 * retweets
+            momentum_score = min(
+                4,
+                int(engagement >= 10)
+                + int(engagement >= 100)
+                + int(engagement >= 500)
+                + int(engagement >= 2_000),
+            )
             items.append(SourceItem(
                 id=f"x-{_identifier(url)}", title=f"@{account}: {text[:100]}", url=url,
                 source="Approved X panel", published_at=published.isoformat().replace("+00:00", "Z"),
                 summary=text, authority="analysis", organization=account, category="expert analysis",
-                metadata={"canonical_url": url, "kind": "expert_analysis", "score": 35},
+                metadata={
+                    "canonical_url": url,
+                    "kind": "expert_analysis",
+                    "community_signal": True,
+                    "community_signal_type": "x",
+                    "x_account": account,
+                    "x_likes": likes,
+                    "x_retweets": retweets,
+                    "x_engagement": engagement,
+                    "momentum_score": momentum_score,
+                    "score": 35 + momentum_score * 8,
+                },
             ))
-    return items
+    return XPanelResult(
+        items=tuple(items),
+        health=XPanelHealth(
+            configured_accounts=len(accounts),
+            attempted_accounts=len(accounts),
+            successful_accounts=successful_accounts,
+            in_window_posts=len(items),
+            failed_accounts=tuple(failed_accounts),
+        ),
+    )
 
 
 def _twitter_cli_fetcher(account: str) -> list[dict[str, Any]]:
@@ -613,6 +768,8 @@ def _twitter_cli_fetcher(account: str) -> list[dict[str, Any]]:
             "published_at": raw_time,
             "url": f"https://x.com/{account}/status/{tweet_id}",
             "text": str(post.get("text") or ""),
+            "likes": int(post.get("likes", 0) or 0),
+            "retweets": int(post.get("rts", post.get("retweets", 0)) or 0),
         })
     return posts
 
