@@ -265,3 +265,31 @@ def test_representative_does_not_invent_subject_for_ambiguous_resolution() -> No
 
     assert representatives[0].organization == ""
     assert representatives[0].metadata["story_organization"] == ""
+
+
+def test_representative_uses_subject_common_to_all_resolved_sources() -> None:
+    first = SourceItem(
+        id="first", title="Acme changes AI output policy",
+        url="https://press.example/acme", source="Press",
+        published_at="2026-08-17T12:00:00Z", summary="Acme policy details.",
+        authority="independent", organization="Press", category="models",
+        metadata={
+            "cluster_id": "acme-policy", "score": 80,
+            "subject_organizations": ["Acme"],
+        },
+    )
+    second = SourceItem(
+        id="second", title="Acme uses Beta watermark technology",
+        url="https://another.example/acme", source="Another Press",
+        published_at="2026-08-17T11:00:00Z", summary="Acme and Beta implementation details.",
+        authority="independent", organization="Another Press", category="models",
+        metadata={
+            "cluster_id": "acme-policy", "score": 75,
+            "subject_organizations": ["Acme", "Beta"],
+        },
+    )
+
+    representatives, _ = _represent_candidates([first, second])
+
+    assert representatives[0].organization == "Acme"
+    assert representatives[0].metadata["subject_organizations"] == ["Acme", "Beta"]

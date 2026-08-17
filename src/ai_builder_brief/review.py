@@ -59,7 +59,7 @@ def review_priority(
             0,
             "consequential community theme" if eligible else "community theme did not clear the consequence floor",
         )
-    eligible = decision.score >= 55 and decision.impact >= 3 and decision.audience_breadth >= 2
+    eligible = decision.score >= 65 and decision.impact >= 3 and decision.audience_breadth >= 2
     return (
         eligible,
         decision.score,

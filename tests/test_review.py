@@ -139,6 +139,20 @@ def test_routine_release_cannot_outrank_consequential_development() -> None:
     assert review_priority(routine_decision, routine)[0] is False
 
 
+def test_low_scoring_major_development_does_not_fill_review() -> None:
+    development = SourceItem.from_dict({
+        **_source(1).to_dict(),
+        "metadata": {**_source(1).metadata, "editorial_class": "major_development"},
+    })
+    low_value = EditorialDecision(
+        cluster_id="candidate-01", decision="reject", impact=3, actionability=3,
+        novelty=2, evidence=2, audience_breadth=3, builder_actions=("monitor",),
+    )
+
+    assert low_value.score == 61.25
+    assert review_priority(low_value, development)[0] is False
+
+
 def test_exceptional_release_keeps_its_priority_penalty() -> None:
     release = SourceItem.from_dict({
         **_source(0).to_dict(),

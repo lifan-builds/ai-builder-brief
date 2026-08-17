@@ -260,15 +260,24 @@ def _represent_candidates(candidates):
             (str(item.metadata["product_family"]) for item in group if item.metadata.get("product_family")),
             "",
         )
-        subject_organizations = sorted({
-            str(organization)
+        subject_sets = [
+            {
+                str(organization)
+                for organization in item.metadata.get("subject_organizations", [])
+                if str(organization).strip()
+            }
             for item in group
-            for organization in item.metadata.get("subject_organizations", [])
-            if str(organization).strip()
-        })
+        ]
+        nonempty_subject_sets = [subjects for subjects in subject_sets if subjects]
+        common_subjects = (
+            set.intersection(*nonempty_subject_sets)
+            if nonempty_subject_sets
+            else set()
+        )
+        subject_organizations = sorted(set.union(*nonempty_subject_sets)) if nonempty_subject_sets else []
         story_organization = (
-            subject_organizations[0]
-            if len(subject_organizations) == 1
+            next(iter(common_subjects))
+            if len(common_subjects) == 1
             else ""
         )
         community_sources = sorted(
