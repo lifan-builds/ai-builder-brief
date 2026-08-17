@@ -594,6 +594,10 @@ def assign_story_clusters(
         name.casefold(): _organization_key(name)
         for name in organizations if name.strip()
     }
+    organization_labels = {
+        _organization_key(name): name
+        for name in organizations if name.strip()
+    }
     representatives: list[tuple[str, str, set[str], set[str], set[str]]] = []
     result: list[SourceItem] = []
     for item in ordered:
@@ -630,6 +634,10 @@ def assign_story_clusters(
         metadata["cluster_id"] = cluster_id
         metadata["theme_key"] = cluster_id
         metadata["mentioned_organizations"] = sorted(item_organizations)
+        metadata["subject_organizations"] = sorted(
+            organization_labels.get(organization, organization)
+            for organization in item_organizations
+        )
         metadata["topic_tokens"] = sorted(topic_tokens)
         if product_family:
             metadata["product_family"] = product_family

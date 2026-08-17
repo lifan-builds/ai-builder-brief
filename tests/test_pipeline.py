@@ -9,7 +9,13 @@ from castforge.config import load_config
 from castforge.models import EpisodeManifest
 
 from ai_builder_brief.collectors import CollectionResult, XPanelHealth
-from ai_builder_brief.pipeline import _apply_snapshot_deltas, _eligible_editorial_items, is_published, run_daily
+from ai_builder_brief.pipeline import (
+    _apply_snapshot_deltas,
+    _eligible_editorial_items,
+    _represent_candidates,
+    is_published,
+    run_daily,
+)
 from castforge.models import SourceItem
 
 
@@ -223,3 +229,39 @@ def test_editorial_window_is_strict_and_deduplicates_historical_snapshots() -> N
 
     assert {item.id for item in eligible} == {"boundary", "duplicate"}
     assert next(item for item in eligible if item.id == "duplicate").metadata["snapshot_date"] == "2026-08-17"
+
+
+def test_representative_uses_resolved_subject_instead_of_publisher() -> None:
+    report = SourceItem(
+        id="report", title="Acme changes AI output policy",
+        url="https://press.example/acme", source="Press",
+        published_at="2026-08-17T12:00:00Z", summary="Acme policy details.",
+        authority="independent", organization="Press", category="models",
+        metadata={
+            "cluster_id": "acme-policy", "score": 80,
+            "subject_organizations": ["Acme"],
+        },
+    )
+
+    representatives, _ = _represent_candidates([report])
+
+    assert representatives[0].organization == "Acme"
+    assert representatives[0].metadata["story_organization"] == "Acme"
+
+
+def test_representative_does_not_invent_subject_for_ambiguous_resolution() -> None:
+    report = SourceItem(
+        id="report", title="Acme and Beta discuss AI policy",
+        url="https://press.example/policy", source="Press",
+        published_at="2026-08-17T12:00:00Z", summary="Both organizations publish policy details.",
+        authority="independent", organization="Press", category="models",
+        metadata={
+            "cluster_id": "ambiguous-policy", "score": 80,
+            "subject_organizations": ["Acme", "Beta"],
+        },
+    )
+
+    representatives, _ = _represent_candidates([report])
+
+    assert representatives[0].organization == ""
+    assert representatives[0].metadata["story_organization"] == ""

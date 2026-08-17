@@ -260,6 +260,17 @@ def _represent_candidates(candidates):
             (str(item.metadata["product_family"]) for item in group if item.metadata.get("product_family")),
             "",
         )
+        subject_organizations = sorted({
+            str(organization)
+            for item in group
+            for organization in item.metadata.get("subject_organizations", [])
+            if str(organization).strip()
+        })
+        story_organization = (
+            subject_organizations[0]
+            if len(subject_organizations) == 1
+            else ""
+        )
         community_sources = sorted(
             (item for item in group if item.metadata.get("community_signal")),
             key=lambda item: (-int(item.metadata.get("momentum_score", 0) or 0), item.id),
@@ -268,6 +279,8 @@ def _represent_candidates(candidates):
             "source_ids": [item.id for item in group],
             "source_types": sorted({item.source for item in group}),
             "source_authorities": sorted({item.authority for item in group}),
+            "story_organization": story_organization,
+            "subject_organizations": subject_organizations,
             "community_led": community_led,
             "editorial_class": str(lead.metadata.get("editorial_class", "major_development")),
             "theme_key": str(lead.metadata.get("theme_key") or cluster_id),
@@ -299,7 +312,11 @@ def _represent_candidates(candidates):
             ],
             **({"product_family": product_family} if product_family else {}),
         }
-        representatives.append(replace(lead, metadata={**lead.metadata, **aggregate}))
+        representatives.append(replace(
+            lead,
+            organization=story_organization,
+            metadata={**lead.metadata, **aggregate},
+        ))
         metadata[cluster_id] = aggregate
     return representatives, metadata
 
