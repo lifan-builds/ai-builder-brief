@@ -68,6 +68,66 @@ def review_priority(
     )
 
 
+def _review_item(
+    decision: EditorialDecision,
+    *,
+    rank: int,
+    tier: str,
+    representative: SourceItem,
+    evidence: list[SourceItem],
+    priority_record: tuple[bool, float, int, str],
+) -> dict[str, Any]:
+    _, priority, adjustment, quality_reason = priority_record
+    return {
+        "rank": rank,
+        "tier": tier,
+        "cluster_id": decision.cluster_id,
+        "title": representative.title,
+        "summary": representative.summary,
+        "organization": representative.organization,
+        "category": representative.category,
+        "kind": str(representative.metadata.get("kind", "development")),
+        "editorial_class": str(representative.metadata.get("editorial_class", "major_development")),
+        "theme_key": str(representative.metadata.get("theme_key") or decision.cluster_id),
+        "community_led": bool(representative.metadata.get("community_led")),
+        "community_signal_types": list(representative.metadata.get("community_signal_types", [])),
+        "product_family": str(representative.metadata.get("product_family", "")),
+        "published_at": representative.published_at,
+        "decision": decision.decision,
+        "podcast_ready": is_podcast_ready(decision, evidence),
+        "score": decision.score,
+        "review_priority": priority,
+        "priority_adjustment": adjustment,
+        "quality_reason": quality_reason,
+        "editorial": decision.to_dict(),
+        "sources": [
+            {
+                "id": source.id,
+                "title": source.title,
+                "url": source.url,
+                "source": source.source,
+                "authority": source.authority,
+                "organization": source.organization,
+                "category": source.category,
+                "published_at": source.published_at,
+                "summary": source.summary,
+                "signals": {
+                    key: source.metadata[key]
+                    for key in (
+                        "x_account", "x_likes", "x_retweets", "x_engagement",
+                        "hn_points", "hn_comments", "hf_upvotes", "hf_likes",
+                        "hf_downloads", "hf_trending_score", "repository_stars",
+                        "repository_forks", "repository_open_issues", "delta_24h",
+                        "delta_7d", "momentum_score",
+                    )
+                    if key in source.metadata
+                },
+            }
+            for source in evidence
+        ],
+    }
+
+
 def build_review_items(
     representatives: Iterable[SourceItem],
     sources: Iterable[SourceItem],
@@ -154,78 +214,163 @@ def build_review_items(
             sources_by_id.get(decision.cluster_id, [representative]),
             key=lambda item: (item.id, item.url),
         )
-        _, priority, adjustment, quality_reason = priority_by_id[decision.cluster_id]
-        items.append(
-            {
-                "rank": rank,
-                "cluster_id": decision.cluster_id,
-                "title": representative.title,
-                "summary": representative.summary,
-                "organization": representative.organization,
-                "category": representative.category,
-                "kind": str(representative.metadata.get("kind", "development")),
-                "editorial_class": str(representative.metadata.get("editorial_class", "major_development")),
-                "theme_key": str(representative.metadata.get("theme_key") or decision.cluster_id),
-                "community_led": bool(representative.metadata.get("community_led")),
-                "community_signal_types": list(representative.metadata.get("community_signal_types", [])),
-                "product_family": str(representative.metadata.get("product_family", "")),
-                "published_at": representative.published_at,
-                "decision": decision.decision,
-                "podcast_ready": is_podcast_ready(decision, evidence),
-                "score": decision.score,
-                "review_priority": priority,
-                "priority_adjustment": adjustment,
-                "quality_reason": quality_reason,
-                "editorial": decision.to_dict(),
-                "sources": [
-                    {
-                        "id": source.id,
-                        "title": source.title,
-                        "url": source.url,
-                        "source": source.source,
-                        "authority": source.authority,
-                        "organization": source.organization,
-                        "category": source.category,
-                        "published_at": source.published_at,
-                        "summary": source.summary,
-                        "signals": {
-                            key: source.metadata[key]
-                            for key in (
-                                "x_account", "x_likes", "x_retweets", "x_engagement",
-                                "hn_points", "hn_comments", "hf_upvotes", "hf_likes",
-                                "hf_downloads", "hf_trending_score", "repository_stars",
-                                "repository_forks", "repository_open_issues", "delta_24h",
-                                "delta_7d", "momentum_score",
-                            )
-                            if key in source.metadata
-                        },
-                    }
-                    for source in evidence
-                ],
-            }
-        )
+        items.append(_review_item(
+            decision,
+            rank=rank,
+            tier="shortlist",
+            representative=representative,
+            evidence=evidence,
+            priority_record=priority_by_id[decision.cluster_id],
+        ))
     return items
+
+
+def build_watchlist_items(
+    representatives: Iterable[SourceItem],
+    sources: Iterable[SourceItem],
+    decisions: Iterable[EditorialDecision],
+    *,
+    exclude_cluster_ids: set[str],
+    limit: int,
+) -> list[dict[str, Any]]:
+    """Add the next useful themes without weakening the quality shortlist."""
+
+    if limit <= 0:
+        return []
+    representatives_by_id = {
+        str(item.metadata.get("cluster_id") or item.id): item
+        for item in representatives
+    }
+    sources_by_id: dict[str, list[SourceItem]] = {}
+    for item in sources:
+        cluster_id = str(item.metadata.get("cluster_id") or item.id)
+        sources_by_id.setdefault(cluster_id, []).append(item)
+    priority_by_id = {
+        decision.cluster_id: review_priority(
+            decision, representatives_by_id[decision.cluster_id],
+        )
+        for decision in decisions
+    }
+    ranked = sorted(
+        (
+            decision for decision in decisions
+            if decision.cluster_id not in exclude_cluster_ids
+        ),
+        key=lambda item: (-priority_by_id[item.cluster_id][1], item.cluster_id),
+    )
+    used_organizations = {
+        representatives_by_id[cluster_id].organization.strip().casefold()
+        for cluster_id in exclude_cluster_ids
+        if representatives_by_id[cluster_id].organization.strip()
+    }
+    used_products = {
+        str(representatives_by_id[cluster_id].metadata.get("product_family") or "").strip().casefold()
+        for cluster_id in exclude_cluster_ids
+        if representatives_by_id[cluster_id].metadata.get("product_family")
+    }
+    used_themes = {
+        str(representatives_by_id[cluster_id].metadata.get("theme_key") or cluster_id).strip().casefold()
+        for cluster_id in exclude_cluster_ids
+    }
+    selected: list[EditorialDecision] = []
+    for decision in ranked:
+        eligible = priority_by_id[decision.cluster_id][0]
+        representative = representatives_by_id[decision.cluster_id]
+        editorial_class = str(representative.metadata.get("editorial_class", "major_development"))
+        if not eligible and editorial_class in {"maintenance_release", "research"}:
+            continue
+        organization = representative.organization.strip().casefold()
+        product = str(representative.metadata.get("product_family") or "").strip().casefold()
+        theme = str(representative.metadata.get("theme_key") or decision.cluster_id).strip().casefold()
+        if organization and organization in used_organizations:
+            continue
+        if product and product in used_products:
+            continue
+        if theme in used_themes:
+            continue
+        selected.append(decision)
+        if organization:
+            used_organizations.add(organization)
+        if product:
+            used_products.add(product)
+        used_themes.add(theme)
+        if len(selected) >= limit:
+            break
+
+    items = []
+    for rank, decision in enumerate(selected, 1):
+        representative = representatives_by_id[decision.cluster_id]
+        evidence = sorted(
+            sources_by_id.get(decision.cluster_id, [representative]),
+            key=lambda item: (item.id, item.url),
+        )
+        items.append(_review_item(
+            decision,
+            rank=rank,
+            tier="watchlist",
+            representative=representative,
+            evidence=evidence,
+            priority_record=priority_by_id[decision.cluster_id],
+        ))
+    return items
+
+
+def _render_review_record(item: dict[str, Any], heading: str) -> list[str]:
+    editorial = item["editorial"]
+    actions = ", ".join(editorial["builder_actions"]) or "not specified"
+    readiness = "yes" if item["podcast_ready"] else "no"
+    lines = [
+        heading,
+        "",
+        f"**Cluster ID:** {item['cluster_id']}",
+        f"**Decision:** {item['decision']}",
+        f"**Podcast-ready:** {readiness}",
+        f"**Editorial score:** {item['score']:.2f}",
+        f"**Review priority:** {item['review_priority']:.2f}",
+        f"**Editorial class:** {item['editorial_class']}",
+        f"**Quality rationale:** {item['quality_reason']}",
+        f"**Organization / Category:** {item['organization'] or 'unresolved'} / {item['category']}",
+        f"**Review class:** {'community-led' if item['community_led'] else 'major primary'}",
+        f"**Community signals:** {', '.join(item['community_signal_types']) or 'none'}",
+        f"**Product family:** {item['product_family'] or 'not specified'}",
+        f"**Published:** {item['published_at']}",
+        f"**What happened:** {item['summary']}",
+        f"**Why now:** {editorial['why_now']}",
+        f"**Editorial rationale:** {editorial['rationale']}",
+        f"**Builder actions:** {actions}",
+        f"**Caveats / Unknowns:** {editorial['caveats'] or 'not specified'}",
+        "**Sources:**",
+    ]
+    lines.extend(
+        f"- [{source['source']}]({source['url']}) — {source['authority']}: {source['summary']}"
+        for source in item["sources"]
+    )
+    lines.append("")
+    return lines
 
 
 def render_review_markdown(
     review_date: date,
     items: Iterable[dict[str, Any]],
     *,
+    watchlist: Iterable[dict[str, Any]] = (),
     source_health: dict[str, Any] | None = None,
     window_start: str | None = None,
 ) -> str:
     """Render the structured review records without adding uncited claims."""
 
     records = list(items)
+    watch_records = list(watchlist)
     ready_count = sum(bool(item["podcast_ready"]) for item in records)
     community_count = sum(bool(item["community_led"]) for item in records)
     primary_count = len(records) - community_count
     lines = [
         f"# AI Builder Brief editorial review — {review_date.isoformat()}",
         "",
-        f"Reviewed candidates shown: {len(records)}. Community-led: {community_count}/6. Major primary: {primary_count}/4. Podcast-ready: {ready_count}.",
+        f"Quality shortlist: {len(records)}. Additional watchlist: {len(watch_records)}. Total shown: {len(records) + len(watch_records)}.",
+        f"Shortlist mix — community-led: {community_count}/6; major primary: {primary_count}/4; podcast-ready: {ready_count}.",
         "",
-        "This review includes accepted and rejected candidates. Podcast-ready items pass the unchanged evidence and score gate.",
+        "The shortlist keeps the strict editorial floor. The watchlist adds the next useful non-maintenance, non-routine-research themes for human review; it does not weaken podcast readiness.",
         "",
     ]
     if window_start:
@@ -239,38 +384,16 @@ def render_review_markdown(
             "",
         ])
     for item in records:
-        editorial = item["editorial"]
-        actions = ", ".join(editorial["builder_actions"]) or "not specified"
-        readiness = "yes" if item["podcast_ready"] else "no"
-        lines.extend(
-            [
-                f"## {item['rank']}. {item['title']}",
-                "",
-                f"**Cluster ID:** {item['cluster_id']}",
-                f"**Decision:** {item['decision']}",
-                f"**Podcast-ready:** {readiness}",
-                f"**Editorial score:** {item['score']:.2f}",
-                f"**Review priority:** {item['review_priority']:.2f}",
-                f"**Editorial class:** {item['editorial_class']}",
-                f"**Quality rationale:** {item['quality_reason']}",
-                f"**Organization / Category:** {item['organization']} / {item['category']}",
-                f"**Review class:** {'community-led' if item['community_led'] else 'major primary'}",
-                f"**Community signals:** {', '.join(item['community_signal_types']) or 'none'}",
-                f"**Product family:** {item['product_family'] or 'not specified'}",
-                f"**Published:** {item['published_at']}",
-                f"**What happened:** {item['summary']}",
-                f"**Why now:** {editorial['why_now']}",
-                f"**Editorial rationale:** {editorial['rationale']}",
-                f"**Builder actions:** {actions}",
-                f"**Caveats / Unknowns:** {editorial['caveats'] or 'not specified'}",
-                "**Sources:**",
-            ]
-        )
-        lines.extend(
-            f"- [{source['source']}]({source['url']}) — {source['authority']}: {source['summary']}"
-            for source in item["sources"]
-        )
-        lines.append("")
+        lines.extend(_render_review_record(item, f"## {item['rank']}. {item['title']}"))
+    if watch_records:
+        lines.extend([
+            "## Additional watchlist",
+            "",
+            "These themes are included for broader review and are not part of the quality shortlist.",
+            "",
+        ])
+        for item in watch_records:
+            lines.extend(_render_review_record(item, f"### W{item['rank']}. {item['title']}"))
     return "\n".join(lines).rstrip() + "\n"
 
 
@@ -290,6 +413,14 @@ def write_review_artifacts(
     sources = list(sources)
     decisions = list(decisions)
     items = build_review_items(representatives, sources, decisions)
+    shortlist_ids = {str(item["cluster_id"]) for item in items}
+    watchlist = build_watchlist_items(
+        representatives,
+        sources,
+        decisions,
+        exclude_cluster_ids=shortlist_ids,
+        limit=max(0, 10 - len(items)),
+    )
     representatives_by_id = {
         str(item.metadata.get("cluster_id") or item.id): item
         for item in representatives
@@ -323,6 +454,8 @@ def write_review_artifacts(
         "status": "reviewed",
         **({"window_start": window_start} if window_start else {}),
         "candidate_count": len(items),
+        "watchlist_count": len(watchlist),
+        "displayed_count": len(items) + len(watchlist),
         "podcast_ready_count": sum(bool(item["podcast_ready"]) for item in items),
         "target_mix": {"community_led": 6, "major_primary": 4},
         "actual_mix": {"community_led": community_count, "major_primary": primary_count},
@@ -334,6 +467,7 @@ def write_review_artifacts(
         "quality_exclusions": quality_exclusions,
         **({"source_health": source_health} if source_health else {}),
         "candidates": items,
+        "watchlist": watchlist,
     }
     json_path.write_text(
         json.dumps(body, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
@@ -343,6 +477,7 @@ def write_review_artifacts(
         render_review_markdown(
             review_date,
             items,
+            watchlist=watchlist,
             source_health=source_health,
             window_start=window_start,
         ),

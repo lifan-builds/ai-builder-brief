@@ -77,6 +77,8 @@ def test_json_and_markdown_render_the_same_top_ten(tmp_path) -> None:
     payload = json.loads(json_path.read_text(encoding="utf-8"))
     markdown = markdown_path.read_text(encoding="utf-8")
     assert payload["candidate_count"] == 10
+    assert payload["watchlist_count"] == 0
+    assert payload["displayed_count"] == 10
     assert payload["podcast_ready_count"] == 9
     assert payload["actual_mix"] == {"community_led": 6, "major_primary": 4}
     assert payload["mix_shortfall"] == {"community_led": 0, "major_primary": 0}
@@ -215,5 +217,56 @@ def test_review_artifact_reports_quality_exclusions(tmp_path) -> None:
     payload = json.loads(json_path.read_text(encoding="utf-8"))
 
     assert payload["candidate_count"] == 0
+    assert payload["watchlist_count"] == 0
+    assert payload["displayed_count"] == 0
     assert payload["quality_exclusion_count"] == 1
     assert payload["quality_exclusions"][0]["cluster_id"] == "candidate-02"
+
+
+def test_review_artifact_adds_watchlist_without_maintenance_or_routine_research(tmp_path) -> None:
+    sources = [_source(index) for index in range(12)]
+    sources[10] = SourceItem.from_dict({
+        **sources[10].to_dict(),
+        "metadata": {**sources[10].metadata, "editorial_class": "maintenance_release"},
+    })
+    sources[11] = SourceItem.from_dict({
+        **sources[11].to_dict(),
+        "category": "research",
+        "metadata": {**sources[11].metadata, "editorial_class": "research"},
+    })
+    strong = [_decision(index) for index in range(5)]
+    additional = [
+        EditorialDecision(
+            cluster_id=f"candidate-{index:02d}", decision="reject",
+            impact=3, actionability=2, novelty=2, evidence=2, audience_breadth=3,
+            builder_actions=("monitor",),
+        )
+        for index in range(5, 10)
+    ]
+    maintenance = EditorialDecision(
+        cluster_id="candidate-10", decision="reject", impact=3, actionability=4,
+        novelty=3, evidence=4, audience_breadth=4, builder_actions=("monitor",),
+    )
+    research = EditorialDecision(
+        cluster_id="candidate-11", decision="reject", impact=3, actionability=4,
+        novelty=3, evidence=4, audience_breadth=4, builder_actions=("monitor",),
+    )
+
+    json_path, markdown_path = write_review_artifacts(
+        date(2026, 8, 18), sources, sources,
+        [*strong, *additional, maintenance, research], tmp_path,
+    )
+    payload = json.loads(json_path.read_text(encoding="utf-8"))
+    markdown = markdown_path.read_text(encoding="utf-8")
+
+    assert payload["candidate_count"] == 5
+    assert payload["watchlist_count"] == 5
+    assert payload["displayed_count"] == 10
+    assert {item["tier"] for item in payload["candidates"]} == {"shortlist"}
+    assert {item["tier"] for item in payload["watchlist"]} == {"watchlist"}
+    assert {
+        item["editorial_class"] for item in payload["watchlist"]
+    } <= {"major_development", "community_theme"}
+    assert "## Additional watchlist" in markdown
+    assert "Candidate 10" not in markdown
+    assert "Candidate 11" not in markdown
