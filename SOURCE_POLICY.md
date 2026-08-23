@@ -14,6 +14,14 @@
 - Do not ingest Reddit content. Reddit's API and user-content terms require a separately approved use case.
 - Do not quote community comments unless the source and author permission clearly allow it.
 
+## X discovery panel
+
+- Maintain three complementary groups: first-party lab and developer-product channels, hands-on product leads and maintainers, and independent interpreters or primary researchers.
+- Prefer durable first-party coverage across organizations. Add individuals when they repeatedly publish previews or implementation details before the corresponding corporate channel.
+- Do not remove an interpreter merely because they publish fewer launches; their distinct job is to expose practical implications and credible open-research signals.
+- Review affiliations and recent output periodically. Remove accounts for sustained inactivity, a changed role, persistent off-topic noise, or redundant coverage—not from a small snapshot of posts.
+- X posts remain discovery and momentum evidence. Follow their links to an eligible primary source or obtain independent corroboration before a story can qualify.
+
 ## Editorial rules
 
 - Explain what happened, why a builder should care, and what remains uncertain.

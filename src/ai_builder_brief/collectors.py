@@ -136,11 +136,13 @@ BUILDER_TERMS = {
 NON_BUILDER_TERMS = {"ad campaign", "advertising", "marketing", "shopping"}
 AI_TOPIC_TERMS = {
     "ai", "agent", "agents", "anthropic", "artificial intelligence", "benchmark",
-    "benchmarks", "chatgpt", "claude", "deepmind", "embedding", "eval", "evals", "gemini",
-    "generative ai", "genai", "gpt", "gpu", "hugging face", "inference", "language model",
-    "language models", "llama", "llm", "machine learning", "ml", "model", "models", "neural",
-    "open weights", "openai", "prompt", "qwen", "rag", "token", "tokens", "training",
-    "transformer", "transformers", "watermark", "weights",
+    "benchmarks", "chatgpt", "claude", "codex", "cohere", "cursor", "deepmind",
+    "deepseek", "embedding", "eval", "evals", "gemini", "generative ai", "genai", "gpt",
+    "gpu", "grok", "hugging face", "inference", "kimi", "language model",
+    "language models", "llama", "llm", "machine learning", "minimax", "mistral", "ml",
+    "model", "models", "moonshot", "neural", "ollama", "open weights", "openai",
+    "plugin", "plugins", "prompt", "qwen", "rag", "skill", "skills", "token", "tokens",
+    "training", "transformer", "transformers", "vllm", "watermark", "weights", "xai",
 }
 
 

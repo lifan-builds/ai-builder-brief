@@ -130,6 +130,24 @@ def test_x_panel_health_fails_below_coverage_without_raw_errors() -> None:
     assert "secret" not in str(result.health.to_dict())
 
 
+def test_x_panel_recognizes_builder_product_and_lab_names() -> None:
+    result = collect_x_panel(
+        ["launches"],
+        start=datetime(2026, 8, 10, tzinfo=UTC),
+        end=datetime(2026, 8, 12, tzinfo=UTC),
+        topic_filter="ai",
+        fetcher=lambda account: [
+            {
+                "published_at": "2026-08-11T12:00:00Z",
+                "url": "https://x.com/launches/status/1",
+                "text": "DeepSeek V4 API is live with a new plugin and skill workflow.",
+            }
+        ],
+    )
+
+    assert len(result.items) == 1
+
+
 def test_explicit_product_family_collapses_versioned_releases() -> None:
     first = _item("ollama-1", "Ollama v0.12.1", "https://github.com/ollama/ollama/releases/1", "Ollama")
     second = _item("ollama-2", "Ollama v0.12.2", "https://github.com/ollama/ollama/releases/2", "Ollama")
