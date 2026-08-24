@@ -12,22 +12,16 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from ai_builder_brief.schedule import scheduled_attempt  # noqa: E402
+from ai_builder_brief.schedule import scheduled_review  # noqa: E402
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--cron", required=True)
     parser.add_argument("--date", required=True, type=date.fromisoformat)
-    parser.add_argument("--publication-enabled", action="store_true")
     args = parser.parse_args()
-    decision = scheduled_attempt(
-        args.cron,
-        args.date,
-        publication_enabled=args.publication_enabled,
-    )
+    decision = scheduled_review(args.cron, args.date)
     print(f"run={'true' if decision.run else 'false'}")
-    print(f"shadow={'true' if decision.shadow else 'false'}")
     print(f"episode_date={decision.episode_date.isoformat()}")
     return 0
 

@@ -22,13 +22,12 @@ python -m ai_builder_brief run --date YYYY-MM-DD --shadow
 
 Review the generated `build/shadow/` artifacts for citation qualification, story duplication, transcript quality, and duration. Freeze the story count when the seven-run median is 5–7 minutes; adjust by one story at a time if it is outside the range.
 
-The shadow command remains available locally, but the scheduled workflow cannot invoke it during the editorial review period. Restoring scheduled audio requires an explicit workflow change and a fresh review of the seven-shadow gate; setting `PUBLICATION_ENABLED` alone has no effect.
+The shadow command remains available locally, but the scheduled workflow cannot invoke it during the editorial review period. Restoring scheduled audio requires an explicit workflow change and a fresh review of the seven-shadow gate; repository variables alone cannot enable it.
 
 ## Publication
 
-- 6 AM Pacific: first daily attempt.
-- 8 AM and 10 AM Pacific: recovery windows.
-- The workflow covers both PST and PDT UTC hours, then admits only those three local-time windows.
+- Publication is manual while the scheduled workflow remains review-only.
+- Restoring scheduled publication requires an explicitly reviewed workflow and recovery policy; the current 6 AM schedule must not be treated as a publication attempt.
 - Same-date runs skip when the date GUID already exists in RSS.
 - R2 audio is immutable and date-keyed.
 - RSS moves only after source, manifest, audio, transcript, chapters, site, and public audio validation succeed.

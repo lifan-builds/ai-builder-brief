@@ -47,22 +47,56 @@ x_panel:
   enabled: true
   topic_filter: ai
   accounts:
+    # First-party lab and developer-product channels. These are the broad,
+    # durable coverage layer for launches that never reach a newsroom page.
+    - {account: OpenAI, organization: OpenAI}
+    - {account: OpenAIDevs, organization: OpenAI}
+    - {account: claudeai, organization: Anthropic}
+    - {account: anthropicai, organization: Anthropic}
+    - {account: GoogleDeepMind, organization: Google DeepMind}
+    - {account: GoogleAIStudio, organization: Google}
+    - {account: AIatMeta, organization: Meta}
+    - {account: mistralai, organization: Mistral AI}
+    - {account: cohere, organization: Cohere}
+    - {account: SpaceXAI, organization: xAI}
+    - {account: deepseek_ai, organization: DeepSeek}
+    - {account: Alibaba_Qwen, organization: Qwen}
+    - {account: Kimi_Moonshot, organization: Moonshot AI}
+    - {account: MiniMax_AI, organization: MiniMax}
+    - {account: huggingface, organization: Hugging Face}
+    - {account: NVIDIAAI, organization: NVIDIA}
+    - {account: vllm_project, organization: vLLM}
+    - {account: ollama, organization: Ollama}
+    - {account: cursor_ai, organization: Cursor}
+    - {account: Replit, organization: Replit}
+
+    # Hands-on product leads and maintainers. These accounts regularly expose
+    # previews, small tools, and release details before corporate channels do.
     - {account: sama, organization: OpenAI}
+    - {account: pvncher, organization: OpenAI}
     - {account: alexalbert__, organization: Anthropic}
-    - {account: demishassabis, organization: Google}
-    - NoamShazeer
-    - karpathy
-    - simonw
-    - swyx
-    - emollick
+    - {account: trq212, organization: Anthropic}
+    - {account: bcherny, organization: Anthropic}
+    - {account: felixrieseberg, organization: Anthropic}
+    - {account: nateparrott, organization: Anthropic}
+    - {account: demishassabis, organization: Google DeepMind}
+    - {account: OfficialLoganK, organization: Google}
     - {account: Thom_Wolf, organization: Hugging Face}
     - {account: ClementDelangue, organization: Hugging Face}
     - {account: ggerganov, organization: ggml.org}
+    - {account: hwchase17, organization: LangChain}
+    - {account: jerryjliu0, organization: LlamaIndex}
+
+    # Independent interpreters and primary researchers. They supply early
+    # practical implications and open-research signals, not factual authority.
+    - karpathy
+    - {account: NoamShazeer, organization: OpenAI}
+    - simonw
+    - swyx
+    - emollick
     - {account: ylecun, organization: Meta}
     - {account: percyliang, organization: Stanford}
     - {account: DrJimFan, organization: NVIDIA}
     - lilianweng
-    - {account: hwchase17, organization: LangChain}
-    - {account: jerryjliu0, organization: LlamaIndex}
     - HamelHusain
     - sh_reya

@@ -1,4 +1,4 @@
-"""Deterministic mapping from GitHub's UTC cron slots to Pacific attempts."""
+"""Deterministic mapping from GitHub's UTC cron slots to the daily review."""
 
 from __future__ import annotations
 
@@ -8,18 +8,15 @@ from zoneinfo import ZoneInfo
 
 
 PACIFIC = ZoneInfo("America/Los_Angeles")
-PACIFIC_ATTEMPT_HOURS = frozenset({6, 8, 10})
-PREPUBLICATION_HOUR = 6
+REVIEW_HOUR = 6
 
 
 @dataclass(frozen=True, slots=True)
 class ScheduleDecision:
-    """The run decision for one identifiable UTC cron invocation."""
+    """The review decision for one identifiable UTC cron invocation."""
 
     episode_date: date
-    pacific_hour: int
     run: bool
-    shadow: bool
 
 
 def cron_utc_hour(schedule: str) -> int:
@@ -57,25 +54,12 @@ def intended_pacific_slot(schedule_hour_utc: int, schedule_date: date) -> dateti
     return scheduled.astimezone(PACIFIC)
 
 
-def scheduled_attempt(
-    schedule: str,
-    schedule_date: date,
-    *,
-    publication_enabled: bool,
-) -> ScheduleDecision:
-    """Return whether an individual scheduled event should run.
-
-    Before publication, only the Pacific 6 AM slot is admitted and marked as a
-    private shadow.  Once publication is enabled, the 6/8/10 AM slots are all
-    admitted as public attempts.
-    """
+def scheduled_review(schedule: str, schedule_date: date) -> ScheduleDecision:
+    """Admit only the intended 6 AM Pacific editorial-review event."""
 
     utc_hour = cron_utc_hour(schedule)
     local = intended_pacific_slot(utc_hour, schedule_date)
-    allowed_hour = local.hour in PACIFIC_ATTEMPT_HOURS if publication_enabled else local.hour == PREPUBLICATION_HOUR
     return ScheduleDecision(
         episode_date=local.date(),
-        pacific_hour=local.hour,
-        run=allowed_hour,
-        shadow=allowed_hour and not publication_enabled,
+        run=local.hour == REVIEW_HOUR,
     )

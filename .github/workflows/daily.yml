@@ -6,10 +6,6 @@ on:
     # evaluate the slot that triggered it instead of its current local hour.
     - cron: "0 13 * * *"
     - cron: "0 14 * * *"
-    - cron: "0 15 * * *"
-    - cron: "0 16 * * *"
-    - cron: "0 17 * * *"
-    - cron: "0 18 * * *"
   workflow_dispatch:
     inputs:
       episode_date:
@@ -35,7 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Select Pacific attempt window
+      - name: Select Pacific review slot
         id: pacific_window
         env:
           EVENT_NAME: ${{ github.event_name }}
