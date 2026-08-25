@@ -128,6 +128,34 @@ def _review_item(
     }
 
 
+def _review_maps(
+    representatives: Iterable[SourceItem],
+    sources: Iterable[SourceItem],
+    decisions: Iterable[EditorialDecision],
+) -> tuple[
+    dict[str, SourceItem],
+    dict[str, list[SourceItem]],
+    dict[str, tuple[bool, float, int, str]],
+]:
+    """Build the shared joins used by shortlist, watchlist, and quality output."""
+
+    representatives_by_id = {
+        str(item.metadata.get("cluster_id") or item.id): item
+        for item in representatives
+    }
+    sources_by_id: dict[str, list[SourceItem]] = {}
+    for item in sources:
+        cluster_id = str(item.metadata.get("cluster_id") or item.id)
+        sources_by_id.setdefault(cluster_id, []).append(item)
+    priority_by_id = {
+        decision.cluster_id: review_priority(
+            decision, representatives_by_id[decision.cluster_id],
+        )
+        for decision in decisions
+    }
+    return representatives_by_id, sources_by_id, priority_by_id
+
+
 def build_review_items(
     representatives: Iterable[SourceItem],
     sources: Iterable[SourceItem],
@@ -141,21 +169,9 @@ def build_review_items(
     representatives = list(representatives)
     sources = list(sources)
     decisions = list(decisions)
-    representatives_by_id = {
-        str(item.metadata.get("cluster_id") or item.id): item
-        for item in representatives
-    }
-    sources_by_id: dict[str, list[SourceItem]] = {}
-    for item in sources:
-        cluster_id = str(item.metadata.get("cluster_id") or item.id)
-        sources_by_id.setdefault(cluster_id, []).append(item)
-
-    priority_by_id = {
-        decision.cluster_id: review_priority(
-            decision, representatives_by_id[decision.cluster_id],
-        )
-        for decision in decisions
-    }
+    representatives_by_id, sources_by_id, priority_by_id = _review_maps(
+        representatives, sources, decisions,
+    )
     ranked = sorted(
         (
             decision for decision in decisions
@@ -237,20 +253,12 @@ def build_watchlist_items(
 
     if limit <= 0:
         return []
-    representatives_by_id = {
-        str(item.metadata.get("cluster_id") or item.id): item
-        for item in representatives
-    }
-    sources_by_id: dict[str, list[SourceItem]] = {}
-    for item in sources:
-        cluster_id = str(item.metadata.get("cluster_id") or item.id)
-        sources_by_id.setdefault(cluster_id, []).append(item)
-    priority_by_id = {
-        decision.cluster_id: review_priority(
-            decision, representatives_by_id[decision.cluster_id],
-        )
-        for decision in decisions
-    }
+    representatives = list(representatives)
+    sources = list(sources)
+    decisions = list(decisions)
+    representatives_by_id, sources_by_id, priority_by_id = _review_maps(
+        representatives, sources, decisions,
+    )
     ranked = sorted(
         (
             decision for decision in decisions
@@ -421,15 +429,12 @@ def write_review_artifacts(
         exclude_cluster_ids=shortlist_ids,
         limit=max(0, 10 - len(items)),
     )
-    representatives_by_id = {
-        str(item.metadata.get("cluster_id") or item.id): item
-        for item in representatives
-    }
+    representatives_by_id, _, priority_by_id = _review_maps(
+        representatives, sources, decisions,
+    )
     quality_exclusions = []
     for decision in decisions:
-        eligible, priority, adjustment, reason = review_priority(
-            decision, representatives_by_id[decision.cluster_id],
-        )
+        eligible, priority, adjustment, reason = priority_by_id[decision.cluster_id]
         if not eligible:
             quality_exclusions.append({
                 "cluster_id": decision.cluster_id,
