@@ -193,7 +193,7 @@ def review_candidates(candidates: list[dict], *, opener=urlopen) -> dict:
         raise EditorialReviewError("proxy", stage="proxy_config") from None
     if parsed_base.scheme != "http" or parsed_base.hostname not in {"127.0.0.1", "localhost"}:
         raise EditorialReviewError("proxy", stage="proxy_config")
-    model = os.environ.get("EDITORIAL_MODEL", "gpt-5.6-terra").strip() or "gpt-5.6-terra"
+    model = os.environ.get("EDITORIAL_MODEL", "gpt-6-luna").strip() or "gpt-6-luna"
     try:
         key = _client_key()
     except EditorialReviewError:
