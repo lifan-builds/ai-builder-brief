@@ -408,7 +408,13 @@
     }
 
     details.archive-more summary { cursor: pointer; font-weight: 600; font-size: 14px; }
-    .archive-grid { display: grid; gap: 12px; margin-top: 14px; }
+    .archive-grid { display: grid; margin-top: 10px; }
+    .archive-grid article.episode-card {
+      border: none;
+      border-top: 1px solid var(--line);
+      border-radius: 0;
+      padding: 16px 0 4px;
+    }
 
     .docs-row {
       display: flex;
@@ -429,6 +435,7 @@
     }
 
     .doc-pill:hover { color: var(--text); border-color: var(--accent); }
+    .copy-btn:active, .brief-tab:active, .button:active, .doc-pill:active { transform: translateY(1px); }
 
     footer {
       padding-top: 24px;
