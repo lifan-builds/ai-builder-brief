@@ -4,40 +4,371 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Decision-changing, source-linked AI developments for builders.">
-  <title>AI Builder Brief</title>
+  <title>AI Builder Brief — Evidence-gated AI developments for builders</title>
   <style>
-    :root { color-scheme: dark; --bg:#090d12; --panel:#111923; --text:#eef6ff; --muted:#98a9bb; --accent:#60e6a8; --line:#263443; }
-    * { box-sizing:border-box; } body { margin:0; background:radial-gradient(circle at 20% 0,#153b3377,transparent 34rem),var(--bg); color:var(--text); font:16px/1.6 Inter,ui-sans-serif,system-ui,sans-serif; }
-    main { width:min(980px,calc(100% - 2rem)); margin:auto; } a { color:inherit; text-underline-offset:.2em; }
-    header { min-height:54vh; display:grid; align-content:center; padding:4rem 0 3rem; border-bottom:1px solid var(--line); }
-    .kicker { color:var(--accent); font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
-    h1 { margin:.15rem 0 .7rem; max-width:12ch; font-size:clamp(3.2rem,10vw,7rem); line-height:.88; letter-spacing:-.065em; }
-    .lede { max-width:45rem; color:var(--muted); font-size:1.15rem; } nav { display:flex; flex-wrap:wrap; gap:.7rem; margin-top:1.3rem; }
-    .button { padding:.65rem 1rem; border:1px solid var(--line); border-radius:999px; text-decoration:none; font-weight:750; background:var(--panel); }
-    .primary { color:#07110d; background:var(--accent); border-color:var(--accent); }
-    section { padding:2.2rem 0; } .section-head { display:flex; justify-content:space-between; align-items:end; border-bottom:1px solid var(--line); }
-    h2 { margin:0 0 .7rem; } #episodes { display:grid; gap:1rem; padding-top:1.2rem; }
-    article { padding:1.2rem; border:1px solid var(--line); border-radius:18px; background:#111923dd; }
-    article h3 { margin:0; } article p,time { color:var(--muted); } audio { width:100%; margin:.8rem 0; }
-    .links { display:flex; flex-wrap:wrap; gap:1rem; font-size:.92rem; } footer { padding:2rem 0 3rem; color:var(--muted); border-top:1px solid var(--line); }
+    :root {
+      color-scheme: light;
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --subtle: #f1f5f9;
+      --text: #0f172a;
+      --muted: #475569;
+      --accent: #0f766e;
+      --accent-hover: #115e59;
+      --accent-soft: #f0fdfa;
+      --line: #e2e8f0;
+      --line-strong: #cbd5e1;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    ::selection { background: #ccfbf1; color: var(--text); }
+    body {
+      margin: 0;
+      background-color: var(--bg);
+      color: var(--text);
+      font-size: 16px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    main {
+      width: min(920px, calc(100% - 2.5rem));
+      margin: 0 auto;
+      padding: 24px 0 64px;
+    }
+    a { color: inherit; text-underline-offset: 0.2em; }
+    a:focus-visible, button:focus-visible, summary:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 3px;
+      border-radius: 6px;
+    }
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+    .cadence-pill {
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background-color: var(--accent-soft);
+      border: 1px solid #99f6e4;
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .topnav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      font-size: 14px;
+      color: var(--muted);
+    }
+    .topnav a { text-decoration: none; }
+    .topnav a:hover { color: var(--text); }
+    .hero {
+      display: grid;
+      grid-template-columns: 96px 1fr;
+      gap: 24px;
+      align-items: start;
+      padding: 44px 0 36px;
+      border-bottom: 1px solid var(--line);
+    }
+    .hero > div {
+      min-width: 0;
+    }
+    .cover {
+      width: 96px;
+      height: 96px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      object-fit: cover;
+    }
+    h1 {
+      margin: 0 0 12px;
+      font-size: clamp(2.1rem, 4.5vw, 3.1rem);
+      line-height: 1.08;
+      letter-spacing: -0.035em;
+    }
+    .lede {
+      margin: 0 0 20px;
+      max-width: 62ch;
+      color: var(--muted);
+      font-size: 17.5px;
+    }
+    .feed-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      max-width: 580px;
+      min-width: 0;
+      padding: 8px 10px 8px 14px;
+      background-color: var(--panel);
+      border: 1px solid var(--line-strong);
+      border-radius: 10px;
+      margin-bottom: 16px;
+    }
+    .feed-bar code {
+      flex: 1;
+      min-width: 0;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 13px;
+      color: var(--text);
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .copy-btn {
+      flex: none;
+      padding: 5px 11px;
+      border: 1px solid var(--line-strong);
+      border-radius: 7px;
+      background-color: var(--subtle);
+      color: var(--text);
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .copy-btn:hover { background-color: var(--line); }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      padding: 9px 16px;
+      border: 1px solid var(--line-strong);
+      border-radius: 9px;
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      background-color: var(--panel);
+      color: var(--text);
+    }
+    .button:hover { background-color: var(--subtle); }
+    .button.primary {
+      color: #ffffff;
+      background-color: var(--accent);
+      border-color: var(--accent);
+    }
+    .button.primary:hover { background-color: var(--accent-hover); }
+    .pipeline {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 28px 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .stage-box {
+      padding: 14px 16px;
+      background-color: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    .stage-box strong {
+      display: block;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    .stage-box span {
+      display: block;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+    section { padding: 32px 0; }
+    .section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+    h2 { margin: 0; font-size: 20px; letter-spacing: -0.02em; }
+    #count { margin: 0; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+    #episodes { display: grid; gap: 14px; padding-top: 18px; }
+    article {
+      padding: 18px 20px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background-color: var(--panel);
+    }
+    article h3 { margin: 0 0 4px; font-size: 17px; }
+    article p, time { color: var(--muted); font-size: 14px; margin: 6px 0; }
+    audio { width: 100%; margin: 10px 0; }
+    .links { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13.5px; font-weight: 500; margin-top: 8px; }
+    .empty-state {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background-color: var(--panel);
+    }
+    .empty-state h3 { margin: 0 0 6px; font-size: 16px; }
+    .empty-state p { margin: 0 0 14px; color: var(--muted); font-size: 14.5px; max-width: 62ch; }
+    details.archive-more {
+      margin-top: 8px;
+      padding: 12px 16px;
+      background-color: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+    details.archive-more summary {
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    .archive-grid { display: grid; gap: 12px; margin-top: 14px; }
+    .docs-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding-top: 14px;
+    }
+    .doc-pill {
+      padding: 7px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background-color: var(--panel);
+      text-decoration: none;
+      font-size: 13.5px;
+      color: var(--muted);
+    }
+    .doc-pill:hover { color: var(--text); border-color: var(--accent); }
+    footer {
+      padding-top: 24px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      font-size: 13.5px;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    @media (max-width: 720px) {
+      .hero { grid-template-columns: 1fr; gap: 16px; padding: 28px 0; }
+      .cover { width: 72px; height: 72px; }
+      .pipeline { grid-template-columns: 1fr 1fr; }
+      .topbar { flex-direction: column; align-items: flex-start; }
+    }
+    @media (max-width: 480px) {
+      .pipeline { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body><main>
-  <header>
-    <div class="kicker">Monitored daily · published when warranted · usually 8–12 minutes</div>
-    <h1>AI Builder Brief</h1>
-    <p class="lede">The AI developments that matter to people building with models, agents, and open-source tools. Every story carries its primary source or independent corroboration.</p>
-    <nav><a class="button primary" href="feed.xml">Subscribe via RSS</a><a class="button" href="https://github.com/lifan-builds/ai-builder-brief">Source &amp; manifests</a><a class="button" href="https://github.com/lifan-builds/castforge">Powered by CastForge</a></nav>
+  <div class="topbar">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+      <a class="brand" href="./">AI Builder Brief</a>
+      <span class="cadence-pill">Monitored daily · Evidence-gated</span>
+    </div>
+    <nav class="topnav" aria-label="Primary">
+      <a href="feed.xml">RSS Feed</a>
+      <a href="https://clifan.com/journal/ai-builder-brief/">Written Archive ↗</a>
+      <a href="https://github.com/lifan-builds/ai-builder-brief">GitHub ↗</a>
+      <a href="https://github.com/lifan-builds/castforge">CastForge ↗</a>
+    </nav>
+  </div>
+
+  <header class="hero">
+    <img class="cover" src="cover.jpg" alt="AI Builder Brief cover" width="96" height="96">
+    <div>
+      <h1>AI Builder Brief</h1>
+      <p class="lede">The AI developments that matter to people building with models, agents, and open-source tools. Every story carries its primary source or independent corroboration.</p>
+      <div class="feed-bar" role="region" aria-label="Podcast RSS feed URL">
+        <code id="feedUrl">https://lifan-builds.github.io/ai-builder-brief/feed.xml</code>
+        <button type="button" class="copy-btn" id="copyFeed">Copy RSS</button>
+      </div>
+      <nav class="actions" aria-label="Actions">
+        <a class="button primary" href="feed.xml">Subscribe via RSS</a>
+        <a class="button" href="https://clifan.com/journal/ai-builder-brief/">Read daily Top 10 briefs →</a>
+        <a class="button" href="https://github.com/lifan-builds/ai-builder-brief">Source &amp; manifests</a>
+      </nav>
+    </div>
   </header>
-  <section><div class="section-head"><h2>Episodes</h2><p id="count">Loading feed…</p></div><div id="episodes"></div></section>
-  <footer><p>Automated briefing. Claims should be verified against the linked sources. Reddit and newsletter summaries are not used as factual inputs.</p></footer>
+
+  <div class="pipeline" aria-label="Editorial pipeline stages">
+    <div class="stage-box">
+      <strong>1. Primary sources</strong>
+      <span>Official lab blogs, arXiv, Hugging Face, and release feeds.</span>
+    </div>
+    <div class="stage-box">
+      <strong>2. Evidence gate</strong>
+      <span>Requires a primary artifact or two independent reports.</span>
+    </div>
+    <div class="stage-box">
+      <strong>3. Editorial ledger</strong>
+      <span>Ranked top-10 builder relevance with published JSON manifests.</span>
+    </div>
+    <div class="stage-box">
+      <strong>4. Verified output</strong>
+      <span>Written briefs and CastForge audio with chapters and transcripts.</span>
+    </div>
+  </div>
+
+  <section aria-labelledby="episodes-heading">
+    <div class="section-head">
+      <h2 id="episodes-heading">Audio Episodes</h2>
+      <p id="count">Loading feed…</p>
+    </div>
+    <div id="episodes"></div>
+    <div class="docs-row" aria-label="Documentation links">
+      <a class="doc-pill" href="https://github.com/lifan-builds/ai-builder-brief/blob/main/SOURCE_POLICY.md">Source Policy →</a>
+      <a class="doc-pill" href="https://github.com/lifan-builds/ai-builder-brief/blob/main/DAILY_BRIEF.md">Daily Brief Spec →</a>
+      <a class="doc-pill" href="https://github.com/lifan-builds/ai-builder-brief/blob/main/ARCHITECTURE.md">Architecture →</a>
+      <a class="doc-pill" href="https://github.com/lifan-builds/castforge">Powered by CastForge →</a>
+    </div>
+  </section>
+
+  <footer>
+    <span>Automated briefing. Verify claims against linked primary sources; Reddit and newsletter summaries are never used as factual inputs.</span>
+    <span><a href="https://clifan.com">Lifan Builds</a> · <a href="https://github.com/lifan-builds/ai-builder-brief">MIT License</a></span>
+  </footer>
 </main>
 <script>
-const episodes=document.querySelector('#episodes'),count=document.querySelector('#count');
+const episodes=document.querySelector('#episodes'),count=document.querySelector('#count'),copyBtn=document.querySelector('#copyFeed'),feedUrl=document.querySelector('#feedUrl');
+if(copyBtn&&feedUrl){copyBtn.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(feedUrl.textContent.trim());copyBtn.textContent='Copied';setTimeout(()=>{copyBtn.textContent='Copy RSS'},1800)}catch{copyBtn.textContent='Select URL'}})}
+function buildCard(item){
+  const guid=item.querySelector('guid')?.textContent||'',date=guid.slice(-10),card=document.createElement('article'),title=document.createElement('h3'),time=document.createElement('time'),audio=document.createElement('audio'),summary=document.createElement('p'),links=document.createElement('div');
+  title.textContent=item.querySelector('title')?.textContent||'AI Builder Brief';
+  time.textContent=new Date(item.querySelector('pubDate')?.textContent||'').toLocaleDateString(undefined,{dateStyle:'long'});
+  audio.controls=true;audio.preload='none';audio.src=item.querySelector('enclosure')?.getAttribute('url')||'';
+  summary.textContent=item.querySelector('description')?.textContent||'';links.className='links';
+  const resources=[['Source manifest',`manifests/${date}.json`],['Transcript',`transcripts/${date}.vtt`],['Chapters',`chapters/${date}.json`]];
+  if(date>='2026-08-12')resources.splice(1,0,['Editorial ledger',`editorial/${date}.json`]);
+  for(const [label,url] of resources){const a=document.createElement('a');a.textContent=label;a.href=url;links.append(a)}
+  card.append(title,time,audio,summary,links);
+  return card;
+}
 fetch('feed.xml').then(r=>{if(!r.ok)throw Error(`Feed returned ${r.status}`);return r.text()}).then(x=>new DOMParser().parseFromString(x,'application/xml')).then(feed=>{
-  const items=[...feed.querySelectorAll('channel > item')]; count.textContent=`${items.length} episodes`;
-  for(const item of items){const guid=item.querySelector('guid')?.textContent||'',date=guid.slice(-10),card=document.createElement('article'),title=document.createElement('h3'),time=document.createElement('time'),audio=document.createElement('audio'),summary=document.createElement('p'),links=document.createElement('div');
-    title.textContent=item.querySelector('title')?.textContent||'AI Builder Brief'; time.textContent=new Date(item.querySelector('pubDate')?.textContent||'').toLocaleDateString(undefined,{dateStyle:'long'}); audio.controls=true;audio.preload='none';audio.src=item.querySelector('enclosure')?.getAttribute('url')||''; summary.textContent=item.querySelector('description')?.textContent||'';links.className='links';
-    const resources=[['Source manifest',`manifests/${date}.json`],['Transcript',`transcripts/${date}.vtt`],['Chapters',`chapters/${date}.json`]];if(date>='2026-08-12')resources.splice(1,0,['Editorial ledger',`editorial/${date}.json`]);for(const [label,url] of resources){const a=document.createElement('a');a.textContent=label;a.href=url;links.append(a)} card.append(title,time,audio,summary,links);episodes.append(card)}
+  const items=[...feed.querySelectorAll('channel > item')];
+  count.textContent=`${items.length} episodes`;
+  if(items.length===0){
+    const empty=document.createElement('div');empty.className='empty-state';
+    empty.innerHTML='<h3>Audio feed paused during editorial calibration</h3><p>Scheduled runs currently publish ranked daily Top-10 builder briefs and source ledgers while audio episode thresholds are tuned.</p><div class="actions"><a class="button primary" href="https://clifan.com/journal/ai-builder-brief/">Read daily briefs in the Journal →</a><a class="button" href="https://github.com/lifan-builds/ai-builder-brief/tree/main/history">Browse Markdown history on GitHub ↗</a></div>';
+    episodes.append(empty);
+    return;
+  }
+  const recent=items.slice(0,3),older=items.slice(3);
+  for(const item of recent)episodes.append(buildCard(item));
+  if(older.length>0){
+    const details=document.createElement('details');details.className='archive-more';
+    const summary=document.createElement('summary');summary.textContent=`Show ${older.length} earlier episode${older.length===1?'':'s'}`;
+    const grid=document.createElement('div');grid.className='archive-grid';
+    for(const item of older)grid.append(buildCard(item));
+    details.append(summary,grid);episodes.append(details);
+  }
 }).catch(e=>{count.textContent='Feed unavailable';episodes.textContent=e.message});
 </script></body></html>
