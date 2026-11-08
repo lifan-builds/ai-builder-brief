@@ -4,78 +4,117 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="Decision-changing, source-linked AI developments for builders.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23095c49'/%3E%3Ctext x='16' y='22' text-anchor='middle' font-family='system-ui,sans-serif' font-size='18' font-weight='700' fill='%23fff'%3EB%3C/text%3E%3C/svg%3E">
   <title>AI Builder Brief — Evidence-gated AI developments for builders</title>
   <style>
     :root {
       color-scheme: light;
-      --bg: #f8fafc;
+      --bg: #eaf0f4;
+      --surface: #f7fafc;
       --panel: #ffffff;
-      --subtle: #f1f5f9;
-      --text: #0f172a;
-      --muted: #475569;
-      --accent: #0f766e;
-      --accent-hover: #115e59;
-      --accent-soft: #f0fdfa;
-      --line: #e2e8f0;
-      --line-strong: #cbd5e1;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+      --code-bg: #101c26;
+      --code-sub: #0c1720;
+      --code-ink: #e6f0f7;
+      --code-control: #203444;
+      --code-control-hover: #2b4559;
+      --code-border: #38556b;
+      --text: #0c1720;
+      --muted: #344b5c;
+      --bar-neutral: #7c93a6;
+      --accent: #095c49;
+      --accent-hover: #064436;
+      --accent-soft: #d7efe8;
+      --signal: #b53f15;
+      --tok-fn: #7cc4fa;
+      --tok-num: #f7c873;
+      --line: #c4d1dc;
+      --line-strong: #9fb2c2;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", system-ui, sans-serif;
+      --font-mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, ui-monospace, monospace;
     }
+
     * { box-sizing: border-box; }
-    ::selection { background: #ccfbf1; color: var(--text); }
+    ::selection { background: var(--accent); color: var(--panel); }
+
     body {
       margin: 0;
       background-color: var(--bg);
       color: var(--text);
+      font-family: var(--font-sans);
       font-size: 16px;
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
     }
+
     main {
-      width: min(920px, calc(100% - 2.5rem));
+      width: min(980px, calc(100% - 2.5rem));
       margin: 0 auto;
       padding: 24px 0 64px;
     }
-    a { color: inherit; text-underline-offset: 0.2em; }
-    a:focus-visible, button:focus-visible, summary:focus-visible {
-      outline: 2px solid var(--accent);
+
+    a { color: var(--accent); text-underline-offset: 0.2em; }
+    a:hover { color: var(--accent-hover); }
+
+    :focus-visible {
+      outline: 2.5px solid var(--signal);
       outline-offset: 3px;
       border-radius: 6px;
     }
+
+    code {
+      font-family: var(--font-mono);
+      font-size: 13px;
+    }
+
     .topbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 16px;
+      flex-wrap: wrap;
       padding-bottom: 18px;
       border-bottom: 1px solid var(--line);
     }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
     .brand {
       display: inline-flex;
       align-items: center;
       gap: 10px;
       font-weight: 700;
+      color: var(--text);
       text-decoration: none;
     }
+
     .cadence-pill {
       display: inline-flex;
       align-items: center;
       padding: 3px 10px;
-      border-radius: 999px;
+      border-radius: 6px;
       background-color: var(--accent-soft);
-      border: 1px solid #99f6e4;
       color: var(--accent);
+      font-family: var(--font-mono);
       font-size: 12px;
       font-weight: 600;
     }
+
     .topnav {
       display: flex;
       flex-wrap: wrap;
       gap: 16px;
       font-size: 14px;
-      color: var(--muted);
+      font-weight: 600;
     }
-    .topnav a { text-decoration: none; }
-    .topnav a:hover { color: var(--text); }
+
+    .topnav a { color: var(--muted); text-decoration: none; }
+    .topnav a:hover { color: var(--text); text-decoration: underline; }
+
     .hero {
       display: grid;
       grid-template-columns: 96px 1fr;
@@ -84,140 +123,282 @@
       padding: 44px 0 36px;
       border-bottom: 1px solid var(--line);
     }
-    .hero > div {
-      min-width: 0;
-    }
+
+    .hero > div { min-width: 0; }
+
     .cover {
       width: 96px;
       height: 96px;
-      border-radius: 16px;
-      border: 1px solid var(--line);
+      border-radius: 14px;
+      border: 1px solid var(--line-strong);
       object-fit: cover;
     }
+
     h1 {
       margin: 0 0 12px;
-      font-size: clamp(2.1rem, 4.5vw, 3.1rem);
+      font-size: clamp(2.1rem, 4.4vw, 3rem);
       line-height: 1.08;
-      letter-spacing: -0.035em;
+      letter-spacing: -0.03em;
+      font-weight: 800;
     }
+
     .lede {
       margin: 0 0 20px;
-      max-width: 62ch;
+      max-width: 60ch;
       color: var(--muted);
-      font-size: 17.5px;
+      font-size: 17px;
     }
+
     .feed-bar {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 10px;
-      max-width: 580px;
+      max-width: 620px;
       min-width: 0;
-      padding: 8px 10px 8px 14px;
-      background-color: var(--panel);
-      border: 1px solid var(--line-strong);
+      padding: 9px 12px 9px 14px;
+      background-color: var(--code-bg);
+      color: var(--code-ink);
+      border: 1px solid var(--code-border);
       border-radius: 10px;
       margin-bottom: 16px;
     }
+
     .feed-bar code {
       flex: 1;
       min-width: 0;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 13px;
-      color: var(--text);
-      overflow-x: auto;
-      white-space: nowrap;
+      color: var(--code-ink);
+      overflow-wrap: anywhere;
+      line-height: 1.45;
     }
+
     .copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
       flex: none;
       padding: 5px 11px;
-      border: 1px solid var(--line-strong);
-      border-radius: 7px;
-      background-color: var(--subtle);
-      color: var(--text);
-      font: inherit;
-      font-size: 12px;
+      border: 1px solid var(--code-border);
+      border-radius: 6px;
+      background-color: var(--code-control);
+      color: var(--code-ink);
+      font-family: var(--font-sans);
+      font-size: 12.5px;
       font-weight: 600;
       cursor: pointer;
+      transition: background-color 140ms ease, border-color 140ms ease;
     }
-    .copy-btn:hover { background-color: var(--line); }
+
+    .copy-btn:hover { background-color: var(--code-control-hover); }
+    .copy-btn .icon-check { display: none; }
+    .copy-btn.is-copied { border-color: #26997f; color: #b0e2d5; }
+    .copy-btn.is-copied .icon-clip { display: none; }
+    .copy-btn.is-copied .icon-check { display: block; }
+
     .actions {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
     }
+
     .button {
       display: inline-flex;
       align-items: center;
       padding: 9px 16px;
       border: 1px solid var(--line-strong);
-      border-radius: 9px;
+      border-radius: 8px;
       text-decoration: none;
       font-size: 14px;
       font-weight: 600;
       background-color: var(--panel);
       color: var(--text);
     }
-    .button:hover { background-color: var(--subtle); }
+
+    .button:hover { background-color: var(--surface); color: var(--text); }
+
     .button.primary {
       color: #ffffff;
       background-color: var(--accent);
       border-color: var(--accent);
     }
-    .button.primary:hover { background-color: var(--accent-hover); }
-    .pipeline {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 12px;
-      padding: 28px 0;
-      border-bottom: 1px solid var(--line);
-    }
-    .stage-box {
-      padding: 14px 16px;
-      background-color: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 12px;
-    }
-    .stage-box strong {
-      display: block;
-      font-size: 14px;
-      margin-bottom: 4px;
-    }
-    .stage-box span {
-      display: block;
-      color: var(--muted);
-      font-size: 13px;
-      line-height: 1.45;
-    }
-    section { padding: 32px 0; }
+
+    .button.primary:hover { background-color: var(--accent-hover); color: #ffffff; }
+
+    section { padding: 34px 0; border-bottom: 1px solid var(--line); }
+    section:last-of-type { border-bottom: none; }
+
     .section-head {
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
-      padding-bottom: 12px;
+      align-items: flex-end;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    h2 { margin: 0; font-size: clamp(1.3rem, 2.2vw, 1.55rem); letter-spacing: -0.02em; }
+    .section-sub { margin: 4px 0 0; color: var(--muted); font-size: 14.5px; }
+
+    /* Recessed Segmented Pill Controls */
+    .tab-group {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+      background: var(--bg);
+      padding: 3.5px;
+      border-radius: 8px;
+      border: 1px solid var(--line);
+    }
+
+    .brief-tab {
+      background: transparent;
+      color: var(--muted);
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-family: var(--font-sans);
+      font-size: 13.5px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 140ms ease, color 140ms ease;
+    }
+
+    .brief-tab:hover { color: var(--text); }
+    .brief-tab[aria-selected="true"] { background: var(--accent); color: var(--panel); }
+
+    /* Signal-Pipeline Ledger (Single Surface Container, Zero Nested Cards) */
+    .pipeline-ledger {
+      background: var(--panel);
+      border: 1px solid var(--line-strong);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    .pipeline-svg-wrap {
+      padding: 16px 18px;
+      background: var(--surface);
       border-bottom: 1px solid var(--line);
     }
-    h2 { margin: 0; font-size: 20px; letter-spacing: -0.02em; }
-    #count { margin: 0; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
-    #episodes { display: grid; gap: 14px; padding-top: 18px; }
-    article {
+
+    .pipeline-svg {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+
+    .brief-panel {
+      padding: 0;
+    }
+
+    .signal-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 16px;
+      flex-wrap: wrap;
+      padding: 13px 20px;
+      border-bottom: 1px solid var(--line);
+      font-size: 14.5px;
+    }
+
+    .signal-row:last-child { border-bottom: none; }
+
+    .signal-main {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .signal-rank {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--accent);
+      flex-shrink: 0;
+    }
+
+    .signal-title {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .signal-meta {
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-size: 12px;
+      color: var(--muted);
+      flex-shrink: 0;
+    }
+
+    .trace-code {
+      margin: 0;
+      padding: 12px 0;
+      background: var(--code-bg);
+      color: var(--code-ink);
+      font-family: var(--font-mono);
+      font-variant-numeric: tabular-nums;
+      font-size: 12.5px;
+      line-height: 1.55;
+      overflow-x: auto;
+      white-space: normal;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .code-line {
+      display: block;
+      white-space: pre-wrap;
+      overflow-wrap: break-word;
+      padding: 1px 16px 1px 40px;
+      position: relative;
+    }
+
+    .code-line::before {
+      content: attr(data-line);
+      position: absolute;
+      left: 8px;
+      width: 22px;
+      text-align: right;
+      color: var(--bar-neutral);
+      font-size: 12px;
+      user-select: none;
+    }
+
+    .tok-comment { color: var(--line-strong); font-style: italic; }
+    .tok-kw { color: #f0a68b; font-weight: 600; }
+    .tok-fn { color: var(--tok-fn); }
+    .tok-str { color: #6bc2ad; }
+    .tok-num { color: var(--tok-num); font-weight: 600; }
+
+    #count { margin: 0; color: var(--muted); font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
+    #episodes { display: grid; gap: 14px; }
+
+    article.episode-card {
       padding: 18px 20px;
-      border: 1px solid var(--line);
+      border: 1px solid var(--line-strong);
       border-radius: 12px;
       background-color: var(--panel);
     }
-    article h3 { margin: 0 0 4px; font-size: 17px; }
-    article p, time { color: var(--muted); font-size: 14px; margin: 6px 0; }
+
+    article.episode-card h3 { margin: 0 0 4px; font-size: 17px; }
+    article.episode-card p, time { color: var(--muted); font-size: 14px; margin: 6px 0; font-variant-numeric: tabular-nums; }
     audio { width: 100%; margin: 10px 0; }
-    .links { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13.5px; font-weight: 500; margin-top: 8px; }
+    .links { display: flex; flex-wrap: wrap; gap: 14px; font-size: 13.5px; font-weight: 600; margin-top: 8px; }
+
     .empty-state {
-      padding: 22px;
-      border: 1px solid var(--line);
+      padding: 20px 22px;
+      border: 1px solid var(--line-strong);
       border-radius: 12px;
       background-color: var(--panel);
     }
+
     .empty-state h3 { margin: 0 0 6px; font-size: 16px; }
-    .empty-state p { margin: 0 0 14px; color: var(--muted); font-size: 14.5px; max-width: 62ch; }
+    .empty-state p { margin: 0 0 14px; color: var(--muted); font-size: 14.5px; max-width: 60ch; }
+
     details.archive-more {
       margin-top: 8px;
       padding: 12px 16px;
@@ -225,28 +406,30 @@
       border: 1px solid var(--line);
       border-radius: 12px;
     }
-    details.archive-more summary {
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 14px;
-    }
+
+    details.archive-more summary { cursor: pointer; font-weight: 600; font-size: 14px; }
     .archive-grid { display: grid; gap: 12px; margin-top: 14px; }
+
     .docs-row {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      padding-top: 14px;
+      padding-top: 16px;
     }
+
     .doc-pill {
       padding: 7px 12px;
-      border: 1px solid var(--line);
+      border: 1px solid var(--line-strong);
       border-radius: 8px;
       background-color: var(--panel);
       text-decoration: none;
       font-size: 13.5px;
+      font-weight: 600;
       color: var(--muted);
     }
+
     .doc-pill:hover { color: var(--text); border-color: var(--accent); }
+
     footer {
       padding-top: 24px;
       color: var(--muted);
@@ -257,39 +440,44 @@
       justify-content: space-between;
       gap: 12px;
     }
+
     @media (max-width: 720px) {
       .hero { grid-template-columns: 1fr; gap: 16px; padding: 28px 0; }
       .cover { width: 72px; height: 72px; }
-      .pipeline { grid-template-columns: 1fr 1fr; }
       .topbar { flex-direction: column; align-items: flex-start; }
-    }
-    @media (max-width: 480px) {
-      .pipeline { grid-template-columns: 1fr; }
     }
   </style>
 </head>
-<body><main>
-  <div class="topbar">
-    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+<body>
+<main>
+  <header class="topbar">
+    <div class="brand-wrap">
       <a class="brand" href="./">AI Builder Brief</a>
       <span class="cadence-pill">Monitored daily · Evidence-gated</span>
     </div>
     <nav class="topnav" aria-label="Primary">
+      <a href="#pipeline-heading">Pipeline</a>
       <a href="feed.xml">RSS Feed</a>
       <a href="https://clifan.com/journal/ai-builder-brief/">Written Archive ↗</a>
       <a href="https://github.com/lifan-builds/ai-builder-brief">GitHub ↗</a>
       <a href="https://github.com/lifan-builds/castforge">CastForge ↗</a>
     </nav>
-  </div>
+  </header>
 
-  <header class="hero">
+  <section class="hero" aria-labelledby="hero-heading">
     <img class="cover" src="cover.jpg" alt="AI Builder Brief cover" width="96" height="96">
     <div>
-      <h1>AI Builder Brief</h1>
-      <p class="lede">The AI developments that matter to people building with models, agents, and open-source tools. Every story carries its primary source or independent corroboration.</p>
+      <h1 id="hero-heading">AI Builder Brief</h1>
+      <p class="lede">Decision-changing AI developments for people building with models, agents, and open-source tools. Every story carries its primary artifact or independent corroboration.</p>
       <div class="feed-bar" role="region" aria-label="Podcast RSS feed URL">
-        <code id="feedUrl">https://lifan-builds.github.io/ai-builder-brief/feed.xml</code>
-        <button type="button" class="copy-btn" id="copyFeed">Copy RSS</button>
+        <code id="feedUrl" aria-live="polite">https://lifan-builds.github.io/ai-builder-brief/feed.xml</code>
+        <button type="button" class="copy-btn" id="copyFeed" data-copy-target="feedUrl" aria-live="polite">
+          <svg class="copy-icon" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true">
+            <path class="icon-clip" fill="currentColor" d="M5.75 1a.75.75 0 0 0-.75.75v3c0 .414.336.75.75.75h4.5a.75.75 0 0 0 .75-.75v-3a.75.75 0 0 0-.75-.75h-4.5Zm.75 3V2.5h3V4h-3Zm-2.874-.467a.75.75 0 0 0-.752-1.298A1.75 1.75 0 0 0 2 3.75v9.5c0 .966.784 1.75 1.75 1.75h8.5A1.75 1.75 0 0 0 14 13.25v-9.5a1.75 1.75 0 0 0-.874-1.515.75.75 0 1 0-.752 1.298.25.25 0 0 1 .126.217v9.5a.25.25 0 0 1-.25.25h-8.5a.25.25 0 0 1-.25-.25v-9.5a.25.25 0 0 1 .126-.217Z"/>
+            <path class="icon-check" fill="currentColor" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/>
+          </svg>
+          <span class="copy-label">Copy RSS</span>
+        </button>
       </div>
       <nav class="actions" aria-label="Actions">
         <a class="button primary" href="feed.xml">Subscribe via RSS</a>
@@ -297,26 +485,57 @@
         <a class="button" href="https://github.com/lifan-builds/ai-builder-brief">Source &amp; manifests</a>
       </nav>
     </div>
-  </header>
+  </section>
 
-  <div class="pipeline" aria-label="Editorial pipeline stages">
-    <div class="stage-box">
-      <strong>1. Primary sources</strong>
-      <span>Official lab blogs, arXiv, Hugging Face, and release feeds.</span>
+  <section aria-labelledby="pipeline-heading">
+    <div class="section-head">
+      <div>
+        <h2 id="pipeline-heading">Evidence-Gated Signal Pipeline</h2>
+        <p class="section-sub">Rolling 72-hour intake, 24h/7d momentum deltas, and bilingual builder synthesis.</p>
+      </div>
+      <div class="tab-group" role="tablist" aria-label="Switch brief language or schema">
+        <button type="button" class="brief-tab" id="tab-brief-en" role="tab" aria-selected="true" aria-controls="brief-panel" tabindex="0" data-lang="en">EN Brief</button>
+        <button type="button" class="brief-tab" id="tab-brief-zh" role="tab" aria-selected="false" aria-controls="brief-panel" tabindex="-1" data-lang="zh">中文简报</button>
+        <button type="button" class="brief-tab" id="tab-brief-yaml" role="tab" aria-selected="false" aria-controls="brief-panel" tabindex="-1" data-lang="yaml">Evidence Ledger</button>
+      </div>
     </div>
-    <div class="stage-box">
-      <strong>2. Evidence gate</strong>
-      <span>Requires a primary artifact or two independent reports.</span>
+
+    <div class="pipeline-ledger">
+      <div class="pipeline-svg-wrap" aria-hidden="true">
+        <svg class="pipeline-svg" viewBox="0 0 860 108" aria-hidden="true">
+          <rect x="0" y="0" width="860" height="108" rx="8" fill="#eaf0f4"/>
+
+          <!-- Stage 1: Sources -->
+          <rect x="12" y="12" width="256" height="84" rx="6" fill="#101c26"/>
+          <text x="26" y="35" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#6bc2ad">Sources (HN · GitHub · X · ArXiv)</text>
+          <text x="26" y="56" font-family="JetBrains Mono, monospace" font-size="9" fill="#e6f0f7">Lab blogs · Hugging Face · releases</text>
+          <text x="26" y="76" font-family="JetBrains Mono, monospace" font-size="8.5" fill="#9fb2c2">72h window · 24h/7d snapshot deltas</text>
+
+          <!-- Connector 1 -->
+          <line x1="268" y1="54" x2="302" y2="54" stroke="#095c49" stroke-width="1.8" stroke-dasharray="4 3"/>
+          <polygon points="302,49 311,54 302,59" fill="#095c49"/>
+
+          <!-- Stage 2: Signal Scorer & Dedup -->
+          <rect x="312" y="12" width="248" height="84" rx="6" fill="#ffffff" stroke="#9fb2c2" stroke-width="1"/>
+          <text x="326" y="35" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#095c49">Signal Scorer &amp; Dedup</text>
+          <text x="326" y="56" font-family="JetBrains Mono, monospace" font-size="9" fill="#0c1720">Primary artifact or 2× reports</text>
+          <text x="326" y="76" font-family="JetBrains Mono, monospace" font-size="8.5" fill="#344b5c">Canonical event registry · 0 repeats</text>
+
+          <!-- Connector 2 -->
+          <line x1="560" y1="54" x2="594" y2="54" stroke="#095c49" stroke-width="1.8" stroke-dasharray="4 3"/>
+          <polygon points="594,49 603,54 594,59" fill="#095c49"/>
+
+          <!-- Stage 3: Bilingual Daily Brief -->
+          <rect x="604" y="12" width="244" height="84" rx="6" fill="#ffffff" stroke="#095c49" stroke-width="1.4"/>
+          <text x="618" y="35" font-family="JetBrains Mono, monospace" font-size="10.5" font-weight="700" fill="#095c49">Bilingual Daily Brief</text>
+          <text x="618" y="56" font-family="JetBrains Mono, monospace" font-size="9" fill="#0c1720" id="svg-brief-mode">EN / 中文 Top-10 builder ledger</text>
+          <text x="618" y="76" font-family="JetBrains Mono, monospace" font-size="8.5" fill="#344b5c">CastForge audio · VTT · chapters</text>
+        </svg>
+      </div>
+
+      <div class="brief-panel" id="brief-panel" role="tabpanel" aria-labelledby="tab-brief-en" aria-live="polite"></div>
     </div>
-    <div class="stage-box">
-      <strong>3. Editorial ledger</strong>
-      <span>Ranked top-10 builder relevance with published JSON manifests.</span>
-    </div>
-    <div class="stage-box">
-      <strong>4. Verified output</strong>
-      <span>Written briefs and CastForge audio with chapters and transcripts.</span>
-    </div>
-  </div>
+  </section>
 
   <section aria-labelledby="episodes-heading">
     <div class="section-head">
@@ -337,38 +556,204 @@
     <span><a href="https://clifan.com">Lifan Builds</a> · <a href="https://github.com/lifan-builds/ai-builder-brief">MIT License</a></span>
   </footer>
 </main>
+
 <script>
-const episodes=document.querySelector('#episodes'),count=document.querySelector('#count'),copyBtn=document.querySelector('#copyFeed'),feedUrl=document.querySelector('#feedUrl');
-if(copyBtn&&feedUrl){copyBtn.addEventListener('click',async()=>{try{await navigator.clipboard.writeText(feedUrl.textContent.trim());copyBtn.textContent='Copied';setTimeout(()=>{copyBtn.textContent='Copy RSS'},1800)}catch{copyBtn.textContent='Select URL'}})}
-function buildCard(item){
-  const guid=item.querySelector('guid')?.textContent||'',date=guid.slice(-10),card=document.createElement('article'),title=document.createElement('h3'),time=document.createElement('time'),audio=document.createElement('audio'),summary=document.createElement('p'),links=document.createElement('div');
-  title.textContent=item.querySelector('title')?.textContent||'AI Builder Brief';
-  time.textContent=new Date(item.querySelector('pubDate')?.textContent||'').toLocaleDateString(undefined,{dateStyle:'long'});
-  audio.controls=true;audio.preload='none';audio.src=item.querySelector('enclosure')?.getAttribute('url')||'';
-  summary.textContent=item.querySelector('description')?.textContent||'';links.className='links';
-  const resources=[['Source manifest',`manifests/${date}.json`],['Transcript',`transcripts/${date}.vtt`],['Chapters',`chapters/${date}.json`]];
-  if(date>='2026-08-12')resources.splice(1,0,['Editorial ledger',`editorial/${date}.json`]);
-  for(const [label,url] of resources){const a=document.createElement('a');a.textContent=label;a.href=url;links.append(a)}
-  card.append(title,time,audio,summary,links);
-  return card;
+const BRIEF_VIEWS = {
+  en: {
+    svgMode: "EN Top-10 builder brief active",
+    rows: [
+      { rank: "#01", title: "Models & APIs — Model cards, context pricing, and verified latency shifts", meta: "primary · 24h delta" },
+      { rank: "#02", title: "Developer Tools & Agents — MCP protocols, sandboxes, and eval harnesses", meta: "repo + release tag" },
+      { rank: "#03", title: "Infrastructure & Research — Serving throughput, replications, and negative results", meta: "arXiv + benchmark" }
+    ]
+  },
+  zh: {
+    svgMode: "中文每日 Top-10 开发者简报",
+    rows: [
+      { rank: "#01", title: "模型与 API — 官方模型卡、上下文定价变动与实测延迟对比", meta: "一手信源 · 24h 增量" },
+      { rank: "#02", title: "开发工具与智能体 — MCP 协议演进、沙箱权限边界与评测基准", meta: "开源仓库 + Release" },
+      { rank: "#03", title: "推理架构与研究 — 吞吐量实测、论文复现与有效证伪结果", meta: "arXiv + 独立复现" }
+    ]
+  },
+  yaml: {
+    svgMode: "Evidence bundle schema (YAML)",
+    code: `# Every ranked development requires a primary artifact or 2 independent reports
+canonical_event_id: "engine-mcp-release-2026-11"
+primary_source: "https://github.com/org/repo/releases/tag/v1.4.0"
+adoption_signal: "+1,420 stars / 24h (snapshot delta)"
+material_update: "Qualified in 72h UTC window; 0 prior ledger repeats"
+confidence: "high"`
+  }
+};
+
+function highlightYaml(line) {
+  const esc = line.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  if (/^\s*#/.test(esc)) return `<span class="tok-comment">${esc}</span>`;
+  return esc.replace(/^([a-z_]+:)|("(?:[^"\\]|\\.)*")/g, (m, key, str) => {
+    if (key) return `<span class="tok-fn">${key}</span>`;
+    if (str) return `<span class="tok-str">${str}</span>`;
+    return m;
+  });
 }
-fetch('feed.xml').then(r=>{if(!r.ok)throw Error(`Feed returned ${r.status}`);return r.text()}).then(x=>new DOMParser().parseFromString(x,'application/xml')).then(feed=>{
-  const items=[...feed.querySelectorAll('channel > item')];
-  count.textContent=`${items.length} episodes`;
-  if(items.length===0){
-    const empty=document.createElement('div');empty.className='empty-state';
-    empty.innerHTML='<h3>Audio feed paused during editorial calibration</h3><p>Scheduled runs currently publish ranked daily Top-10 builder briefs and source ledgers while audio episode thresholds are tuned.</p><div class="actions"><a class="button primary" href="https://clifan.com/journal/ai-builder-brief/">Read daily briefs in the Journal →</a><a class="button" href="https://github.com/lifan-builds/ai-builder-brief/tree/main/history">Browse Markdown history on GitHub ↗</a></div>';
-    episodes.append(empty);
+
+function renderBriefPanel(lang) {
+  const panel = document.getElementById("brief-panel");
+  const svgMode = document.getElementById("svg-brief-mode");
+  const view = BRIEF_VIEWS[lang] || BRIEF_VIEWS.en;
+  if (svgMode) svgMode.textContent = view.svgMode;
+  panel.replaceChildren();
+
+  if (view.code) {
+    const pre = document.createElement("pre");
+    pre.className = "trace-code";
+    pre.innerHTML = view.code
+      .split("\n")
+      .map((l, i) => `<span class="code-line" data-line="${i + 1}">${highlightYaml(l) || " "}</span>`)
+      .join("\n");
+    panel.append(pre);
     return;
   }
-  const recent=items.slice(0,3),older=items.slice(3);
-  for(const item of recent)episodes.append(buildCard(item));
-  if(older.length>0){
-    const details=document.createElement('details');details.className='archive-more';
-    const summary=document.createElement('summary');summary.textContent=`Show ${older.length} earlier episode${older.length===1?'':'s'}`;
-    const grid=document.createElement('div');grid.className='archive-grid';
-    for(const item of older)grid.append(buildCard(item));
-    details.append(summary,grid);episodes.append(details);
+
+  for (const r of view.rows) {
+    const row = document.createElement("div");
+    row.className = "signal-row";
+    const main = document.createElement("div");
+    main.className = "signal-main";
+    const rank = document.createElement("span");
+    rank.className = "signal-rank";
+    rank.textContent = r.rank;
+    const title = document.createElement("span");
+    title.className = "signal-title";
+    title.textContent = r.title;
+    main.append(rank, title);
+    const meta = document.createElement("span");
+    meta.className = "signal-meta";
+    meta.textContent = r.meta;
+    row.append(main, meta);
+    panel.append(row);
   }
-}).catch(e=>{count.textContent='Feed unavailable';episodes.textContent=e.message});
-</script></body></html>
+}
+
+const briefTabs = Array.from(document.querySelectorAll(".brief-tab"));
+briefTabs.forEach((btn, idx) => {
+  btn.addEventListener("click", () => {
+    briefTabs.forEach((b) => {
+      const active = b === btn;
+      b.setAttribute("aria-selected", active ? "true" : "false");
+      b.setAttribute("tabindex", active ? "0" : "-1");
+    });
+    document.getElementById("brief-panel").setAttribute("aria-labelledby", btn.id);
+    renderBriefPanel(btn.dataset.lang);
+  });
+  btn.addEventListener("keydown", (e) => {
+    let next = null;
+    if (e.key === "ArrowRight") next = (idx + 1) % briefTabs.length;
+    else if (e.key === "ArrowLeft") next = (idx - 1 + briefTabs.length) % briefTabs.length;
+    if (next !== null) {
+      e.preventDefault();
+      briefTabs[next].focus();
+      briefTabs[next].click();
+    }
+  });
+});
+renderBriefPanel("en");
+
+const episodes = document.querySelector("#episodes");
+const count = document.querySelector("#count");
+const copyBtn = document.querySelector("#copyFeed");
+const feedUrl = document.querySelector("#feedUrl");
+
+if (copyBtn && feedUrl) {
+  const label = copyBtn.querySelector(".copy-label");
+  const defaultLabel = label ? label.textContent : "Copy RSS";
+  copyBtn.addEventListener("click", async () => {
+    const text = feedUrl.textContent.trim();
+    copyBtn.classList.add("is-copied");
+    if (label) label.textContent = "Copied";
+    clearTimeout(copyBtn._timer);
+    copyBtn._timer = setTimeout(() => {
+      copyBtn.classList.remove("is-copied");
+      if (label) label.textContent = defaultLabel;
+    }, 1600);
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const area = document.createElement("textarea");
+      area.value = text;
+      area.style.position = "fixed";
+      area.style.opacity = "0";
+      document.body.append(area);
+      area.select();
+      try { document.execCommand("copy"); } catch {}
+      area.remove();
+    }
+  });
+}
+
+function buildCard(item) {
+  const guid = item.querySelector("guid")?.textContent || "";
+  const date = guid.slice(-10);
+  const card = document.createElement("article");
+  card.className = "episode-card";
+  const title = document.createElement("h3");
+  const time = document.createElement("time");
+  const audio = document.createElement("audio");
+  const summary = document.createElement("p");
+  const links = document.createElement("div");
+  title.textContent = item.querySelector("title")?.textContent || "AI Builder Brief";
+  time.textContent = new Date(item.querySelector("pubDate")?.textContent || "").toLocaleDateString(undefined, { dateStyle: "long" });
+  audio.controls = true;
+  audio.preload = "none";
+  audio.src = item.querySelector("enclosure")?.getAttribute("url") || "";
+  summary.textContent = item.querySelector("description")?.textContent || "";
+  links.className = "links";
+  const resources = [["Source manifest", `manifests/${date}.json`], ["Transcript", `transcripts/${date}.vtt`], ["Chapters", `chapters/${date}.json`]];
+  if (date >= "2026-08-12") resources.splice(1, 0, ["Editorial ledger", `editorial/${date}.json`]);
+  for (const [lbl, url] of resources) {
+    const a = document.createElement("a");
+    a.textContent = lbl;
+    a.href = url;
+    links.append(a);
+  }
+  card.append(title, time, audio, summary, links);
+  return card;
+}
+
+fetch("feed.xml")
+  .then((r) => {
+    if (!r.ok) throw Error(`Feed returned ${r.status}`);
+    return r.text();
+  })
+  .then((x) => new DOMParser().parseFromString(x, "application/xml"))
+  .then((feed) => {
+    const items = [...feed.querySelectorAll("channel > item")];
+    count.textContent = `${items.length} episodes`;
+    if (items.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "empty-state";
+      empty.innerHTML = '<h3>Audio feed paused during editorial calibration</h3><p>Scheduled runs publish ranked daily Top-10 builder briefs and source ledgers while audio episode thresholds are tuned.</p><div class="actions"><a class="button primary" href="https://clifan.com/journal/ai-builder-brief/">Read daily briefs in the Journal →</a><a class="button" href="https://github.com/lifan-builds/ai-builder-brief/tree/main/history">Browse Markdown history on GitHub ↗</a></div>';
+      episodes.append(empty);
+      return;
+    }
+    const recent = items.slice(0, 3);
+    const older = items.slice(3);
+    for (const item of recent) episodes.append(buildCard(item));
+    if (older.length > 0) {
+      const details = document.createElement("details");
+      details.className = "archive-more";
+      const summary = document.createElement("summary");
+      summary.textContent = `Show ${older.length} earlier episode${older.length === 1 ? "" : "s"}`;
+      const grid = document.createElement("div");
+      grid.className = "archive-grid";
+      for (const item of older) grid.append(buildCard(item));
+      details.append(summary, grid);
+      episodes.append(details);
+    }
+  })
+  .catch((e) => {
+    count.textContent = "Feed unavailable";
+    episodes.textContent = e.message;
+  });
+</script>
+</body>
+</html>
