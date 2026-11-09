@@ -2,6 +2,9 @@
 
 Three to six source-linked, decision-changing AI developments before stand-up, produced as an approximately six-minute English NotebookLM dialogue every day.
 
+- **Website:** [https://clifan.com/ai-builder-brief/](https://clifan.com/ai-builder-brief/) (mirror: [lifan-builds.github.io/ai-builder-brief](https://lifan-builds.github.io/ai-builder-brief/))
+- **Daily Written Archive:** [https://clifan.com/journal/ai-builder-brief/](https://clifan.com/journal/ai-builder-brief/)
+
 AI Builder Brief is a production reference show for [CastForge](https://github.com/lifan-builds/castforge). Its differentiator is not generic AI-news generation: every selected story has an authoritative primary source or two independent reports, and every episode publishes its source manifest, transcript, and chapters.
 
 The public feed remains closed. During the current editorial-tuning period, the scheduled job produces review artifacts only and cannot invoke NotebookLM, transcription, R2, RSS, or episode publication.
