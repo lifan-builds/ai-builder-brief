@@ -5,6 +5,7 @@ import html
 import re
 from datetime import date
 from pathlib import Path
+from urllib.parse import urlparse
 
 _START = "<!-- AI-BUILDER-BRIEF:START -->"
 _END = "<!-- AI-BUILDER-BRIEF:END -->"
@@ -80,10 +81,13 @@ def markdown_body(markdown: str) -> tuple[str, str]:
 
 def _compact_summary(value: str, limit: int = 76) -> str:
     value = re.sub(r"\s+\*\*Confidence:.*$", "", value, flags=re.S)
+    value = re.sub(r"\s+Confidence:\s+(?:high|medium|low).*$", "", value, flags=re.I | re.S)
     value = re.sub(r"\s*\[[^\]]+\]\(https?://[^)\s]+\)", "", value)
+    value = re.sub(r"https?://[^\s)]+", "", value)
     value = re.sub(r"\*\*([^*]+)\*\*", r"\1", value)
     value = re.sub(r"\s+·\s*$", "", value).strip()
-    sentences = re.split(r"(?<=[.!?])\s+", value)
+    value = re.sub(r"\s{2,}", " ", value)
+    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", value) if len(s.strip()) > 12]
     summary = " ".join(sentences[:2]).strip() or value
     words = summary.split()
     if len(words) > limit:
@@ -91,52 +95,111 @@ def _compact_summary(value: str, limit: int = 76) -> str:
     return summary
 
 
+def _extract_links(text: str) -> list[tuple[str, str]]:
+    md_links = re.findall(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", text)
+    if md_links:
+        return md_links[:3]
+    bare_urls = re.findall(r"https?://[^\s),;]+", text)
+    results: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for raw_url in bare_urls:
+        url = raw_url.rstrip(".")
+        if url in seen:
+            continue
+        seen.add(url)
+        parsed = urlparse(url)
+        host = (parsed.netloc or "source").removeprefix("www.")
+        path_parts = [p for p in parsed.path.split("/") if p]
+        if host == "github.com" and len(path_parts) >= 2:
+            label = f"{path_parts[0]}/{path_parts[1]}"
+        else:
+            label = host
+        results.append((label, url))
+        if len(results) >= 3:
+            break
+    return results
+
+
+def _parse_ranked_items(markdown: str) -> list[tuple[str, str, str, list[tuple[str, str]]]]:
+    lines = markdown.splitlines()
+    raw_items: list[tuple[str, list[str]]] = []
+    cur_first: str | None = None
+    cur_rest: list[str] = []
+    in_items = False
+
+    for line in lines:
+        stripped = line.strip()
+        if re.match(
+            r"^(?:##\s+|\*\*)?(?:Watchlist|Source panel|What changed|Builder workflow|Unified-ranking)",
+            stripped,
+            re.I,
+        ):
+            if in_items:
+                break
+        m_num = re.match(r"^(\d+)\.\s+(.*)$", stripped)
+        if m_num and int(m_num.group(1)) <= 12:
+            if cur_first is not None:
+                raw_items.append((cur_first, cur_rest))
+            cur_first = m_num.group(2).strip()
+            cur_rest = []
+            in_items = True
+        elif in_items and stripped:
+            cur_rest.append(stripped)
+
+    if cur_first is not None:
+        raw_items.append((cur_first, cur_rest))
+
+    parsed_items: list[tuple[str, str, str, list[tuple[str, str]]]] = []
+    for first_line, rest_lines in raw_items[:10]:
+        combined = " ".join([first_line, *rest_lines]).strip()
+        links = _extract_links(combined)
+
+        # Pattern 1: **Title** — **Date**. Body
+        m1 = re.match(r"^\*\*(.+?)\*\*\s+[—–-]\s+\*\*(.+?)\*\*\.\s*(.*)$", combined)
+        # Pattern 2: **Title** (Date). Body
+        m2 = re.match(r"^\*\*(.+?)\*\*\s*\(([^)]+)\)\.\s*(.*)$", combined)
+        # Pattern 3: **Title**. Body
+        m3 = re.match(r"^\*\*(.+?)\*\*\.\s*(.*)$", combined)
+
+        if m1:
+            story_title, story_date, story_body = m1.groups()
+        elif m2:
+            story_title, story_date, story_body = m2.groups()
+        elif m3:
+            story_title, story_body = m3.groups()
+            story_date = "Brief item"
+        elif rest_lines and not first_line.startswith("**"):
+            # Pattern 4: Plain title on line 1, followed by indented paragraphs
+            story_title = first_line.strip("* ")
+            rest_text = " ".join(rest_lines)
+            m_date = re.match(
+                r"^((?:Original|New)[^:]{0,28}:\s*[^.]+)\.\s*(.*)$",
+                rest_text,
+                re.I,
+            )
+            if m_date:
+                story_date, story_body = m_date.groups()
+            else:
+                story_date, story_body = "Field note", rest_text
+        else:
+            story_title, story_date, story_body = re.sub(r"\*\*([^*]+)\*\*", r"\1", first_line), "Field note", " ".join(rest_lines)
+
+        parsed_items.append((story_title.strip(), story_date.strip(), _compact_summary(story_body), links))
+
+    return parsed_items
+
+
 def _top_ten_body(markdown: str) -> tuple[str, str, str, int]:
-    """Build the public, compact view from the private brief's Top 10 section."""
+    """Build the public, compact view from the brief's Top 10 section."""
     lines = markdown.splitlines()
     title = next((line[2:].strip() for line in lines if line.startswith("# ")), "AI Builder Brief")
     intro = ""
     for line in lines:
-        if line.startswith("Read on the day:"):
+        if line.strip().startswith("Read on the day:"):
             intro = _compact_summary(line.split(":", 1)[1].strip(), 42)
             break
 
-    top_lines: list[str] = []
-    in_top = False
-    for line in lines:
-        stripped = line.strip()
-        if stripped == "## Top 10":
-            in_top = True
-            continue
-        if in_top and stripped.startswith("## "):
-            break
-        if in_top:
-            top_lines.append(stripped)
-
-    items: list[tuple[str, str, str, list[tuple[str, str]]]] = []
-    current: list[str] = []
-
-    def flush_item() -> None:
-        if not current:
-            return
-        current_text = " ".join(part for part in current if part)
-        match = re.match(r"^\*\*(.+?)\*\*\s+—\s+\*\*(.+?)\*\*\.\s*(.*)$", current_text)
-        if match:
-            story_title, story_date, story_body = match.groups()
-        else:
-            story_title, story_date, story_body = current_text, "", ""
-        links = re.findall(r"\[([^\]]+)\]\((https?://[^)\s]+)\)", current_text)
-        items.append((story_title, story_date, _compact_summary(story_body), links[:3]))
-
-    for line in top_lines:
-        if re.match(r"^\d+\.\s+", line):
-            flush_item()
-            current = []
-            current.append(re.sub(r"^\d+\.\s+", "", line))
-        elif current and line:
-            current.append(line)
-    flush_item()
-
+    items = _parse_ranked_items(markdown)
     cards: list[str] = []
     for rank, (story_title, story_date, summary, links) in enumerate(items[:10], start=1):
         source_html = "".join(
@@ -149,44 +212,83 @@ def _top_ten_body(markdown: str) -> tuple[str, str, str, int]:
             f'<h2>{html.escape(story_title)}</h2><p class="story-summary">{html.escape(summary)}</p>'
             f'<div class="story-links">{source_html}</div></div></article>'
         )
-    body = "<section class=\"story-grid\" aria-label=\"Top 10 stories\">" + "".join(cards) + "</section>"
+    body = '<section class="story-grid" aria-label="Top 10 stories">' + "".join(cards) + "</section>"
     return title, intro, body, len(items[:10])
 
 
-def _entry_html(day: date, title: str, intro: str, body: str, story_count: int) -> str:
+def _entry_html(
+    day: date,
+    title: str,
+    intro: str,
+    body: str,
+    story_count: int,
+    prev_day: date | None = None,
+    next_day: date | None = None,
+) -> str:
+    display_title = f"AI Builder Brief · {day.strftime('%B %-d, %Y')}"
+    nav_parts = ['<a href="./">← All AI Builder Brief entries</a>']
+    if prev_day:
+        nav_parts.append(f'<a href="{prev_day.isoformat()}.html">← Older ({prev_day.strftime("%b %-d")})</a>')
+    if next_day:
+        nav_parts.append(f'<a href="{next_day.isoformat()}.html">Newer ({next_day.strftime("%b %-d")}) →</a>')
+    nav_parts.append('<a href="https://github.com/lifan-builds/ai-builder-brief">Source repository ↗</a>')
+    bottom_links = " ".join(nav_parts)
+
     return f"""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="{html.escape(title)}"><title>{html.escape(title)} — Lifan Builds Journal</title>
-<link rel="stylesheet" href="../../styles.css"></head>
+<meta name="description" content="{html.escape(intro or display_title)}"><link rel="canonical" href="https://clifan.com/journal/ai-builder-brief/{day.isoformat()}.html"><title>{html.escape(display_title)} — Lifan Chen</title>
+<link rel="stylesheet" href="../../styles.css"><script type="module" src="../../site.js"></script></head>
 <body><div class="scanlines" aria-hidden="true"></div>
-<header class="site-header wrap"><a class="wordmark" href="../../" aria-label="Back to Lifan Builds home"><span class="pixel-mark">LB</span><span>LIFAN BUILDS</span></a><nav aria-label="Journal navigation"><a href="../">Journal</a><a href="../../#quests">Quests</a><a class="nav-button" href="https://clifan.substack.com/">Substack ↗</a></nav></header>
-<main><article class="brief-entry wrap"><div class="brief-hero"><p class="eyebrow">AI BUILDER BRIEF / {day.strftime("%Y.%m.%d")}</p><h1>{html.escape(title)}</h1><p class="brief-entry-meta">{story_count} source-linked stories · <time datetime="{day.isoformat()}">{day.strftime("%B %-d, %Y")}</time></p><p class="brief-lede">{html.escape(intro)}</p></div>{body}<p class="journal-links"><a href="../">← All AI Builder Brief entries</a> <a href="https://github.com/lifan-builds/ai-builder-brief">Source repository ↗</a></p></article></main>
-<footer class="site-footer wrap"><span><a href="../">← Journal</a></span><span><a href="https://github.com/lifan-builds">GitHub</a> · <a href="https://x.com/LifanBuilds">X</a></span></footer></body></html>"""
+<header class="site-header"><div class="header-inner"><a class="wordmark" href="../../" aria-label="Back to Lifan Builds home"><span class="pixel-mark" aria-hidden="true">LB</span><span>Lifan Chen</span><span class="wordmark-role">AI Builder Brief</span></a><nav aria-label="Journal navigation"><a href="../../#quests">Builds</a><a href="../">Journal</a><a href="./">All Briefs</a><button type="button" class="theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Toggle color theme"><span data-theme-label>Light</span><kbd aria-hidden="true">T</kbd></button><a class="nav-button" href="https://clifan.substack.com/">Substack ↗</a></nav></div></header>
+<main><article class="brief-entry wrap"><div class="brief-hero"><p class="eyebrow">AI Builder Brief · {day.strftime("%Y.%m.%d")}</p><h1>{html.escape(display_title)}</h1><p class="brief-entry-meta">{story_count} source-linked stories · <time datetime="{day.isoformat()}">{day.strftime("%B %-d, %Y")}</time></p><p class="brief-lede">{html.escape(intro)}</p></div>{body}<p class="journal-links">{bottom_links}</p></article></main>
+<footer class="site-footer wrap"><span><a href="../">← Journal</a></span><div class="footer-links"><a href="./">Brief Archive</a><a href="https://github.com/lifan-builds">GitHub ↗</a><a href="https://x.com/LifanBuilds">X ↗</a></div></footer></body></html>"""
 
 
-def _archive_html(entries: list[tuple[date, str]]) -> str:
+def _archive_html(entries: list[tuple[date, str, str, int]]) -> str:
     cards = "\n".join(
-        f'<a class="brief-archive-card" href="{day.isoformat()}.html"><span class="journal-meta">AI BUILDER BRIEF <time datetime="{day.isoformat()}">{day.strftime("%b %-d, %Y")}</time></span><strong>{html.escape(title)}</strong><span>Read the field notes →</span></a>'
-        for day, title in entries
+        f'<a class="brief-archive-card" href="{day.isoformat()}.html" data-search="{html.escape((headline + " " + intro + " " + day.isoformat()).lower(), quote=True)}">'
+        f'<span class="journal-meta"><span>AI Builder Brief · {count} stories</span><time datetime="{day.isoformat()}">{day.strftime("%b %-d, %Y")}</time></span>'
+        f'<strong>{html.escape(headline)}</strong>'
+        f'<span class="archive-card-lede">{html.escape(intro)}</span>'
+        f'<span>Read {day.strftime("%b %-d")} field notes →</span></a>'
+        for day, headline, intro, count in entries
     )
     return f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="description" content="Daily AI Builder Brief field notes from Lifan Builds."><title>AI Builder Brief Journal — Lifan Builds</title><link rel="stylesheet" href="../../styles.css"></head>
-<body><div class="scanlines" aria-hidden="true"></div><header class="site-header wrap"><a class="wordmark" href="../../" aria-label="Back to Lifan Builds home"><span class="pixel-mark">LB</span><span>LIFAN BUILDS</span></a><nav aria-label="Journal navigation"><a href="../../#quests">Quests</a><a href="../../#about">About</a><a class="nav-button" href="https://clifan.substack.com/">Substack ↗</a></nav></header>
-<main><section class="journal-hero wrap"><p class="eyebrow">JOURNAL / AI BUILDER BRIEF</p><h1>Daily notes from<br><em>the frontier.</em></h1><p class="hero-lede">Source-linked AI developments, technical insight, and builder behavior—kept as a durable field journal.</p></section><section class="brief-archive wrap" aria-label="AI Builder Brief entries">{cards}</section></main>
-<footer class="site-footer wrap"><span><a href="../../journal/">← Main journal</a></span><span><a href="https://github.com/lifan-builds/ai-builder-brief">Source repository ↗</a></span></footer></body></html>"""
+<meta name="description" content="Daily AI Builder Brief field notes from Lifan Chen: {len(entries)} source-linked editions covering agent systems, evaluations, and model releases."><link rel="canonical" href="https://clifan.com/journal/ai-builder-brief/"><title>AI Builder Brief Archive ({len(entries)} Editions) · Lifan Chen</title><link rel="stylesheet" href="../../styles.css"><script type="module" src="../../site.js"></script></head>
+<body><div class="scanlines" aria-hidden="true"></div><header class="site-header"><div class="header-inner"><a class="wordmark" href="../../" aria-label="Back to Lifan Builds home"><span class="pixel-mark" aria-hidden="true">LB</span><span>Lifan Chen</span><span class="wordmark-role">AI Builder Brief Archive</span></a><nav aria-label="Journal navigation"><a href="../../#quests">Builds</a><a href="../">Journal</a><a href="../../#about">About</a><button type="button" class="theme-toggle" data-theme-toggle aria-pressed="false" aria-label="Toggle color theme"><span data-theme-label>Light</span><kbd aria-hidden="true">T</kbd></button><a class="nav-button" href="https://clifan.substack.com/">Substack ↗</a></nav></div></header>
+<main><section class="journal-hero wrap"><h1>Daily notes from <em>the frontier.</em></h1><p class="hero-lede">Source-linked AI developments, benchmark audits, and agent engineering field notes across {len(entries)} daily editions.</p><div class="archive-search-bar"><label for="brief-search" class="sr-only">Filter daily briefs by topic, model, or lab</label><input type="search" id="brief-search" class="archive-search-input" placeholder="Filter {len(entries)} briefs by topic, lab, or tool (e.g. MCP, Cursor, Anthropic, Qwen, Jepsen)…" autocomplete="off"><span class="archive-search-count" id="brief-search-count">{len(entries)} editions</span></div></section><section class="brief-archive wrap" id="brief-archive-grid" aria-label="AI Builder Brief entries">{cards}</section></main>
+<footer class="site-footer wrap"><span><a href="../../journal/">← Main journal</a></span><div class="footer-links"><a href="../../ai-builder-brief/">Pipeline Overview</a><a href="https://github.com/lifan-builds/ai-builder-brief">Source repository ↗</a></div></footer></body></html>"""
 
 
-def _update_parent_journal(site_root: Path, entries: list[tuple[date, str]]) -> None:
+def _update_parent_journal(site_root: Path, entries: list[tuple[date, str, str, int]]) -> None:
     path = site_root / "docs" / "journal" / "index.html"
     text = path.read_text(encoding="utf-8")
     latest = entries[0] if entries else None
     latest_text = f" · latest {latest[0].strftime('%b %-d')}" if latest else ""
     section = f"""{_START}
-    <section class="brief-portal wrap" aria-labelledby="brief-portal-title"><div><p class="eyebrow">DAILY / AI BUILDER BRIEF</p><h2 id="brief-portal-title">The frontier,<br><em>with receipts.</em></h2><p>Daily field notes on the AI developments that change what builders make, use, and prepare for.</p></div><a class="button primary" href="ai-builder-brief/">Browse {len(entries)} entries{latest_text} ↗</a></section>
-    {_END}"""
+      <section class="brief-portal wrap" aria-labelledby="brief-portal-title">
+        <div>
+          <h2 id="brief-portal-title">The frontier, <em>with receipts.</em></h2>
+          <p>Daily field notes on the AI developments that change what builders make, evaluate, and prepare for · {len(entries)} source-linked editions archived locally.</p>
+        </div>
+        <a class="button primary" href="ai-builder-brief/">Browse {len(entries)} entries{latest_text} →</a>
+      </section>
+      {_END}"""
     pattern = re.compile(re.escape(_START) + r".*?" + re.escape(_END), re.S)
     text = pattern.sub(section, text) if pattern.search(text) else text.replace("</main>", section + "\n  </main>", 1)
     path.write_text(text, encoding="utf-8")
+
+
+def _headline_from_items(day: date, items: list[tuple[str, str, str, list[tuple[str, str]]]]) -> str:
+    if not items:
+        return f"AI Builder Brief · {day.strftime('%b %-d, %Y')}"
+    top_titles = []
+    for story_title, _, _, _ in items[:2]:
+        short = re.sub(r"\s+", " ", story_title).strip().rstrip(".")
+        if len(short) > 54:
+            short = short[:52].rsplit(" ", 1)[0] + "…"
+        top_titles.append(short)
+    return " · ".join(top_titles)
 
 
 def publish_journal(brief_path: Path, site_root: Path) -> str:
@@ -196,20 +298,34 @@ def publish_journal(brief_path: Path, site_root: Path) -> str:
     day = date.fromisoformat(match.group(1))
     target = site_root / "docs" / "journal" / "ai-builder-brief"
     target.mkdir(parents=True, exist_ok=True)
-    title, intro, body, story_count = _top_ten_body(brief_path.read_text(encoding="utf-8"))
+
+    md_by_day: dict[date, Path] = {}
+    for path in sorted(brief_path.parent.glob("*.md")):
+        found = re.search(r"^(\d{4}-\d{2}-\d{2})\.md$", path.name)
+        if found:
+            md_by_day[date.fromisoformat(found.group(1))] = path
+    md_by_day[day] = brief_path
+    ordered_days = sorted(md_by_day.keys())
+    day_index = ordered_days.index(day)
+    prev_day = ordered_days[day_index - 1] if day_index > 0 else None
+    next_day = ordered_days[day_index + 1] if day_index + 1 < len(ordered_days) else None
+
+    raw_md = brief_path.read_text(encoding="utf-8")
+    title, intro, body, story_count = _top_ten_body(raw_md)
     entry = target / f"{day.isoformat()}.html"
-    rendered = _entry_html(day, title, intro, body, story_count)
+    rendered = _entry_html(day, title, intro, body, story_count, prev_day=prev_day, next_day=next_day)
     changed = not entry.is_file() or entry.read_text(encoding="utf-8") != rendered
     entry.write_text(rendered, encoding="utf-8")
-    entries: list[tuple[date, str]] = []
-    for path in sorted(brief_path.parent.glob("*.md"), reverse=True):
-        found = re.search(r"(\d{4}-\d{2}-\d{2})", path.name)
-        if not found or "-x-" in path.name:
-            continue
-        entry_day = date.fromisoformat(found.group(1))
-        entry_title, _ = markdown_body(path.read_text(encoding="utf-8"))
-        entries.append((entry_day, entry_title))
-    entries.sort(reverse=True)
+
+    entries: list[tuple[date, str, str, int]] = []
+    for entry_day in reversed(ordered_days):
+        path = md_by_day[entry_day]
+        md_text = path.read_text(encoding="utf-8")
+        _, e_intro, _, e_count = _top_ten_body(md_text)
+        e_items = _parse_ranked_items(md_text)
+        headline = _headline_from_items(entry_day, e_items)
+        short_intro = _compact_summary(e_intro, 24).replace("—", " · ")
+        entries.append((entry_day, headline.replace("—", " · "), short_intro, e_count))
     (target / "index.html").write_text(_archive_html(entries), encoding="utf-8")
     _update_parent_journal(site_root, entries)
     return "published" if changed else "already-published"

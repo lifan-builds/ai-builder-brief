@@ -62,3 +62,29 @@ Internal collection notes stay private.
     assert "Watchlist" not in body
     assert "Source panel activity" not in body
     assert "What changed from yesterday" not in body
+
+
+def test_top_ten_body_parses_parenthetical_and_multiline_legacy_formats() -> None:
+    _, _, body_paren, count_paren = _top_ten_body(
+        """# Daily AI News Top 10 — 2026-09-20
+
+1. **GitHub copilot CLI release** (September 20, 2026). Terminal agent workflows tighten around repo context. https://github.com/github/copilot-cli
+
+2. **OpenAI eval harness** (September 19, 2026). Structured traces make regressions easier to catch. [Repo](https://github.com/openai/evals)
+"""
+    )
+    assert count_paren == 2
+    assert body_paren.count('class="story-card"') == 2
+    assert "github/copilot-cli" in body_paren
+
+    _, _, body_multi, count_multi = _top_ten_body(
+        """# AI Builder Brief — 2026-09-01
+
+1. Ray Serve latency routing
+   Original disclosure: Sep 1, 2026. Prefix-aware routing reduces p99 tail latency across multi-node clusters. https://docs.ray.io/en/latest/serve/index.html
+"""
+    )
+    assert count_multi == 1
+    assert "Ray Serve latency routing" in body_multi
+    assert "docs.ray.io" in body_multi
+
