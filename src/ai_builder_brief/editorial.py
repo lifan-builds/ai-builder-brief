@@ -30,9 +30,9 @@ PRACTICAL_TERMS = {
     "developer", "migration", "license", "available", "research",
 }
 BUILDER_ACTIONS = frozenset({"use", "build", "test", "monitor", "reconsider"})
-EDITORIAL_FAILURE_TYPES = frozenset({"usage_gate", "timeout", "proxy", "invalid_response"})
+EDITORIAL_FAILURE_TYPES = frozenset({"timeout", "proxy", "invalid_response"})
 EDITORIAL_FAILURE_STAGES = frozenset({
-    "usage_gate", "proxy_config", "editorial_request", "editorial_response",
+    "proxy_config", "editorial_request", "editorial_response",
     "editorial_coverage", "editorial_input", "editorial_batch", "editorial_validation",
 })
 EDITORIAL_CLASS_CAPS = {"maintenance_release": 2, "research": 2}

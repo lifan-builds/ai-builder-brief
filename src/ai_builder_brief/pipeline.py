@@ -25,10 +25,6 @@ from ai_builder_brief.site import render_site
 from ai_builder_brief.transcription import load_fixture, transcribe, write_chapters, write_vtt
 
 
-def _episode_id(prefix: str, episode_date: date) -> str:
-    return f"{prefix}-{episode_date.isoformat()}"
-
-
 def is_published(feed_path: Path, episode_id: str) -> bool:
     if not feed_path.is_file():
         return False
@@ -196,6 +192,71 @@ def _eligible_editorial_items(items, *, start: datetime, end: datetime):
         if existing is None or str(item.metadata.get("snapshot_date", "")) > str(existing.metadata.get("snapshot_date", "")):
             eligible[item.id] = item
     return list(eligible.values())
+
+
+def _historical_story_keys(root: Path, *, episode_date: date, lookback_days: int = 14) -> set[str]:
+    """Return story keys recently used in saved editorial artifacts.
+
+    Feed freshness is not audience freshness: a new article about an already
+    covered event must not be promoted without a material update.
+    """
+    keys: set[str] = set()
+    start = episode_date - timedelta(days=lookback_days)
+    for path in (root / "build" / "editorial").glob("*.json"):
+        try:
+            day = date.fromisoformat(path.stem)
+            if day < start or day >= episode_date:
+                continue
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError, json.JSONDecodeError):
+            continue
+        records = payload if isinstance(payload, list) else payload.get("candidates", [])
+        for record in records:
+            if not isinstance(record, dict):
+                continue
+            key = str(record.get("theme_key") or record.get("cluster_id") or "").strip().casefold()
+            if key:
+                keys.add(key)
+    # Committed daily notes are the durable public history when build artifacts
+    # have been cleaned up. Keep the extracted text as fallback fingerprints.
+    for path in (root / "history").glob("*.md"):
+        try:
+            day = date.fromisoformat(path.stem.split("-x-")[0])
+            if day < start or day >= episode_date:
+                continue
+            for line in path.read_text(encoding="utf-8").splitlines():
+                text = line.strip().casefold()
+                if text and (text[0].isdigit() or text.startswith("- ")):
+                    keys.add(text)
+        except (OSError, ValueError):
+            continue
+    return keys
+
+
+def _load_event_registry(root: Path) -> set[str]:
+    path = root / "history" / "event-registry.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return set()
+    return {str(item).strip().casefold() for item in payload.get("events", []) if str(item).strip()}
+
+
+def _suppress_historical_repeats(items: list[SourceItem], *, root: Path, episode_date: date) -> list[SourceItem]:
+    """Drop repeat events unless a collector explicitly marks a material update."""
+    prior = _historical_story_keys(root, episode_date=episode_date) | _load_event_registry(root)
+    if not prior:
+        return items
+    kept: list[SourceItem] = []
+    for item in items:
+        key = str(item.metadata.get("theme_key") or item.metadata.get("cluster_id") or item.id).strip().casefold()
+        repeated = key in prior or any(
+            key and key in historical for historical in prior
+        )
+        if repeated and not bool(item.metadata.get("material_update")):
+            continue
+        kept.append(item)
+    return kept
 
 
 def _ledger_evidence(deterministic, candidates):
@@ -403,7 +464,7 @@ def run_daily(
 ) -> str:
     root = Path(config_path).resolve().parent
     public_config = load_config(config_path)
-    episode_id = _episode_id(public_config.show.episode_guid_prefix, episode_date)
+    episode_id = f"{public_config.show.episode_guid_prefix}-{episode_date.isoformat()}"
     if review_only:
         for suffix in ("json", "md"):
             (root / "build" / "review" / f"{episode_date.isoformat()}.{suffix}").unlink(missing_ok=True)
@@ -425,32 +486,16 @@ def run_daily(
                 sources=shadow_root / "sources",
             ),
         )
-        end = datetime(
-            episode_date.year,
-            episode_date.month,
-            episode_date.day,
-            public_config.show.publication_hour,
-            tzinfo=ZoneInfo(public_config.show.timezone),
-        ).astimezone(UTC)
-        try:
-            collection_result = collect_sources(
-                sources_path,
-                start=end - timedelta(days=public_config.selection.recent_days),
-                end=end,
-            )
-            write_sources(list(collection_result.items), public_config.source.fixture)
-            _write_source_health(root, episode_date, collection_result)
-        except Exception:
-            write_ledger([], root / "build" / "editorial" / f"{episode_date.isoformat()}.json", episode_date=episode_date.isoformat(), status="no-episode-collector-failure")
-            return "no-episode"
-    else:
-        end = datetime(
-            episode_date.year,
-            episode_date.month,
-            episode_date.day,
-            public_config.show.publication_hour,
-            tzinfo=ZoneInfo(public_config.show.timezone),
-        ).astimezone(UTC)
+
+    end = datetime(
+        episode_date.year,
+        episode_date.month,
+        episode_date.day,
+        public_config.show.publication_hour,
+        tzinfo=ZoneInfo(public_config.show.timezone),
+    ).astimezone(UTC)
+
+    if not fixture:
         try:
             collection_result = collect_sources(
                 sources_path,
@@ -492,11 +537,9 @@ def run_daily(
             start=end - timedelta(days=public_config.selection.recent_days),
             end=end,
         )
-    end = datetime(
-        episode_date.year, episode_date.month, episode_date.day,
-        public_config.show.publication_hour,
-        tzinfo=ZoneInfo(public_config.show.timezone),
-    ).astimezone(UTC)
+        normalized = _suppress_historical_repeats(
+            normalized, root=root, episode_date=episode_date,
+        )
     candidates, deterministic = preprocess(normalized, as_of=end)
     deterministic = _ledger_evidence(deterministic, candidates)
     representatives, candidate_metadata = _represent_candidates(candidates)
@@ -614,7 +657,6 @@ def run_daily(
         manifest,
         source_document=source_final.relative_to(root).as_posix(),
         audio_url=audio_url,
-        duration=manifest.duration,
         metadata={**manifest.metadata, "editorial_ledger": f"editorial/{ledger_path.name}"},
         transcript_url=f"{base_url}/transcripts/{transcript_stage.name}",
         chapters_url=f"{base_url}/chapters/{chapters_stage.name}",

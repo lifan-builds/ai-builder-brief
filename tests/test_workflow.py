@@ -15,6 +15,8 @@ def test_scheduled_job_is_review_only_and_cannot_publish() -> None:
     assert "R2_ACCESS_KEY_ID" not in workflow
     assert "TWITTER_AUTH_TOKEN: ${{ secrets.TWITTER_AUTH_TOKEN }}" in workflow
     assert "TWITTER_CT0: ${{ secrets.TWITTER_CT0 }}" in workflow
+    assert "OPENAI_BASE_URL: http://127.0.0.1:18455/v1" in workflow
+    assert "OPENAI_API_KEY: quotaswitch-local" in workflow
     assert "--check-public" not in workflow
     assert "git push" not in workflow
     assert "inputs.shadow" not in workflow

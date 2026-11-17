@@ -1,16 +1,6 @@
 from pathlib import Path
 
-from ai_builder_brief.journal import _top_ten_body, markdown_body, publish_journal
-
-
-def test_markdown_body_keeps_ranked_items_in_one_ordered_list() -> None:
-    title, body = markdown_body(
-        "# Brief — 2026-10-13\n\n## Top 10\n\n1. **First**\n\n2. **Second**\n\n## Watchlist\n\n- **Later**"
-    )
-    assert title == "Brief — 2026-10-13"
-    assert body.count("<ol>") == 1
-    assert body.count("<li>") == 3
-    assert body.count("<ul>") == 1
+from ai_builder_brief.journal import _top_ten_body, publish_journal
 
 
 def test_publish_journal_writes_entry_archive_and_parent_link(tmp_path: Path) -> None:

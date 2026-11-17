@@ -20,7 +20,7 @@ from __future__ import annotations
 import argparse
 import base64
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 import json
 from pathlib import Path
@@ -32,10 +32,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
-try:
-    import yaml  # type: ignore[import-untyped]
-except ImportError:  # pragma: no cover
-    yaml = None
+import yaml
 
 DEFAULT_BASE_URL = "http://127.0.0.1:18455/v1"
 DEFAULT_API_TOKEN = "quotaswitch-local"
@@ -583,8 +580,6 @@ def load_manifest_tasks(
     """Load custom image tasks from a JSON or YAML manifest."""
     raw = manifest_path.read_text(encoding="utf-8")
     if manifest_path.suffix.lower() in {".yaml", ".yml"}:
-        if yaml is None:
-            raise RuntimeError("PyYAML is required to parse YAML manifests.")
         doc = yaml.safe_load(raw)
     else:
         doc = json.loads(raw)

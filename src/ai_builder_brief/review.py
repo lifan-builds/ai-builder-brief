@@ -156,6 +156,32 @@ def _review_maps(
     return representatives_by_id, sources_by_id, priority_by_id
 
 
+def _review_items(
+    selected: Iterable[EditorialDecision],
+    representatives_by_id: dict[str, SourceItem],
+    sources_by_id: dict[str, list[SourceItem]],
+    priority_by_id: dict[str, tuple[bool, float, int, str]],
+    *,
+    tier: str,
+) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    for rank, decision in enumerate(selected, 1):
+        representative = representatives_by_id[decision.cluster_id]
+        evidence = sorted(
+            sources_by_id.get(decision.cluster_id, [representative]),
+            key=lambda item: (item.id, item.url),
+        )
+        items.append(_review_item(
+            decision,
+            rank=rank,
+            tier=tier,
+            representative=representative,
+            evidence=evidence,
+            priority_record=priority_by_id[decision.cluster_id],
+        ))
+    return items
+
+
 def build_review_items(
     representatives: Iterable[SourceItem],
     sources: Iterable[SourceItem],
@@ -166,8 +192,6 @@ def build_review_items(
 ) -> list[dict[str, Any]]:
     """Select a diverse 6/4 community/primary review and join its evidence."""
 
-    representatives = list(representatives)
-    sources = list(sources)
     decisions = list(decisions)
     representatives_by_id, sources_by_id, priority_by_id = _review_maps(
         representatives, sources, decisions,
@@ -223,22 +247,9 @@ def build_review_items(
     selected.sort(
         key=lambda item: (-priority_by_id[item.cluster_id][1], item.cluster_id),
     )
-    items: list[dict[str, Any]] = []
-    for rank, decision in enumerate(selected, 1):
-        representative = representatives_by_id[decision.cluster_id]
-        evidence = sorted(
-            sources_by_id.get(decision.cluster_id, [representative]),
-            key=lambda item: (item.id, item.url),
-        )
-        items.append(_review_item(
-            decision,
-            rank=rank,
-            tier="shortlist",
-            representative=representative,
-            evidence=evidence,
-            priority_record=priority_by_id[decision.cluster_id],
-        ))
-    return items
+    return _review_items(
+        selected, representatives_by_id, sources_by_id, priority_by_id, tier="shortlist",
+    )
 
 
 def build_watchlist_items(
@@ -253,8 +264,6 @@ def build_watchlist_items(
 
     if limit <= 0:
         return []
-    representatives = list(representatives)
-    sources = list(sources)
     decisions = list(decisions)
     representatives_by_id, sources_by_id, priority_by_id = _review_maps(
         representatives, sources, decisions,
@@ -266,11 +275,14 @@ def build_watchlist_items(
         ),
         key=lambda item: (-priority_by_id[item.cluster_id][1], item.cluster_id),
     )
-    used_organizations = {
-        representatives_by_id[cluster_id].organization.strip().casefold()
-        for cluster_id in exclude_cluster_ids
-        if representatives_by_id[cluster_id].organization.strip()
-    }
+    # The watchlist broadens coverage after the strict shortlist. Keep a soft
+    # cap so one publisher cannot crowd out the rest, while still allowing
+    # distinct high-value events from the same newsroom when the day is dense.
+    organization_counts: dict[str, int] = {}
+    for cluster_id in exclude_cluster_ids:
+        organization = representatives_by_id[cluster_id].organization.strip().casefold()
+        if organization:
+            organization_counts[organization] = organization_counts.get(organization, 0) + 1
     used_products = {
         str(representatives_by_id[cluster_id].metadata.get("product_family") or "").strip().casefold()
         for cluster_id in exclude_cluster_ids
@@ -290,7 +302,7 @@ def build_watchlist_items(
         organization = representative.organization.strip().casefold()
         product = str(representative.metadata.get("product_family") or "").strip().casefold()
         theme = str(representative.metadata.get("theme_key") or decision.cluster_id).strip().casefold()
-        if organization and organization in used_organizations:
+        if organization and organization_counts.get(organization, 0) >= 3:
             continue
         if product and product in used_products:
             continue
@@ -298,29 +310,16 @@ def build_watchlist_items(
             continue
         selected.append(decision)
         if organization:
-            used_organizations.add(organization)
+            organization_counts[organization] = organization_counts.get(organization, 0) + 1
         if product:
             used_products.add(product)
         used_themes.add(theme)
         if len(selected) >= limit:
             break
 
-    items = []
-    for rank, decision in enumerate(selected, 1):
-        representative = representatives_by_id[decision.cluster_id]
-        evidence = sorted(
-            sources_by_id.get(decision.cluster_id, [representative]),
-            key=lambda item: (item.id, item.url),
-        )
-        items.append(_review_item(
-            decision,
-            rank=rank,
-            tier="watchlist",
-            representative=representative,
-            evidence=evidence,
-            priority_record=priority_by_id[decision.cluster_id],
-        ))
-    return items
+    return _review_items(
+        selected, representatives_by_id, sources_by_id, priority_by_id, tier="watchlist",
+    )
 
 
 def _render_review_record(item: dict[str, Any], heading: str) -> list[str]:

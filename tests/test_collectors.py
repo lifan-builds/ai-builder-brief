@@ -130,6 +130,22 @@ def test_x_panel_health_fails_below_coverage_without_raw_errors() -> None:
     assert "secret" not in str(result.health.to_dict())
 
 
+def test_optional_x_accounts_do_not_block_health() -> None:
+    result = collect_x_panel(
+        [{"account": "core", "required": True}, {"account": "interpreter", "required": False}],
+        start=datetime(2026, 8, 10, tzinfo=UTC),
+        end=datetime(2026, 8, 12, tzinfo=UTC),
+        fetcher=lambda account: ([{
+            "published_at": "Aug 11 12:00", "url": "https://x.test/core/1",
+            "text": "AI model API release", "likes": 1, "retweets": 0,
+        }] if account == "core" else (_ for _ in ()).throw(RuntimeError("optional"))),
+    )
+    assert result.health.healthy is True
+    assert result.health.failed_accounts == ("interpreter",)
+    assert result.health.required_configured_accounts == 1
+    assert result.health.required_successful_accounts == 1
+
+
 def test_x_panel_recognizes_builder_product_and_lab_names() -> None:
     result = collect_x_panel(
         ["launches"],
@@ -231,6 +247,42 @@ def test_affiliation_name_cannot_satisfy_topic_overlap() -> None:
     clustered = assign_story_clusters([security, pricing], organizations=["Acme"])
 
     assert len({item.metadata["cluster_id"] for item in clustered}) == 2
+
+
+def test_same_organization_generic_summary_words_do_not_merge_events() -> None:
+    voice = SourceItem(
+        id="voice", title="Build natural voice experiences with GPT Live",
+        url="https://openai.example/voice", source="OpenAI",
+        published_at="2026-08-17T12:00:00Z",
+        summary="The API brings stronger instruction following and telephony support.",
+        authority="primary", organization="OpenAI", category="models",
+        metadata={"score": 95},
+    )
+    government = SourceItem(
+        id="government", title="Expanding AI access for governments",
+        url="https://openai.example/government", source="OpenAI",
+        published_at="2026-08-17T11:00:00Z",
+        summary="Eligible agencies receive cyber defense support and usage access.",
+        authority="primary", organization="OpenAI", category="policy",
+        metadata={"score": 95},
+    )
+    policy = SourceItem(
+        id="policy", title="The AI policy window is open",
+        url="https://openai.example/policy", source="OpenAI",
+        published_at="2026-08-17T10:00:00Z",
+        summary="Durable safety standards require stronger evidence and action.",
+        authority="primary", organization="OpenAI", category="policy",
+        metadata={"score": 95},
+    )
+
+    clustered = assign_story_clusters(
+        [voice, government, policy], organizations=["OpenAI"],
+    )
+    by_id = {item.id: item for item in clustered}
+
+    assert len({item.metadata["cluster_id"] for item in clustered}) == 3
+    assert by_id["voice"].metadata["cluster_id"] != by_id["government"].metadata["cluster_id"]
+    assert by_id["voice"].metadata["cluster_id"] != by_id["policy"].metadata["cluster_id"]
 
 
 def test_independent_publisher_is_not_treated_as_story_subject() -> None:

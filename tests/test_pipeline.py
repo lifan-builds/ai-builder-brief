@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import replace
 import xml.etree.ElementTree as ET
 from datetime import UTC, date, datetime
 from pathlib import Path
@@ -9,6 +10,7 @@ from castforge.config import load_config
 from castforge.models import EpisodeManifest
 
 from ai_builder_brief.collectors import CollectionResult, XPanelHealth
+from ai_builder_brief.editorial_client import EditorialReviewError
 from ai_builder_brief.pipeline import (
     _apply_snapshot_deltas,
     _eligible_editorial_items,
@@ -151,7 +153,7 @@ def test_review_only_collector_failure_keeps_ledger_without_partial_review(show_
     assert not (show_project / "build" / "review" / "2026-08-17.md").exists()
 
 
-def test_unhealthy_x_retains_snapshot_and_health_but_emits_no_review(show_project, monkeypatch) -> None:
+def test_unhealthy_x_retains_snapshot_but_authoritative_sources_allow_review(show_project, monkeypatch) -> None:
     source = SourceItem(
         id="primary", title="Primary builder API", url="https://example.com/primary",
         source="Example", published_at="2026-08-17T12:00:00Z",
@@ -173,6 +175,13 @@ def test_unhealthy_x_retains_snapshot_and_health_but_emits_no_review(show_projec
         ),
     )
 
+    monkeypatch.setattr(
+        "ai_builder_brief.pipeline.review_candidates_batched",
+        lambda *args, **kwargs: (_ for _ in ()).throw(
+            EditorialReviewError("proxy", stage="editorial_request")
+        ),
+    )
+
     status = run_daily(
         config_path=show_project / "podcast.yaml",
         sources_path=show_project / "sources.yaml",
@@ -182,11 +191,11 @@ def test_unhealthy_x_retains_snapshot_and_health_but_emits_no_review(show_projec
 
     assert status == "no-episode"
     health = json.loads((show_project / "build" / "source-health" / "2026-08-17.json").read_text(encoding="utf-8"))
-    assert health["healthy"] is False
+    assert health["healthy"] is True
     assert health["x_panel"]["successful_accounts"] == 14
     assert (show_project / "build" / "snapshots" / "2026-08-17.json").is_file()
     ledger = json.loads((show_project / "build" / "editorial" / "2026-08-17.json").read_text(encoding="utf-8"))
-    assert ledger["status"] == "no-review-source-failure"
+    assert ledger["status"] == "no-episode-editorial-failure"
     assert not (show_project / "build" / "review" / "2026-08-17.json").exists()
     assert not (show_project / "build" / "review" / "2026-08-17.md").exists()
 
@@ -293,3 +302,32 @@ def test_representative_uses_subject_common_to_all_resolved_sources() -> None:
 
     assert representatives[0].organization == "Acme"
     assert representatives[0].metadata["subject_organizations"] == ["Acme", "Beta"]
+
+
+def test_historical_repeat_requires_material_update(tmp_path):
+    from ai_builder_brief.pipeline import _suppress_historical_repeats
+    from castforge.models import SourceItem
+    editorial = tmp_path / "build" / "editorial"
+    editorial.mkdir(parents=True)
+    (editorial / "2026-09-11.json").write_text(
+        '{"candidates":[{"cluster_id":"gpt-5-6-sol-preview","theme_key":"gpt-5-6-sol-preview"}]}',
+        encoding="utf-8",
+    )
+    item = SourceItem(id="new", title="GPT", url="https://example.com", source="OpenAI",
+        published_at="2026-09-12T00:00:00Z", summary="new", authority="primary",
+        organization="OpenAI", category="models", metadata={"theme_key":"gpt-5-6-sol-preview"})
+    assert _suppress_historical_repeats([item], root=tmp_path, episode_date=date(2026, 9, 12)) == []
+    updated = replace(item, metadata={**item.metadata, "material_update": True})
+    assert _suppress_historical_repeats([updated], root=tmp_path, episode_date=date(2026, 9, 12)) == [updated]
+
+
+def test_canonical_event_registry_suppresses_old_event(tmp_path):
+    from ai_builder_brief.pipeline import _suppress_historical_repeats
+    from castforge.models import SourceItem
+    history = tmp_path / "history"
+    history.mkdir()
+    (history / "event-registry.json").write_text('{"events":["old-model-event"]}', encoding="utf-8")
+    item = SourceItem(id="new", title="old", url="https://example.com", source="x",
+        published_at="2026-09-12T00:00:00Z", summary="old", authority="primary",
+        organization="x", category="models", metadata={"theme_key":"old-model-event"})
+    assert _suppress_historical_repeats([item], root=tmp_path, episode_date=date(2026, 9, 12)) == []

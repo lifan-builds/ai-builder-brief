@@ -8,7 +8,7 @@ import pytest
 from castforge.models import SourceItem, StoryCluster
 from ai_builder_brief.editorial import EditorialDecision, is_podcast_ready, preprocess, select_clusters, validate_review, write_ledger
 from ai_builder_brief import editorial_client
-from ai_builder_brief.editorial_client import EDITORIAL_SCHEMA, EditorialReviewError, _client_key, review_candidates_batched
+from ai_builder_brief.editorial_client import EDITORIAL_SCHEMA, EditorialReviewError, _proxy_config, review_candidates_batched
 from ai_builder_brief.pipeline import _editorial_packet
 
 
@@ -177,12 +177,21 @@ def test_selection_applies_diversity_penalty_iteratively_and_one_deep() -> None:
     assert sum(story.metadata["editorial"]["depth_recommendation"] == "deep" for story in selected) == 1
 
 
-def test_proxy_key_can_be_loaded_from_runner_local_config(tmp_path, monkeypatch) -> None:
-    config = tmp_path / "config.yaml"
-    config.write_text('api-keys:\n  - "local-test-key"\n', encoding="utf-8")
-    monkeypatch.delenv("CLIPROXYAPI_API_KEY", raising=False)
-    monkeypatch.setenv("CLIPROXYAPI_CONFIG", str(config))
-    assert _client_key() == "local-test-key"
+def test_proxy_config_defaults_to_loopback_quotaswitch_and_blocks_sk_keys(monkeypatch) -> None:
+    monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    assert _proxy_config() == ("http://127.0.0.1:18455/v1", "quotaswitch-local")
+
+    monkeypatch.setenv("OPENAI_BASE_URL", "https://api.openai.com/v1")
+    with pytest.raises(EditorialReviewError) as non_loopback:
+        _proxy_config()
+    assert non_loopback.value.to_metadata() == {"failure_type": "proxy", "stage": "proxy_config"}
+
+    monkeypatch.setenv("OPENAI_BASE_URL", "http://127.0.0.1:18455/v1")
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test-placeholder")
+    with pytest.raises(EditorialReviewError) as raw_key:
+        _proxy_config()
+    assert raw_key.value.to_metadata() == {"failure_type": "proxy", "stage": "proxy_config"}
 
 
 def test_strict_schema_requires_every_declared_decision_property() -> None:
@@ -278,10 +287,11 @@ def test_editorial_batch_rejects_partial_coverage(monkeypatch) -> None:
 
 
 def test_editorial_request_timeout_is_safely_classified(monkeypatch) -> None:
-    monkeypatch.setattr(editorial_client, "_usage_gate", lambda: None)
-    monkeypatch.setattr(editorial_client, "_client_key", lambda: "local-test-key")
+    monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
     def timeout_opener(request, timeout):
+        assert request.full_url == "http://127.0.0.1:18455/v1/chat/completions"
         assert timeout == 60
         raise TimeoutError("secret upstream details")
 
@@ -299,8 +309,8 @@ def test_editorial_request_timeout_is_safely_classified(monkeypatch) -> None:
 
 
 def test_editorial_response_value_type_is_strictly_validated(monkeypatch) -> None:
-    monkeypatch.setattr(editorial_client, "_usage_gate", lambda: None)
-    monkeypatch.setattr(editorial_client, "_client_key", lambda: "local-test-key")
+    monkeypatch.delenv("OPENAI_BASE_URL", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
     def invalid_opener(request, timeout):
         class Response:

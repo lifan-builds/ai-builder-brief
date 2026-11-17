@@ -11,6 +11,7 @@ import shutil
 import ssl
 import subprocess
 import xml.etree.ElementTree as ET
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
@@ -40,12 +41,19 @@ class XPanelHealth:
     in_window_posts: int
     failed_accounts: tuple[str, ...] = ()
     required_success_ratio: float = 0.8
+    required_configured_accounts: int | None = None
+    required_successful_accounts: int | None = None
 
     @property
     def healthy(self) -> bool:
+        configured = self.required_configured_accounts
+        successful = self.required_successful_accounts
+        if configured is None or successful is None:
+            configured = self.configured_accounts
+            successful = self.successful_accounts
         return (
-            self.configured_accounts > 0
-            and self.successful_accounts / self.configured_accounts >= self.required_success_ratio
+            configured > 0
+            and successful / configured >= self.required_success_ratio
             and self.in_window_posts > 0
         )
 
@@ -59,6 +67,8 @@ class XPanelHealth:
                 if self.configured_accounts else 0.0
             ),
             "required_success_ratio": self.required_success_ratio,
+            "required_configured_accounts": self.required_configured_accounts,
+            "required_successful_accounts": self.required_successful_accounts,
             "in_window_posts": self.in_window_posts,
             "failed_accounts": list(self.failed_accounts),
             "healthy": self.healthy,
@@ -78,7 +88,11 @@ class CollectionResult:
 
     @property
     def healthy(self) -> bool:
-        return self.x_panel.healthy
+        # X is a discovery/momentum panel. It must never be the sole gate for
+        # a review when authoritative feeds and page indexes are available.
+        # Keep its own health visible in the report, but gate on at least one
+        # primary or independently reported item.
+        return any(item.authority in {"primary", "independent"} for item in self.items)
 
     def health_dict(self) -> dict[str, Any]:
         return {"healthy": self.healthy, "x_panel": self.x_panel.to_dict()}
@@ -498,15 +512,17 @@ def collect_hugging_face(
 
 
 STOP_WORDS = {
-    "about", "after", "adds", "again", "from", "into", "launches", "more", "new", "over",
-    "release", "releases", "says", "that", "their", "this", "using", "with", "your",
+    "about", "after", "adds", "again", "and", "api", "ai", "build", "from", "for",
+    "gpt", "introduc", "into", "launches", "more", "new", "over", "release", "releases", "says",
+    "that", "the", "their", "this", "using", "with", "your",
 }
 
 TOPIC_STOP_WORDS = STOP_WORDS | {
     "agent", "agents", "artificial", "available", "builder", "builders", "company",
     "developer", "developers", "latest", "model", "models", "open", "research",
     "first", "good", "great", "people", "really", "today", "tool", "tools",
-    "update", "version", "work",
+    "update", "version", "work", "access", "bring", "brings", "change", "changes",
+    "offer", "offers", "provide", "provides", "support", "stronger", "use",
 }
 
 PRODUCT_FAMILY_PATTERNS = {
@@ -519,24 +535,23 @@ PRODUCT_FAMILY_PATTERNS = {
 
 
 def _title_tokens(title: str) -> set[str]:
-    return {
-        token
-        for token in re.findall(r"[a-z0-9][a-z0-9.+-]+", title.casefold())
-        if len(token) > 2 and token not in STOP_WORDS
-    }
-
-
-def _topic_tokens(item: SourceItem) -> set[str]:
     tokens: set[str] = set()
-    for raw in re.findall(r"[a-z0-9][a-z0-9.+-]+", f"{item.title} {item.summary}".casefold()):
-        token = raw
+    for raw in re.findall(r"[a-z0-9][a-z0-9.+-]+", title.casefold()):
+        token = re.sub(r"^[^a-z0-9]+|[^a-z0-9]+$", "", raw)
         if token.endswith("ing") and len(token) > 6:
             token = token[:-3]
         elif token.endswith("ed") and len(token) > 5:
             token = token[:-2]
-        if len(token) > 3 and token not in TOPIC_STOP_WORDS:
+        if len(token) > 2 and token not in STOP_WORDS:
             tokens.add(token)
     return tokens
+
+
+def _topic_tokens(item: SourceItem) -> set[str]:
+    return {
+        token for token in _title_tokens(f"{item.title} {item.summary}")
+        if len(token) > 3 and token not in TOPIC_STOP_WORDS
+    }
 
 
 def _organization_key(value: str) -> str:
@@ -619,9 +634,13 @@ def assign_story_clusters(
                 overlap = len(tokens & existing_tokens)
                 union = len(tokens | existing_tokens) or 1
                 shared_topics = topic_tokens & existing_topics
+                meaningful_title_overlap = {
+                    token for token in tokens & existing_tokens if len(token) >= 8
+                }
                 same_theme = bool(
                     item_organizations & existing_organizations
-                    and any(len(topic) >= 6 for topic in shared_topics)
+                    and meaningful_title_overlap
+                    and bool(shared_topics)
                 )
                 if canonical == existing_url or same_theme or (overlap >= 3 and overlap / union >= 0.6):
                     cluster_id = existing_id
@@ -806,21 +825,30 @@ def collect_x_panel(
     items: list[SourceItem] = []
     successful_accounts = 0
     failed_accounts: list[str] = []
-    normalized_accounts: list[tuple[str, str]] = []
+    normalized_accounts: list[tuple[str, str, bool]] = []
     for configured in accounts:
         if isinstance(configured, dict):
             account = str(configured.get("account") or "").lstrip("@").strip()
             organization = str(configured.get("organization") or account).strip()
+            required = bool(configured.get("required", True))
         else:
             account = str(configured).lstrip("@").strip()
             organization = account
+            required = True
         if account:
-            normalized_accounts.append((account, organization))
-    for account, organization in normalized_accounts:
+            normalized_accounts.append((account, organization, required))
+    required_configured = sum(required for _, _, required in normalized_accounts)
+    required_successful = 0
+    def fetch_account(entry: tuple[str, str, bool]) -> tuple[str, str, bool, list[dict[str, Any]] | None]:
+        account, organization, required = entry
         posts: list[dict[str, Any]] | None = None
-        for attempt in range(2):
+        attempts = 2 if required else 1
+        for attempt in range(attempts):
             try:
-                payload = fetcher(account)
+                if fetcher is _twitter_cli_fetcher:
+                    payload = fetcher(account, timeout_seconds=30 if required else 10)
+                else:
+                    payload = fetcher(account)
                 if not isinstance(payload, list):
                     raise ValueError("X account payload is not a list")
                 posts = payload
@@ -828,17 +856,28 @@ def collect_x_panel(
             except Exception:
                 if attempt == 1:
                     log.warning("X panel account failed after retry: %s", account)
+        return account, organization, required, posts
+
+    if fetcher is _twitter_cli_fetcher:
+        with ThreadPoolExecutor(max_workers=8, thread_name_prefix="x-panel") as pool:
+            fetched = list(pool.map(fetch_account, normalized_accounts))
+    else:
+        fetched = [fetch_account(entry) for entry in normalized_accounts]
+
+    for account, organization, required, posts in fetched:
         if posts is None:
             failed_accounts.append(account)
             continue
         successful_accounts += 1
+        if required:
+            required_successful += 1
         for post in posts:
             published = _parse_datetime(str(post.get("published_at") or ""))
             if published is None:
                 # The compact twitter CLI omits the year for recent posts.
                 raw_time = str(post.get("published_at") or "").strip()
                 try:
-                    published = datetime.strptime(raw_time, "%b %d %H:%M").replace(year=end.year, tzinfo=UTC)
+                    published = datetime.strptime(f"{end.year} {raw_time}", "%Y %b %d %H:%M").replace(tzinfo=UTC)
                 except ValueError:
                     published = None
             if published is None or not start <= published <= end:
@@ -886,11 +925,13 @@ def collect_x_panel(
             successful_accounts=successful_accounts,
             in_window_posts=len(items),
             failed_accounts=tuple(failed_accounts),
+            required_configured_accounts=required_configured,
+            required_successful_accounts=required_successful,
         ),
     )
 
 
-def _twitter_cli_fetcher(account: str) -> list[dict[str, Any]]:
+def _twitter_cli_fetcher(account: str, *, timeout_seconds: int = 45) -> list[dict[str, Any]]:
     """Read approved-account posts through the installed read-only X CLI."""
 
     executable = shutil.which("twitter")
@@ -901,7 +942,7 @@ def _twitter_cli_fetcher(account: str) -> list[dict[str, Any]]:
         check=True,
         capture_output=True,
         text=True,
-        timeout=45,
+        timeout=timeout_seconds,
     )
     payload = json.loads(result.stdout)
     if isinstance(payload, dict) and payload.get("ok") is True:
