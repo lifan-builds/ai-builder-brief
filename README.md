@@ -2,7 +2,7 @@
 
 Source-linked, decision-changing AI developments for builders: published as daily written field notes and backed by a [CastForge](https://github.com/lifan-builds/castforge) review and audio pipeline.
 
-- **Website:** [https://clifan.com/ai-builder-brief/](https://clifan.com/ai-builder-brief/) (mirror: [lifan-builds.github.io/ai-builder-brief](https://lifan-builds.github.io/ai-builder-brief/))
+- **Website:** [https://clifan.com/ai-builder-brief/](https://clifan.com/ai-builder-brief/)
 - **Daily Written Archive:** [https://clifan.com/journal/ai-builder-brief/](https://clifan.com/journal/ai-builder-brief/)
 
 ## Workflows
