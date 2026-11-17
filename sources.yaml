@@ -1,54 +1,87 @@
 version: 1
 
 feeds:
-  - {name: OpenAI, url: "https://openai.com/news/rss.xml", authority: primary, organization: OpenAI, category: models, score: 100}
-  - {name: Google DeepMind, url: "https://deepmind.google/blog/rss.xml", authority: primary, organization: Google DeepMind, category: research, score: 95}
-  - {name: Google AI, url: "https://blog.google/technology/ai/rss/", authority: primary, organization: Google, category: products, score: 90}
-  - {name: Microsoft Research, url: "https://www.microsoft.com/en-us/research/feed/", authority: primary, organization: Microsoft, category: research, score: 85}
-  - {name: NVIDIA, url: "https://blogs.nvidia.com/feed/", authority: primary, organization: NVIDIA, topic_filter: ai, category: infrastructure, score: 90}
+  # Primary lab, cloud infrastructure, and developer platform feeds
+  - {name: OpenAI, url: "https://openai.com/news/rss.xml", authority: primary, organization: OpenAI, category: models, score: 94}
+  - {name: Google DeepMind, url: "https://deepmind.google/blog/rss.xml", authority: primary, organization: Google DeepMind, category: research, score: 92}
+  - {name: Google Research, url: "https://research.google/blog/rss/", authority: primary, organization: Google Research, topic_filter: ai, category: research, score: 88}
+  - {name: Google AI, url: "https://blog.google/technology/ai/rss/", authority: primary, organization: Google, category: products, score: 86}
+  - {name: Cloudflare AI, url: "https://blog.cloudflare.com/tag/ai/rss/", authority: primary, organization: Cloudflare, category: infrastructure, score: 90}
+  - {name: GitHub Changelog, url: "https://github.blog/changelog/feed/", authority: primary, organization: GitHub, topic_filter: ai, category: developer tools, score: 88}
   - {name: Hugging Face, url: "https://huggingface.co/blog/feed.xml", authority: primary, organization: Hugging Face, category: open source, score: 90}
-  - {name: arXiv cs.AI, url: "https://rss.arxiv.org/rss/cs.AI", authority: primary, organization: arXiv, category: research, score: 65}
-  - {name: arXiv cs.CL, url: "https://rss.arxiv.org/rss/cs.CL", authority: primary, organization: arXiv, category: research, score: 65}
-  - {name: arXiv cs.LG, url: "https://rss.arxiv.org/rss/cs.LG", authority: primary, organization: arXiv, category: research, score: 65}
-  - {name: TechCrunch AI, url: "https://techcrunch.com/category/artificial-intelligence/feed/", authority: independent, organization: TechCrunch, category: industry, score: 75}
-  - {name: Ars Technica, url: "https://feeds.arstechnica.com/arstechnica/technology-lab", authority: independent, organization: Ars Technica, topic_filter: ai, category: industry, score: 75}
-  - {name: MIT Technology Review, url: "https://www.technologyreview.com/topic/artificial-intelligence/feed", authority: independent, organization: MIT Technology Review, category: industry, score: 80}
-  - {name: The Verge AI, url: "https://www.theverge.com/rss/ai-artificial-intelligence/index.xml", authority: independent, organization: The Verge, category: products, score: 70}
-  - {name: Techmeme, url: "https://www.techmeme.com/feed.xml", authority: signal, organization: Techmeme, topic_filter: ai, category: trend, score: 35}
-  - {name: Transformers releases, url: "https://github.com/huggingface/transformers/releases.atom", authority: primary, organization: Hugging Face, product_family: transformers, source_kind: release_feed, category: developer tools, score: 85}
-  - {name: vLLM releases, url: "https://github.com/vllm-project/vllm/releases.atom", authority: primary, organization: vLLM, product_family: vllm, source_kind: release_feed, category: developer tools, score: 85}
-  - {name: llama.cpp releases, url: "https://github.com/ggml-org/llama.cpp/releases.atom", authority: primary, organization: ggml.org, product_family: llama.cpp, source_kind: release_feed, category: developer tools, score: 85}
-  - {name: Ollama releases, url: "https://github.com/ollama/ollama/releases.atom", authority: primary, organization: Ollama, product_family: ollama, source_kind: release_feed, category: developer tools, score: 85}
+  - {name: NVIDIA, url: "https://blogs.nvidia.com/feed/", authority: primary, organization: NVIDIA, topic_filter: ai, category: infrastructure, score: 86}
+  - {name: Microsoft Research, url: "https://www.microsoft.com/en-us/research/feed/", authority: primary, organization: Microsoft, topic_filter: ai, category: research, score: 84}
+
+  # High-signal practitioner engineering and independent technical analysis
+  - {name: Simon Willison, url: "https://simonwillison.net/atom/everything/", authority: independent, organization: Simon Willison, topic_filter: ai, category: developer tools, score: 88}
+  - {name: Latent Space, url: "https://www.latent.space/feed", authority: independent, organization: Latent Space, category: developer tools, score: 86}
+  - {name: Interconnects, url: "https://www.interconnects.ai/feed", authority: independent, organization: Interconnects, category: research, score: 84}
+  - {name: Ahead of AI, url: "https://magazine.sebastianraschka.com/feed", authority: independent, organization: Ahead of AI, category: research, score: 84}
+
+  # Core SDK, agent CLI, and inference runtime release feeds
+  - {name: Claude Code releases, url: "https://github.com/anthropics/claude-code/releases.atom", authority: primary, organization: Anthropic, product_family: claude-code, source_kind: release_feed, category: developer tools, score: 88}
+  - {name: OpenAI Codex releases, url: "https://github.com/openai/codex/releases.atom", authority: primary, organization: OpenAI, product_family: openai-codex, source_kind: release_feed, category: developer tools, score: 86}
+  - {name: vLLM releases, url: "https://github.com/vllm-project/vllm/releases.atom", authority: primary, organization: vLLM, product_family: vllm, source_kind: release_feed, category: developer tools, score: 86}
+  - {name: llama.cpp releases, url: "https://github.com/ggml-org/llama.cpp/releases.atom", authority: primary, organization: ggml.org, product_family: llama.cpp, source_kind: release_feed, category: developer tools, score: 86}
+  - {name: SGLang releases, url: "https://github.com/sgl-project/sglang/releases.atom", authority: primary, organization: SGLang, product_family: sglang, source_kind: release_feed, category: developer tools, score: 85}
+  - {name: Ollama releases, url: "https://github.com/ollama/ollama/releases.atom", authority: primary, organization: Ollama, product_family: ollama, source_kind: release_feed, category: developer tools, score: 84}
+  - {name: Transformers releases, url: "https://github.com/huggingface/transformers/releases.atom", authority: primary, organization: Hugging Face, product_family: transformers, source_kind: release_feed, category: developer tools, score: 84}
+  - {name: Anthropic Python SDK releases, url: "https://github.com/anthropics/anthropic-sdk-python/releases.atom", authority: primary, organization: Anthropic, product_family: anthropic-sdk, source_kind: release_feed, category: developer tools, score: 82}
+  - {name: OpenAI Python SDK releases, url: "https://github.com/openai/openai-python/releases.atom", authority: primary, organization: OpenAI, product_family: openai-sdk, source_kind: release_feed, category: developer tools, score: 82}
+  - {name: PydanticAI releases, url: "https://github.com/pydantic/pydantic-ai/releases.atom", authority: primary, organization: Pydantic, product_family: pydantic-ai, source_kind: release_feed, category: developer tools, score: 82}
+  - {name: Vercel AI SDK releases, url: "https://github.com/vercel/ai/releases.atom", authority: primary, organization: Vercel, product_family: vercel-ai-sdk, source_kind: release_feed, category: developer tools, score: 82}
+  - {name: LiteLLM releases, url: "https://github.com/BerriAI/litellm/releases.atom", authority: primary, organization: LiteLLM, product_family: litellm, source_kind: release_feed, category: developer tools, score: 80}
+
+  # Raw preprint streams (down-weighted below curated HF Daily Papers & shipped engineering)
+  - {name: arXiv cs.AI, url: "https://rss.arxiv.org/rss/cs.AI", authority: primary, organization: arXiv, category: research, score: 48}
+  - {name: arXiv cs.CL, url: "https://rss.arxiv.org/rss/cs.CL", authority: primary, organization: arXiv, category: research, score: 48}
+  - {name: arXiv cs.LG, url: "https://rss.arxiv.org/rss/cs.LG", authority: primary, organization: arXiv, category: research, score: 48}
+
+  # Secondary corroboration reporting (down-weighted so PR/funding cannot crowd out engineering)
+  - {name: Ars Technica, url: "https://feeds.arstechnica.com/arstechnica/technology-lab", authority: independent, organization: Ars Technica, topic_filter: ai, category: industry, score: 62}
+  - {name: TechCrunch AI, url: "https://techcrunch.com/category/artificial-intelligence/feed/", authority: independent, organization: TechCrunch, category: industry, score: 58}
 
 page_indexes:
-  - {name: Anthropic, url: "https://www.anthropic.com/news", link_prefix: "https://www.anthropic.com/news/", organization: Anthropic, category: models, score: 100}
-  - {name: Meta AI, url: "https://ai.meta.com/blog/", link_prefix: "https://ai.meta.com/blog/", organization: Meta, category: models, score: 90}
-  - {name: Mistral AI, url: "https://mistral.ai/news/", link_prefix: "https://mistral.ai/news/", organization: Mistral AI, category: models, score: 95}
+  - {name: Claude Dev Blog, url: "https://claude.dev/blog", link_prefix: "https://claude.dev/blog/", organization: Anthropic, category: developer tools, score: 95}
+  - {name: Anthropic Research, url: "https://www.anthropic.com/research", link_prefix: "https://www.anthropic.com/research/", organization: Anthropic, category: research, score: 92}
+  - {name: Anthropic, url: "https://www.anthropic.com/news", link_prefix: "https://www.anthropic.com/news/", organization: Anthropic, category: models, score: 90}
+  - {name: Cursor, url: "https://cursor.com/blog", link_prefix: "https://cursor.com/blog/", organization: Cursor, category: developer tools, score: 90}
+  - {name: Together AI, url: "https://www.together.ai/blog", link_prefix: "https://www.together.ai/blog/", organization: Together AI, category: infrastructure, score: 88}
+  - {name: Mistral AI, url: "https://mistral.ai/news/", link_prefix: "https://mistral.ai/news/", organization: Mistral AI, category: models, score: 90}
+  - {name: Meta AI, url: "https://ai.meta.com/blog/", link_prefix: "https://ai.meta.com/blog/", organization: Meta, category: models, score: 85}
 
 hacker_news:
   enabled: true
-  limit: 20
+  limit: 50
+  min_points: 60
+  use_algolia: true
+  enrich_links: true
   topic_filter: ai
 
 hugging_face:
   daily_papers: true
   trending_models: true
-  limit: 10
+  limit: 15
 
 github:
   enabled: true
   repositories:
-    - {repository: huggingface/transformers, product_family: transformers}
+    - {repository: anthropics/claude-code, product_family: claude-code}
+    - {repository: openai/codex, product_family: openai-codex}
     - {repository: vllm-project/vllm, product_family: vllm}
     - {repository: ggml-org/llama.cpp, product_family: llama.cpp}
+    - {repository: sgl-project/sglang, product_family: sglang}
     - {repository: ollama/ollama, product_family: ollama}
+    - {repository: huggingface/transformers, product_family: transformers}
+    - {repository: pydantic/pydantic-ai, product_family: pydantic-ai}
+    - {repository: vercel/ai, product_family: vercel-ai-sdk}
+    - {repository: BerriAI/litellm, product_family: litellm}
 
 x_panel:
   enabled: true
   topic_filter: ai
   accounts:
-    # First-party lab and developer-product channels. These are the broad,
-    # durable coverage layer for launches that never reach a newsroom page.
+    # First-party lab and developer-product channels.
     - {account: OpenAI, organization: OpenAI}
     - {account: OpenAIDevs, organization: OpenAI}
     - {account: claudeai, organization: Anthropic}
@@ -58,7 +91,7 @@ x_panel:
     - {account: AIatMeta, organization: Meta}
     - {account: mistralai, organization: Mistral AI}
     - {account: cohere, organization: Cohere}
-    - {account: SpaceXAI, organization: xAI}
+    - {account: SpaceXAI, organization: xAI, required: false}
     - {account: deepseek_ai, organization: DeepSeek}
     - {account: Alibaba_Qwen, organization: Qwen}
     - {account: Kimi_Moonshot, organization: Moonshot AI}
@@ -68,27 +101,25 @@ x_panel:
     - {account: vllm_project, organization: vLLM}
     - {account: ollama, organization: Ollama}
     - {account: cursor_ai, organization: Cursor}
-    - {account: Replit, organization: Replit}
+    - {account: CloudflareDev, organization: Cloudflare, required: false}
 
-    # Hands-on product leads and maintainers. These accounts regularly expose
-    # previews, small tools, and release details before corporate channels do.
+    # Hands-on product leads and maintainers.
     - {account: sama, organization: OpenAI}
     - {account: pvncher, organization: OpenAI}
-    - {account: alexalbert__, organization: Anthropic}
+    - {account: alexalbert__, organization: Anthropic, required: false}
     - {account: trq212, organization: Anthropic}
     - {account: bcherny, organization: Anthropic}
-    - {account: felixrieseberg, organization: Anthropic}
+    - {account: felixrieseberg, organization: Anthropic, required: false}
     - {account: nateparrott, organization: Anthropic}
     - {account: demishassabis, organization: Google DeepMind}
     - {account: OfficialLoganK, organization: Google}
     - {account: Thom_Wolf, organization: Hugging Face}
     - {account: ClementDelangue, organization: Hugging Face}
-    - {account: ggerganov, organization: ggml.org}
+    - {account: ggerganov, organization: ggml.org, required: false}
     - {account: hwchase17, organization: LangChain}
     - {account: jerryjliu0, organization: LlamaIndex}
 
-    # Independent interpreters and primary researchers. They supply early
-    # practical implications and open-research signals, not factual authority.
+    # Independent interpreters and primary researchers.
     - {account: karpathy, required: false}
     - {account: NoamShazeer, organization: OpenAI, required: false}
     - {account: simonw, required: false}
@@ -100,10 +131,3 @@ x_panel:
     - {account: lilianweng, required: false}
     - {account: HamelHusain, required: false}
     - {account: sh_reya, required: false}
-
-    # Comparable public brief creators. These are optional discovery inputs:
-    # they can reveal launches, workflows, and availability changes that our
-    # primary feeds miss, but they never qualify a claim on their own.
-    - {account: TheRundownAI, organization: The Rundown AI, required: false}
-    - {account: rowancheung, organization: Rowan Cheung, required: false}
-    - {account: theneurondaily, organization: The Neuron, required: false}

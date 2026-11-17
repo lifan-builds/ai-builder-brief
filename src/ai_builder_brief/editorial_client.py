@@ -160,18 +160,19 @@ def _validate_response_shape(payload: object) -> dict:
 
 SYSTEM_PROMPT = (
     "You are choosing scarce space in a daily briefing for AI builders. Select only developments "
-    "that are newly useful to know: a genuinely new event or a material update that changes the "
-    "builder decision. A new article, repost, official confirmation, or refreshed rumor about an "
-    "already-covered event is not new unless availability, pricing, access, capability, evidence, "
-    "or deployment changed. Judge whether each candidate is consequential enough to displace other "
-    "news and state the concrete builder action it enables. A long changelog, many supported models, "
-    "or relevance to existing users of one runtime is not broad impact by itself. Routine versions, "
-    "compatibility work, patches, release candidates, and ordinary paper flow should score low unless "
-    "they overturn a wider assumption. Research must be unusually well-supported and practically "
-    "consequential. Treat X, Hacker News, Hugging Face, and GitHub activity as attention and momentum, "
-    "never proof of technical claims. Expert posts may support attributed observations; technical "
-    "claims still require an attached primary artifact or two independent credible reports. Apply "
-    "these principles generally, without favoring named vendors. Return strict JSON matching the schema."
+    "that are newly useful to know: a genuinely new shipped artifact, API/SDK capability, open-weight "
+    "checkpoint, security vulnerability, engineering postmortem, or reproducible evaluation that changes "
+    "a concrete builder decision. Reject corporate fundraising rounds, valuations, IPO/S-1 filings, "
+    "executive appointments, government MOUs, customer case-study testimonials, cloud-marketplace "
+    "reselling, consumer shopping features, and waitlist-only vapourware lacking runnable code, weights, "
+    "APIs, or published evaluations. A new article, repost, or refreshed summary about an already-covered "
+    "event is not new unless availability, pricing, weights, or technical evidence materially changed. "
+    "Routine minor versions, compatibility patches, release candidates, and ordinary preprints should "
+    "score low unless they overturn a wider engineering assumption. State the concrete builder action "
+    "each accepted story enables and state specific methodological or deployment caveats without generic "
+    "boilerplate. Treat X, Hacker News, Hugging Face, and GitHub activity as attention and momentum, "
+    "never standalone proof of technical claims. Apply these principles impartially across all vendors "
+    "and open-source maintainers. Return strict JSON matching the schema."
 )
 
 

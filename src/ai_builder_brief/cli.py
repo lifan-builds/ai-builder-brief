@@ -1,19 +1,27 @@
-"""CLI for the AI Builder Brief production show."""
+"""CLI for the AI Builder Brief production show and benchmark suite."""
 
 from __future__ import annotations
 
 import argparse
+import json
 import logging
 import sys
-from datetime import date
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 from castforge.config import load_config
 from castforge.validation import validate_project
 from dotenv import load_dotenv
 
-from ai_builder_brief.pipeline import run_daily
+from ai_builder_brief.benchmark import (
+    evaluate_brief_markdown,
+    evaluate_history_corpus,
+    fetch_algolia_hn_ground_truth,
+    load_hn_ground_truth,
+    render_benchmark_markdown,
+)
 from ai_builder_brief.journal import publish_journal
+from ai_builder_brief.pipeline import run_daily
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -26,14 +34,27 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument("--fixture", action="store_true")
     run.add_argument("--shadow", action="store_true")
     run.add_argument("--review-only", action="store_true")
+    run.add_argument("--dry-run", action="store_true", help="Run deterministic review pipeline without LLM calls.")
+
     journal = subparsers.add_parser("journal")
     journal.add_argument("--date", dest="brief_date", type=date.fromisoformat, default=None)
     journal.add_argument("--site-root", type=Path, required=True)
     journal.add_argument("--backfill", action="store_true")
+
     validate = subparsers.add_parser("validate")
     validate.add_argument("--config", type=Path, default=Path("podcast.yaml"))
     validate.add_argument("--date", dest="episode_date", default=None)
     validate.add_argument("--check-public", action="store_true")
+
+    bench = subparsers.add_parser("benchmark")
+    bench.add_argument("--history-dir", type=Path, default=Path("history"))
+    bench.add_argument("--ground-truth", type=Path, default=Path("fixtures/benchmark_hn_ground_truth.json"))
+    bench.add_argument("--brief", type=Path, default=None, help="Evaluate a single brief Markdown file.")
+    bench.add_argument("--start-date", type=date.fromisoformat, default=date(2026, 10, 29))
+    bench.add_argument("--end-date", type=date.fromisoformat, default=None)
+    bench.add_argument("--live-hn", action="store_true", help="Fetch fresh Algolia HN ground truth instead of fixture.")
+    bench.add_argument("--json", action="store_true", dest="as_json")
+    bench.add_argument("-o", "--output", type=Path, default=None)
     return parser
 
 
@@ -64,8 +85,45 @@ def main(argv: list[str] | None = None) -> int:
                 fixture=args.fixture,
                 shadow=args.shadow,
                 review_only=args.review_only,
+                dry_run=args.dry_run,
             )
             print(status)
+            return 0
+        if args.command == "benchmark":
+            if args.live_hn:
+                end_dt = (
+                    datetime(args.end_date.year, args.end_date.month, args.end_date.day, 23, 59, tzinfo=UTC)
+                    if args.end_date
+                    else datetime.now(UTC)
+                )
+                start_dt = datetime(args.start_date.year, args.start_date.month, args.start_date.day, 0, 0, tzinfo=UTC) - timedelta(days=3)
+                gt = fetch_algolia_hn_ground_truth(start=start_dt, end=end_dt)
+            else:
+                gt = load_hn_ground_truth(args.ground_truth)
+            if args.brief is not None:
+                prior = sorted(
+                    p for p in args.brief.parent.glob("*.md")
+                    if p.name != args.brief.name and "-x-" not in p.name and p.stem[:10].count("-") == 2 and p.name < args.brief.name
+                )[-14:]
+                single = evaluate_brief_markdown(args.brief, gt, prior_briefs=prior).to_dict()
+                rendered = json.dumps(single, ensure_ascii=False, indent=2) + "\n"
+            else:
+                report = evaluate_history_corpus(
+                    args.history_dir,
+                    gt,
+                    start_date=args.start_date,
+                    end_date=args.end_date,
+                )
+                rendered = (
+                    json.dumps(report, ensure_ascii=False, indent=2) + "\n"
+                    if args.as_json
+                    else render_benchmark_markdown(report)
+                )
+            if args.output:
+                args.output.parent.mkdir(parents=True, exist_ok=True)
+                args.output.write_text(rendered, encoding="utf-8")
+            else:
+                print(rendered, end="")
             return 0
         config = load_config(args.config)
         errors = validate_project(config, episode_date=args.episode_date, check_public=args.check_public)

@@ -1,10 +1,16 @@
-"""Validation for the daily brief source catalog."""
+"""Validation and live health probing for the daily brief source catalog."""
 
 from __future__ import annotations
 
+import gzip
+import ssl
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
+import certifi
 import yaml
 
 REQUIRED_LANES = {
@@ -16,6 +22,9 @@ REQUIRED_LANES = {
     "builder_behavior",
 }
 ALLOWED_ROLES = {"primary", "independent", "adoption", "discovery"}
+LIVE_SKIP_DOMAINS = {"x.com", "www.reddit.com", "reddit.com"}
+SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
+USER_AGENT = "AIBuilderBriefValidator/1.0 (+https://github.com/lifan-builds/ai-builder-brief)"
 
 
 def load_manifest(path: Path) -> dict[str, Any]:
@@ -63,6 +72,9 @@ def validate_manifest(payload: dict[str, Any]) -> list[str]:
             errors.append(f"{source_id} is missing language")
         if not source.get("url"):
             errors.append(f"{source_id} is missing url")
+        weight = source.get("weight")
+        if weight is not None and (isinstance(weight, bool) or not isinstance(weight, int) or not 1 <= weight <= 100):
+            errors.append(f"{source_id} weight must be an integer between 1 and 100")
         if "reddit.com" in str(source.get("url", "")) and source.get("role") != "discovery":
             errors.append("Reddit sources must be discovery-only")
 
@@ -82,9 +94,65 @@ def validate_manifest(payload: dict[str, Any]) -> list[str]:
     return errors
 
 
-def validate_path(path: Path) -> list[str]:
+def check_live_sources(
+    payload: dict[str, Any],
+    *,
+    opener: Callable[..., Any] = urlopen,
+    timeout: float = 15.0,
+) -> list[str]:
+    """Probe configured URLs and return error strings for HTTP failures or challenge shells."""
+    sources = [s for s in payload.get("sources", []) if isinstance(s, dict) and s.get("url")]
+
+    def probe_one(source: dict[str, Any]) -> str | None:
+        source_id = str(source.get("id") or "unknown")
+        url = str(source["url"])
+        if any(f"://{dom}/" in url or url.endswith(f"://{dom}") for dom in LIVE_SKIP_DOMAINS):
+            return None
+        req = Request(
+            url,
+            headers={
+                "User-Agent": USER_AGENT,
+                "Accept": "application/atom+xml,application/rss+xml,application/json,text/xml,text/html,*/*",
+            },
+        )
+        kwargs: dict[str, Any] = {"timeout": timeout}
+        if opener is urlopen:
+            kwargs["context"] = SSL_CONTEXT
+        try:
+            with opener(req, **kwargs) as resp:
+                status = getattr(resp, "status", 200)
+                raw = resp.read(256_000)
+                if raw[:2] == b"\x1f\x8b":
+                    raw = gzip.decompress(raw)
+                if status >= 400:
+                    return f"{source_id} ({url}): HTTP {status}"
+                if len(raw) < 32:
+                    return f"{source_id} ({url}): empty response ({len(raw)} bytes)"
+                sample = raw[:4096].decode("utf-8", errors="replace").lower()
+                if "just a moment..." in sample and "cf-browser-verification" in sample:
+                    return f"{source_id} ({url}): blocked by Cloudflare challenge"
+        except HTTPError as err:
+            return f"{source_id} ({url}): HTTP {err.code}"
+        except URLError as err:
+            return f"{source_id} ({url}): network error ({err.reason})"
+        except Exception as err:
+            return f"{source_id} ({url}): {err}"
+        return None
+
+    if opener is urlopen and len(sources) > 1:
+        with ThreadPoolExecutor(max_workers=12) as pool:
+            results = list(pool.map(probe_one, sources))
+    else:
+        results = [probe_one(s) for s in sources]
+    return [msg for msg in results if msg is not None]
+
+
+def validate_path(path: Path, *, check_live: bool = False) -> list[str]:
     try:
-        return validate_manifest(load_manifest(path))
+        manifest = load_manifest(path)
     except (OSError, yaml.YAMLError) as error:
         return [f"could not read manifest: {error}"]
-
+    errors = validate_manifest(manifest)
+    if not errors and check_live:
+        errors.extend(check_live_sources(manifest))
+    return errors

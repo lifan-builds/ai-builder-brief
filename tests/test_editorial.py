@@ -380,3 +380,70 @@ def test_editorial_failure_ledger_metadata_is_allowlisted(tmp_path) -> None:
         "batch_index": 2,
     }
     assert "secret" not in path.read_text(encoding="utf-8")
+
+
+def test_word_bounded_routine_filter_keeps_ci_substrings_and_blocks_funding_fluff() -> None:
+    valid_items = [
+        _item(
+            "gpt62",
+            "Official pricing and decision guide for artificial intelligence APIs",
+            summary="Hallucinations fall 20% with higher inference efficiency and precision.",
+            metadata={"cluster_id": "gpt62", "score": 95},
+        ),
+    ]
+    fluff_items = [
+        _item(
+            "seed",
+            "Pedestal AI raises $4.7 million seed round to automate workflows",
+            authority="independent",
+            summary="The startup announced a new seed round led by venture investors.",
+            metadata={"cluster_id": "seed", "score": 85},
+        ),
+        _item(
+            "ipo",
+            "Anthropic files S-1 for initial public offering",
+            authority="primary",
+            summary="Regulatory filing details compute commitments.",
+            metadata={"cluster_id": "ipo", "score": 95},
+        ),
+    ]
+    candidates, _ = preprocess([*valid_items, *fluff_items])
+    assert [item.id for item in candidates] == ["gpt62"]
+
+
+def test_single_publisher_duplicate_articles_do_not_satisfy_independent_corroboration() -> None:
+    first = SourceItem(
+        id="tc1",
+        title="Reported provider roadmap leak",
+        url="https://techcrunch.example/1",
+        source="TechCrunch AI",
+        published_at="2026-11-16T12:00:00Z",
+        summary="Reported API details.",
+        authority="independent",
+        organization="TechCrunch",
+        category="models",
+        metadata={"cluster_id": "leak", "score": 70},
+    )
+    second = SourceItem(
+        id="tc2",
+        title="Follow-up on reported provider roadmap leak",
+        url="https://techcrunch.example/2",
+        source="TechCrunch AI",
+        published_at="2026-11-16T14:00:00Z",
+        summary="Additional reported API details.",
+        authority="independent",
+        organization="TechCrunch",
+        category="models",
+        metadata={"cluster_id": "leak", "score": 68},
+    )
+    decision = EditorialDecision(
+        cluster_id="leak",
+        decision="accept",
+        impact=4,
+        actionability=4,
+        novelty=4,
+        evidence=4,
+        audience_breadth=4,
+        builder_actions=("monitor",),
+    )
+    assert is_podcast_ready(decision, [first, second]) is False

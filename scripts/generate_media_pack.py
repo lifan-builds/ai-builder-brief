@@ -227,6 +227,19 @@ def parse_issue_markdown(path: Path) -> ParsedIssue:
             watchlist.append(_MD_LINK_RE.sub(r"\1", line[2:].strip()))
 
     if not items:
+        from ai_builder_brief.journal import _parse_ranked_items
+
+        for rank_idx, (story_title, story_date, summary, link_pairs) in enumerate(_parse_ranked_items(raw), start=1):
+            items.append(
+                IssueItem(
+                    rank=rank_idx,
+                    headline=story_title,
+                    date_label=story_date,
+                    summary=summary,
+                    links=[u for _, u in link_pairs],
+                )
+            )
+    if not items:
         raise ValueError(f"No ranked Top 10 items found in issue file {path}")
 
     slug_match = re.search(r"\d{4}-\d{2}-\d{2}", path.stem)
@@ -274,16 +287,29 @@ def build_issue_image_tasks(
     thesis = issue.read_on_the_day or f"Key developments led by {lead.headline}."
     story_context = " | ".join(f"#{item.rank}: {item.headline}" for item in top[:8])
 
+    def short_tag(headline: str, max_words: int = 4) -> str:
+        words = re.findall(r"[A-Za-z0-9.+-]+", headline)
+        return " ".join(words[:max_words]).upper() or "BUILDER SIGNAL"
+
+    tag1 = short_tag(lead.headline)
+    tag2 = short_tag(second.headline)
+    tag3 = short_tag(third.headline)
+    tag4 = short_tag(fourth.headline)
+    tag6 = short_tag(sixth.headline)
+    tag7 = short_tag(seventh.headline)
+    tag8 = short_tag(eighth.headline)
+    tag10 = short_tag(tenth.headline)
+
     hero_prompt = (
         f"Wide 3:2 editorial technical illustration for '{issue.title}'. "
         "Visual style: ultra-crisp dark-slate architectural schematic and flagship engineering magazine hero artwork "
         "on deep midnight slate (#0c1720) with luminous emerald-mint (#34d399), sky-cyan (#7cc4fa), and warm amber (#f7c873) signal lines. "
         f"Semantic editorial context (for visual iconography only — do NOT paste raw headlines verbatim or invent unverified percentages): {thesis} ({story_context}). "
         "Composition: Top-left minimal monospace pill reading 'AI BUILDER BRIEF · "
-        f"{issue.slug}', bold clean headline 'EVALUATION BOUNDARIES & AGENT CONTROL FLOW', and three interconnected isometric engineering chambers left-to-right: "
-        "(Left chamber) 'EVAL HARNESS GATE' — split comparison diagram showing 'API CONFIG' vs 'PRODUCT CONFIG' with a single bold callout badge 'UP TO 34 PP DELTA' (do NOT draw fabricated axis percentages) plus 'HUMAN CALIBRATION' checkmarks; "
-        "(Center chamber) 'BREAKWATER & AGENT DAG' — isolated verification sandbox above a clean Python multi-agent DAG ('PLAN -> PARALLEL AGENTS -> VERIFY'); "
-        "(Right chamber) 'LOCAL & API STACK' — clean modular stack icons with complete short labels ONLY: 'DEEPSEEK APP APIS', 'CHECKPOINT FORENSICS', 'EDGE0 145B STREAMING', 'LLAMA.CPP V1.0 ABI', and 'SCOPED WALLET TOKENS'. "
+        f"{issue.slug}', bold clean headline '{tag1} & {tag2}', and three interconnected isometric engineering chambers left-to-right: "
+        f"(Left chamber) 'LEAD EVIDENCE' — split comparison diagram for '{tag1}' with verification checkmarks; "
+        f"(Center chamber) 'SYSTEMS & HARNESS' — isolated verification sandbox above a clean workflow DAG for '{tag2}' and '{tag3}'; "
+        f"(Right chamber) 'RUNTIME & API STACK' — clean modular stack icons with complete short labels ONLY: '{tag4}', '{tag6}', '{tag7}', '{tag8}', and '{tag10}'. "
         "Every visible label must be complete, grammatical, and razor-sharp; zero truncated sentences, zero invented numbers."
     )
 
@@ -292,12 +318,12 @@ def build_issue_image_tasks(
         "Visual aesthetic: flagship indie-engineering magazine cover on deep midnight navy-slate (#0b131b) with subtle architectural grid, "
         "emerald (#34d399), electric cyan (#66a6ff), and warm amber (#fbbf24) glowing accents. "
         f"Top header pill badge: 'AI BUILDER BRIEF · {issue.slug}'. "
-        "Bold, ultra-clean poster title at upper center: 'EVAL GATES & AGENT CONTROL'. "
-        "Below the title, three crisp glassmorphic highlight cards with icons and COMPLETE 3-word titles ONLY (no cut-off sentences): "
-        "Card 1: 'ANTHROPIC EVAL GUIDE' (subtitle: '34 pp Setup Delta'), "
-        "Card 2: 'SINGULARITY-BENCH' (subtitle: 'Breakwater Verifier'), "
-        "Card 3: 'ANTIGRAVITY DAG' (subtitle: 'Python Workflows'). "
-        "Lower centerpiece visual: striking isometric 3D technical diagram of an AI agent signal passing through a glowing emerald 'VERIFICATION GATE' into a structured 'MULTI-AGENT WORKFLOW' node cluster. "
+        f"Bold, ultra-clean poster title at upper center: '{tag1}'. "
+        "Below the title, three crisp glassmorphic highlight cards with icons and COMPLETE short titles ONLY (no cut-off sentences): "
+        f"Card 1: '{tag1}', "
+        f"Card 2: '{tag2}', "
+        f"Card 3: '{tag3}'. "
+        "Lower centerpiece visual: striking isometric 3D technical diagram of an AI agent signal passing through a glowing emerald 'VERIFICATION GATE' into a structured 'BUILDER WORKFLOW' node cluster. "
         "Bottom clean footer strip: '10 SOURCE-LINKED STORIES · EVIDENCE FIRST'. "
         "Crisp typography, complete phrases only, balanced margins for mobile 2:3 feed."
     )
@@ -305,11 +331,11 @@ def build_issue_image_tasks(
     xhs_insight_prompt = (
         f"Vertical 2:3 Xiaohongshu (RedNote) technical insight infographic card for AI Builder Brief ({issue.slug}). "
         "Style: high-craft dark-slate (#0d1821) architectural schematic with crisp mint-emerald (#34d399), amber (#f59e0b), and ice-blue (#7dd3fc) diagrams. "
-        f"Top header bar ONLY: 'AI BUILDER BRIEF | {issue.slug}' above banner 'CORE INSIGHT · EVALUATION BOUNDARIES' (do NOT add a bullet or summary text strip under the banner; go straight into the two diagram panels). "
+        f"Top header bar ONLY: 'AI BUILDER BRIEF | {issue.slug}' above banner 'CORE INSIGHT · {tag1}' (do NOT add a bullet or summary text strip under the banner; go straight into the two diagram panels). "
         f"Semantic reference (do NOT render these sentences verbatim): {lead.headline}; {second.headline}; {sixth.headline}. "
         "Two spacious visual diagram panels stacked vertically filling the card: "
-        "Upper panel — 'HARNESS & GRADER DELTA (ANTHROPIC)': schematic comparing 'API CONFIG' vs 'PRODUCT CONFIG' connected by a bold caliper badge 'UP TO 34 PP SHIFT' (show structural config blocks only, no invented percentages), paired with a circular loop 'WHOLE CONVERSATION -> HUMAN CALIBRATION -> PAIRED UNCERTAINTY'. "
-        "Lower panel — 'SANDBOX & EGRESS ISOLATION': fortified 'BREAKWATER VERIFIER' & 'NETWORK EGRESS FIREWALL' blocking external '36,411 EVAL PROBES (EPOCH)' from reaching 'LIVE PRODUCTION ENDPOINTS'. "
+        f"Upper panel — '{tag1}': clean engineering comparison diagram paired with a verification loop 'BENCHMARK -> CALIBRATE -> VERIFY'. "
+        f"Lower panel — '{tag2} & {tag6}': fortified sandbox and system boundary schematic separating verified execution from untrusted inputs. "
         "Every visible label must be complete, concise, and razor-sharp."
     )
 
@@ -319,9 +345,9 @@ def build_issue_image_tasks(
         f"Top header bar ONLY: 'BUILDER MOVES · SHIP WITH EVIDENCE' and subheader 'AI BUILDER BRIEF | {issue.slug}' (do NOT render a checklist strip above Module 01; go straight from the header into the three spacious bento modules). "
         f"Semantic reference (do NOT render verbatim): {fourth.headline}; {seventh.headline}; {eighth.headline}; {tenth.headline}. "
         "Three clean horizontal bento modules stacked vertically using ONLY complete, self-contained labels: "
-        "Module 01 — '01 · SCRIPTED WORKFLOWS': Python icon + 'PLAN -> EXECUTE -> VERIFY' DAG + complete footer tag 'ANTIGRAVITY SCHEMA-CHECKED PYTHON PHASES'. "
-        "Module 02 — '02 · LOCAL RUNTIME CONTRACTS': GPU '23.25 GiB VRAM' + '38.27 GiB RAM' icons & 'C-ABI v1.0 LOCK' icon + complete footer tag 'EDGE0 145B STREAMING & LLAMA.CPP 1.0'. "
-        "Module 03 — '03 · SCOPED AGENT PAYMENTS': 'HUMAN APPROVAL' lock arrow into 'PAYMENT TOKEN' badge + complete footer tag 'CHATGPT WALLET MERCHANT & RISK CHECKS'. "
+        f"Module 01 — '01 · {tag4}': workflow icon + 'PLAN -> TEST -> VERIFY' DAG. "
+        f"Module 02 — '02 · {tag7}': runtime & memory contract schematic + '{tag8}'. "
+        f"Module 03 — '03 · {tag10}': explicit permission boundary & production check badge. "
         "Bottom sign-off pill: 'CLIFAN.COM/AI-BUILDER-BRIEF'. "
         "Ultra-clean layout, complete grammatical labels, generous vertical spacing."
     )

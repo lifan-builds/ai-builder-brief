@@ -331,3 +331,53 @@ def test_canonical_event_registry_suppresses_old_event(tmp_path):
         published_at="2026-09-12T00:00:00Z", summary="old", authority="primary",
         organization="x", category="models", metadata={"theme_key":"old-model-event"})
     assert _suppress_historical_repeats([item], root=tmp_path, episode_date=date(2026, 9, 12)) == []
+
+
+def test_historical_suppression_reads_decisions_ledger_and_history_urls_without_substring_false_positives(tmp_path: Path) -> None:
+    from ai_builder_brief.pipeline import _suppress_historical_repeats
+
+    editorial = tmp_path / "build" / "editorial"
+    editorial.mkdir(parents=True)
+    (editorial / "2026-11-15.json").write_text(
+        json.dumps({"decisions": [{"cluster_id": "covered-ledger-cluster", "decision": "accept"}]}),
+        encoding="utf-8",
+    )
+    history = tmp_path / "history"
+    history.mkdir()
+    (history / "2026-11-15.md").write_text(
+        "# AI Builder Brief — November 15, 2026\n\n"
+        "## Top 10\n\n"
+        "1. **Cursor discloses marketplace compromise** — **November 14, 2026**. "
+        "OpenRouter and Claude workflows were discussed in detail. [Postmortem](https://cursor.com/blog/compromise).\n\n"
+        "## Watchlist\n\n"
+        "- **Qwen4-Max preview:** restricted preview only. [Changelog](https://docs.qwencloud.com/changelog/models).\n",
+        encoding="utf-8",
+    )
+
+    repeat_ledger = SourceItem(
+        id="r1", title="Covered", url="https://example.com/1", source="A",
+        published_at="2026-11-17T00:00:00Z", summary="s", authority="primary",
+        organization="A", category="models", metadata={"theme_key": "covered-ledger-cluster"},
+    )
+    repeat_url = SourceItem(
+        id="r2", title="Cursor postmortem", url="https://www.cursor.com/blog/compromise/", source="Cursor",
+        published_at="2026-11-17T00:00:00Z", summary="s", authority="primary",
+        organization="Cursor", category="security", metadata={"theme_key": "new-slug"},
+    )
+    unrelated_openrouter = SourceItem(
+        id="fresh", title="Hugging Face moves routing to OpenRouter", url="https://huggingface.co/blog/openrouter",
+        source="Hugging Face", published_at="2026-11-16T00:00:00Z", summary="s", authority="primary",
+        organization="Hugging Face", category="infrastructure", metadata={"theme_key": "openrouter"},
+    )
+    watchlist_graduation = SourceItem(
+        id="qwen-ga", title="Qwen4-Max general availability", url="https://docs.qwencloud.com/changelog/models",
+        source="Qwen", published_at="2026-11-16T00:00:00Z", summary="s", authority="primary",
+        organization="Qwen", category="models", metadata={"theme_key": "qwen4-max-ga"},
+    )
+
+    kept = _suppress_historical_repeats(
+        [repeat_ledger, repeat_url, unrelated_openrouter, watchlist_graduation],
+        root=tmp_path,
+        episode_date=date(2026, 11, 17),
+    )
+    assert [item.id for item in kept] == ["fresh", "qwen-ga"]

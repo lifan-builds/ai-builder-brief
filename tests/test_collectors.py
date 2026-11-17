@@ -5,7 +5,7 @@ from email.message import Message
 
 from castforge.models import SourceItem
 
-from ai_builder_brief.collectors import assign_story_clusters, collect_feed, collect_x_panel
+from ai_builder_brief.collectors import assign_story_clusters, collect_feed, collect_hacker_news, collect_x_panel
 
 
 class Response:
@@ -322,3 +322,114 @@ def test_x_account_affiliation_is_preserved_as_organization() -> None:
 
     assert result.items[0].organization == "Acme"
     assert result.items[0].metadata["x_account"] == "representative"
+
+
+def test_long_organization_names_and_baseline_mentions_do_not_false_merge() -> None:
+    revenue = SourceItem(
+        id="rev",
+        title="Moonshot AI targets $2B in annual revenue",
+        url="https://techcrunch.example/moonshot-revenue",
+        source="TechCrunch AI",
+        published_at="2026-09-11T19:00:00Z",
+        summary="OpenRouter data shows strong Kimi usage across models.",
+        authority="independent",
+        organization="TechCrunch",
+        category="industry",
+        metadata={"score": 60},
+    )
+    distillation = SourceItem(
+        id="distill",
+        title="Anthropic details distillation campaigns from Moonshot AI",
+        url="https://techcrunch.example/distillation",
+        source="TechCrunch AI",
+        published_at="2026-09-10T18:00:00Z",
+        summary="Anthropic alleges model usage campaigns across providers.",
+        authority="independent",
+        organization="TechCrunch",
+        category="security",
+        metadata={"score": 60},
+    )
+    quail_paper = SourceItem(
+        id="quail",
+        title="Quail saves recurrent checkpoints alongside KV caches",
+        url="https://fsdatalab.github.io/blog/quail",
+        source="FSDataLab",
+        published_at="2026-11-16T12:00:00Z",
+        summary="On one H100 with Qwen3.5-4B, Quail achieves a 3.2x speedup over vLLM.",
+        authority="independent",
+        organization="FSDataLab",
+        category="infrastructure",
+        metadata={"score": 85},
+    )
+    qwen_release = SourceItem(
+        id="qwen-ga",
+        title="Qwen4-Max opens general API access",
+        url="https://docs.qwencloud.com/changelog/models",
+        source="QwenCloud",
+        published_at="2026-11-16T10:00:00Z",
+        summary="General API availability with 1M context.",
+        authority="primary",
+        organization="Qwen",
+        category="models",
+        metadata={"score": 90},
+    )
+
+    clustered = assign_story_clusters(
+        [revenue, distillation, quail_paper, qwen_release],
+        organizations=["Anthropic", "Moonshot AI", "Qwen", "vLLM"],
+    )
+    by_id = {item.id: item for item in clustered}
+    assert by_id["rev"].metadata["cluster_id"] != by_id["distill"].metadata["cluster_id"]
+    assert by_id["quail"].metadata["cluster_id"] != by_id["qwen-ga"].metadata["cluster_id"]
+    assert not str(by_id["quail"].metadata["cluster_id"]).startswith("product-")
+
+
+def test_algolia_hn_collector_enriches_linked_summary_and_filters_non_ai_agents() -> None:
+    import json as _json
+
+    algolia_payload = {
+        "nbPages": 1,
+        "hits": [
+            {
+                "objectID": "501",
+                "title": "Windows 11 collects coding agent telemetry across CLI tools",
+                "url": "https://xusheng.example/posts/windows-coding-agent-telemetry",
+                "points": 704,
+                "num_comments": 584,
+                "created_at_i": int(datetime(2026, 11, 16, 22, 0, tzinfo=UTC).timestamp()),
+            },
+            {
+                "objectID": "502",
+                "title": "Police officer gave ICE agent husband access to camera system",
+                "url": "https://localnews.example/ice-agent",
+                "points": 650,
+                "num_comments": 370,
+                "created_at_i": int(datetime(2026, 11, 16, 20, 0, tzinfo=UTC).timestamp()),
+            },
+        ],
+    }
+    article_html = (
+        b'<html><head><meta property="og:description" content="'
+        b"Detailed packet capture and ETW trace analysis showing Windows 11 enumerating active coding agent processes and MCP configs."
+        b'"></head></html>'
+    )
+
+    def opener(request, timeout=30):
+        if "hn.algolia.com" in request.full_url:
+            return Response(_json.dumps(algolia_payload).encode("utf-8"))
+        return Response(article_html)
+
+    items = collect_hacker_news(
+        start=datetime(2026, 11, 15, tzinfo=UTC),
+        end=datetime(2026, 11, 17, tzinfo=UTC),
+        limit=20,
+        topic_filter="ai",
+        use_algolia=True,
+        enrich_links=True,
+        opener=opener,
+    )
+    assert len(items) == 1
+    assert items[0].id == "hn-501"
+    assert items[0].authority == "independent"
+    assert "ETW trace analysis" in items[0].summary
+    assert items[0].metadata["hn_points"] == 704

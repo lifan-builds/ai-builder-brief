@@ -212,38 +212,49 @@ def build_review_items(
         if not bool(representatives_by_id[decision.cluster_id].metadata.get("community_led"))
     ]
     selected: list[EditorialDecision] = []
+    selected_ids: set[str] = set()
     used_organizations: set[str] = set()
     used_products: set[str] = set()
     used_themes: set[str] = set()
 
+    def try_select(decision: EditorialDecision) -> bool:
+        if decision.cluster_id in selected_ids:
+            return False
+        representative = representatives_by_id[decision.cluster_id]
+        organization = representative.organization.strip().casefold()
+        product = str(representative.metadata.get("product_family") or "").strip().casefold()
+        theme = str(representative.metadata.get("theme_key") or decision.cluster_id).strip().casefold()
+        if organization and organization in used_organizations:
+            return False
+        if product and product in used_products:
+            return False
+        if theme and theme in used_themes:
+            return False
+        selected.append(decision)
+        selected_ids.add(decision.cluster_id)
+        if organization:
+            used_organizations.add(organization)
+        if product:
+            used_products.add(product)
+        if theme:
+            used_themes.add(theme)
+        return True
+
     def admit(pool: list[EditorialDecision], target: int) -> None:
+        admitted_in_pool = 0
         for decision in pool:
-            if sum(
-                bool(representatives_by_id[item.cluster_id].metadata.get("community_led"))
-                == bool(representatives_by_id[decision.cluster_id].metadata.get("community_led"))
-                for item in selected
-            ) >= target:
+            if admitted_in_pool >= target:
                 break
-            representative = representatives_by_id[decision.cluster_id]
-            organization = representative.organization.strip().casefold()
-            product = str(representative.metadata.get("product_family") or "").strip().casefold()
-            theme = str(representative.metadata.get("theme_key") or decision.cluster_id).strip().casefold()
-            if organization and organization in used_organizations:
-                continue
-            if product and product in used_products:
-                continue
-            if theme and theme in used_themes:
-                continue
-            selected.append(decision)
-            if organization:
-                used_organizations.add(organization)
-            if product:
-                used_products.add(product)
-            if theme:
-                used_themes.add(theme)
+            if try_select(decision):
+                admitted_in_pool += 1
 
     admit(community, min(community_target, limit))
     admit(primary, max(0, limit - community_target))
+    if len(selected) < limit:
+        for decision in ranked:
+            if len(selected) >= limit:
+                break
+            try_select(decision)
     selected.sort(
         key=lambda item: (-priority_by_id[item.cluster_id][1], item.cluster_id),
     )

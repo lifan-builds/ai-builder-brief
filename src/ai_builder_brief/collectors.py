@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+import gzip
 import hashlib
 import html
 import json
 import logging
+import math
 import re
 import shutil
 import ssl
@@ -18,17 +20,56 @@ from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Callable, Iterable
-from urllib.parse import urljoin, urlparse
+from urllib.parse import urlencode, urljoin, urlparse
 from urllib.request import Request, urlopen
 
-import yaml
 import certifi
-
+import yaml
 from castforge.models import SourceItem
 
 log = logging.getLogger(__name__)
-USER_AGENT = "AIBuilderBrief/0.1 (+https://github.com/lifan-builds/ai-builder-brief)"
+USER_AGENT = "AIBuilderBrief/0.2 (+https://github.com/lifan-builds/ai-builder-brief)"
 SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
+
+PRIMARY_ARTIFACT_HOSTS = (
+    "openai.com",
+    "deploymentsafety.openai.com",
+    "alignment.openai.com",
+    "platform.openai.com",
+    "anthropic.com",
+    "claude.dev",
+    "claude.com",
+    "docs.anthropic.com",
+    "deepmind.google",
+    "research.google",
+    "blog.google",
+    "ai.meta.com",
+    "mistral.ai",
+    "api-docs.deepseek.com",
+    "qwen.ai",
+    "docs.qwencloud.com",
+    "huggingface.co",
+    "arxiv.org",
+    "blog.cloudflare.com",
+    "together.ai",
+    "cursor.com",
+    "opencode.ai",
+    "github.blog",
+    "epoch.ai",
+    "metr.org",
+    "apolloresearch.ai",
+)
+
+DISCOVERY_ONLY_HOSTS = {
+    "news.ycombinator.com",
+    "x.com",
+    "twitter.com",
+    "nitter.cf",
+    "reddit.com",
+    "old.reddit.com",
+    "techmeme.com",
+    "news.google.com",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -64,7 +105,8 @@ class XPanelHealth:
             "successful_accounts": self.successful_accounts,
             "success_ratio": (
                 self.successful_accounts / self.configured_accounts
-                if self.configured_accounts else 0.0
+                if self.configured_accounts
+                else 0.0
             ),
             "required_success_ratio": self.required_success_ratio,
             "required_configured_accounts": self.required_configured_accounts,
@@ -88,27 +130,64 @@ class CollectionResult:
 
     @property
     def healthy(self) -> bool:
-        # X is a discovery/momentum panel. It must never be the sole gate for
-        # a review when authoritative feeds and page indexes are available.
-        # Keep its own health visible in the report, but gate on at least one
-        # primary or independently reported item.
         return any(item.authority in {"primary", "independent"} for item in self.items)
 
     def health_dict(self) -> dict[str, Any]:
         return {"healthy": self.healthy, "x_panel": self.x_panel.to_dict()}
 
 
-def _request(url: str, *, opener: Callable[..., Any] = urlopen) -> bytes:
-    request = Request(url, headers={"User-Agent": USER_AGENT, "Accept": "application/rss+xml, application/atom+xml, application/json, text/html"})
-    kwargs: dict[str, Any] = {"timeout": 30}
-    if opener is urlopen:
-        kwargs["context"] = SSL_CONTEXT
-    with opener(request, **kwargs) as response:
-        return response.read()
+def _request(url: str, *, opener: Callable[..., Any] = urlopen, timeout: int = 30) -> bytes:
+    request = Request(
+        url,
+        headers={
+            "User-Agent": USER_AGENT,
+            "Accept": "application/rss+xml, application/atom+xml, application/json, text/xml, text/html, */*",
+        },
+    )
+    if opener is not urlopen:
+        with opener(request, timeout=timeout) as response:
+            raw: bytes = response.read()
+            return gzip.decompress(raw) if raw[:2] == b"\x1f\x8b" else raw
+
+    last_error: Exception | None = None
+    for _ in range(2):
+        try:
+            with opener(request, timeout=timeout, context=SSL_CONTEXT) as response:
+                raw = response.read()
+                if raw[:2] == b"\x1f\x8b":
+                    raw = gzip.decompress(raw)
+                if raw:
+                    return raw
+        except Exception as exc:
+            last_error = exc
+    if last_error is not None:
+        raise last_error
+    raise RuntimeError(f"empty response from {url}")
+
+
+def canonical_source_url(url: str) -> str:
+    """Canonicalize URLs across tracking params and arXiv/HF paper mirrors."""
+    raw = (url or "").strip()
+    if not raw:
+        return ""
+    parsed = urlparse(raw)
+    scheme = "https" if parsed.scheme in {"http", "https"} else parsed.scheme
+    host = parsed.netloc.lower().removeprefix("www.")
+    path = parsed.path.rstrip("/")
+    arxiv_match = re.match(
+        r"^(?:/(?:abs|html|pdf)|/papers)/(\d{4}\.\d{4,5})(?:v\d+)?(?:\.pdf)?$",
+        path,
+    )
+    if arxiv_match and host in {"arxiv.org", "huggingface.co"}:
+        return f"https://arxiv.org/abs/{arxiv_match.group(1)}"
+    query = ""
+    if host == "qwen.ai" and parsed.query.startswith("id="):
+        query = f"?{parsed.query.split('&', 1)[0]}"
+    return f"{scheme}://{host}{path}{query}" if host else raw.rstrip("/")
 
 
 def _identifier(url: str) -> str:
-    return hashlib.sha256(url.encode("utf-8")).hexdigest()[:16]
+    return hashlib.sha256(canonical_source_url(url).encode("utf-8")).hexdigest()[:16]
 
 
 def _parse_datetime(value: str) -> datetime | None:
@@ -144,20 +223,46 @@ def _plain_text(value: str, *, limit: int = 1200) -> str:
 
 
 BUILDER_TERMS = {
-    "agent", "api", "benchmark", "code", "developer", "eval", "gpu", "inference", "library",
-    "model", "open source", "release", "research", "sdk", "serving", "tool", "training",
+    "agent", "api", "benchmark", "changelog", "cli", "code", "compiler", "context",
+    "developer", "eval", "gpu", "harness", "inference", "kernel", "kv cache",
+    "latency", "library", "migration", "model", "open source", "open weights",
+    "postmortem", "quantization", "release", "research", "runtime", "sandbox",
+    "sdk", "serving", "tool", "training", "verification", "vulnerability", "weights",
 }
-NON_BUILDER_TERMS = {"ad campaign", "advertising", "marketing", "shopping"}
+NON_BUILDER_TERMS = {
+    "ad campaign", "advertising", "before anyone asks", "case study",
+    "disrupt 2026", "files s-1", "initial public offering", "interim ceo",
+    "leads in legal intelligence", "marketing", "memorandum of understanding",
+    "raises $", "seed round", "series a", "series b", "series c", "shopping",
+    "sponsored", "stock price", "targets $", "valuation",
+}
 AI_TOPIC_TERMS = {
-    "ai", "agent", "agents", "anthropic", "artificial intelligence", "benchmark",
-    "benchmarks", "chatgpt", "claude", "codex", "cohere", "cursor", "deepmind",
-    "deepseek", "embedding", "eval", "evals", "gemini", "generative ai", "genai", "gpt",
-    "gpu", "grok", "hugging face", "inference", "kimi", "language model",
-    "language models", "llama", "llm", "machine learning", "minimax", "mistral", "ml",
-    "model", "models", "moonshot", "neural", "ollama", "open weights", "openai",
-    "plugin", "plugins", "prompt", "qwen", "rag", "skill", "skills", "token", "tokens",
-    "training", "transformer", "transformers", "vllm", "watermark", "weights", "xai",
+    "ai", "agent", "agents", "agentic", "aider", "anthropic", "artificial intelligence",
+    "benchmark", "benchmarks", "blackwell", "chatgpt", "claude", "claude code", "cline",
+    "codex", "coding agent", "coding agents", "cohere", "cuda", "cursor", "deepmind",
+    "deepseek", "diffusion", "embedding", "embeddings", "eval", "evals", "fine-tuning",
+    "flashattention", "gemini", "generative ai", "genai", "ggml", "gguf", "gpt", "gpu",
+    "grpo", "grok", "hugging face", "huggingface", "inference", "jax", "kimi",
+    "kv cache", "langchain", "language model", "language models", "litellm", "llama",
+    "llama.cpp", "llamaindex", "llm", "llms", "lora", "machine learning", "mcp",
+    "minimax", "mistral", "ml", "mlx", "model", "model context protocol", "models",
+    "moonshot", "neural", "ollama", "open weights", "open-source ai", "openai",
+    "opencode", "openrouter", "plugin", "plugins", "prompt", "prompt injection",
+    "pydantic", "pytorch", "quantization", "qwen", "rag", "rlhf", "safetensors",
+    "sglang", "skill", "skills", "speculative decoding", "swe-bench", "token",
+    "tokens", "training", "transformer", "transformers", "triton", "vllm",
+    "watermark", "weights", "xai",
 }
+NON_AI_CONTEXT_RE = re.compile(
+    r"\b(?:ice\s+agent|fbi\s+agent|border\s+agent|real\s+estate\s+agent|secret\s+agent|insurance\s+agent|travel\s+agent|tesla\s+model\s+[3ysx]|car's\s+navigation)\b",
+    re.IGNORECASE,
+)
+
+
+def _contains_term(text: str, term: str) -> bool:
+    if term.endswith("$"):
+        return term in text
+    return bool(re.search(rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])", text))
 
 
 def _matches_topic_filter(title: str, summary: str, topic_filter: str) -> bool:
@@ -166,28 +271,28 @@ def _matches_topic_filter(title: str, summary: str, topic_filter: str) -> bool:
     if topic_filter != "ai":
         raise ValueError(f"unsupported topic filter: {topic_filter}")
     text = f"{title} {summary}".casefold()
-    return any(
-        re.search(rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])", text)
-        for term in AI_TOPIC_TERMS
-    )
+    if NON_AI_CONTEXT_RE.search(text):
+        return False
+    return any(_contains_term(text, term) for term in AI_TOPIC_TERMS)
 
 
 def _builder_adjustment(title: str, summary: str) -> float:
     haystack = f"{title} {summary}".casefold()
-    matches = sum(1 for term in BUILDER_TERMS if term in haystack)
-    penalty = 40 if any(term in haystack for term in NON_BUILDER_TERMS) else 0
-    return (matches * 3 if matches else -25) - penalty
+    matches = sum(1 for term in BUILDER_TERMS if _contains_term(haystack, term))
+    fluff_hits = sum(1 for term in NON_BUILDER_TERMS if _contains_term(haystack, term))
+    penalty = min(60, fluff_hits * 35)
+    return (min(21, matches * 3) if matches else -20) - penalty
 
 
 def _infer_category(configured: str, title: str, summary: str) -> str:
     if configured in {"developer tools", "research", "open source", "infrastructure"}:
         return configured
     text = f"{title} {summary}".casefold()
-    if any(term in text for term in ("government", "regulation", "policy", "lawmakers", "responsible ai")):
+    if any(_contains_term(text, term) for term in ("government", "regulation", "policy", "lawmakers", "responsible ai")):
         return "policy"
-    if any(term in text for term in ("data center", "datacenter", "gpu", "chip", "compute infrastructure")):
+    if any(_contains_term(text, term) for term in ("data center", "datacenter", "gpu", "chip", "compute infrastructure")):
         return "infrastructure"
-    if any(term in text for term in ("sdk", "api", "developer", "library", "runtime", "framework")):
+    if any(_contains_term(text, term) for term in ("sdk", "api", "developer", "library", "runtime", "framework", "cli", "mcp")):
         return "developer tools"
     return configured
 
@@ -228,7 +333,7 @@ def collect_feed(
             continue
         url = _entry_link(entry)
         title = _plain_text(_child_text(entry, "title"), limit=300)
-        summary = _plain_text(_child_text(entry, "description", "summary", "content"))
+        summary = _plain_text(_child_text(entry, "description", "summary", "content", "encoded"))
         if not url or not title or not summary:
             continue
         if not _matches_topic_filter(
@@ -239,12 +344,13 @@ def collect_feed(
             continue
         organization = str(definition.get("organization", definition["name"]))
         category = _infer_category(str(definition.get("category", "industry")), title, summary)
-        if "github.com" in urlparse(url).netloc and category == "developer tools":
+        if "github.com" in urlparse(url).netloc and category == "developer tools" and not title.lower().startswith(organization.lower()):
             title = f"{organization} {title}"
         score = float(definition.get("score", 50)) + _builder_adjustment(title, summary)
+        canon_url = canonical_source_url(url)
         items.append(
             SourceItem(
-                id=_identifier(url),
+                id=_identifier(canon_url),
                 title=title,
                 url=url,
                 source=str(definition["name"]),
@@ -254,13 +360,14 @@ def collect_feed(
                 organization=organization,
                 category=category,
                 metadata={
-                    "canonical_url": url,
+                    "canonical_url": canon_url,
                     "source_kind": str(definition.get("source_kind", "feed")),
                     "score": score,
-                    "selection_reason": "Fresh source within the rolling 24-hour window",
+                    "selection_reason": "Fresh source within the rolling window",
                     **(
                         {"product_family": str(definition["product_family"])}
-                        if definition.get("product_family") else {}
+                        if definition.get("product_family")
+                        else {}
                     ),
                 },
             )
@@ -298,6 +405,8 @@ class _ArticleMetaParser(HTMLParser):
         super().__init__()
         self.meta: dict[str, str] = {}
         self.times: list[str] = []
+        self._in_ld_json = False
+        self._ld_chunks: list[str] = []
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         values = dict(attrs)
@@ -308,6 +417,27 @@ class _ArticleMetaParser(HTMLParser):
                 self.meta[key] = content
         elif tag == "time" and values.get("datetime"):
             self.times.append(values["datetime"] or "")
+        elif tag == "script" and (values.get("type") or "").lower() == "application/ld+json":
+            self._in_ld_json = True
+            self._ld_chunks = []
+
+    def handle_data(self, data: str) -> None:
+        if self._in_ld_json:
+            self._ld_chunks.append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag == "script" and self._in_ld_json:
+            self._in_ld_json = False
+            raw_ld = "".join(self._ld_chunks)
+            m_pub = re.search(r'"datePublished"\s*:\s*"([^"]+)"', raw_ld)
+            if m_pub and "datePublished" not in self.meta:
+                self.meta["datePublished"] = m_pub.group(1)
+            m_desc = re.search(r'"description"\s*:\s*"([^"]+)"', raw_ld)
+            if m_desc and "description" not in self.meta:
+                self.meta["description"] = m_desc.group(1)
+
+
+_INDEX_SKIP_SEGMENTS = ("/topic/", "/tag/", "/category/", "/page/", "/author/", "/authors/")
 
 
 def collect_page_index(
@@ -325,17 +455,26 @@ def collect_page_index(
     seen: set[str] = set()
     for href, anchor_text in parser.links:
         url = urljoin(index_url, href).split("#", 1)[0]
-        if not url.startswith(prefix) or url.rstrip("/") == index_url.rstrip("/") or url in seen:
+        if (
+            not url.startswith(prefix)
+            or url.rstrip("/") == index_url.rstrip("/")
+            or any(seg in url.lower() for seg in _INDEX_SKIP_SEGMENTS)
+            or url in seen
+        ):
             continue
         seen.add(url)
         candidates.append((url, anchor_text))
-        if len(candidates) >= 8:
+        if len(candidates) >= 14:
             break
 
     items: list[SourceItem] = []
     for url, anchor_text in candidates:
+        try:
+            article_html = _request(url, opener=opener).decode("utf-8", errors="replace")
+        except Exception:
+            continue
         article = _ArticleMetaParser()
-        article.feed(_request(url, opener=opener).decode("utf-8", errors="replace"))
+        article.feed(article_html)
         published = _parse_datetime(
             article.meta.get("article:published_time", "")
             or article.meta.get("datePublished", "")
@@ -348,9 +487,13 @@ def collect_page_index(
         summary = _plain_text(article.meta.get("og:description", "") or article.meta.get("description", "") or title)
         if not title:
             continue
+        if not _matches_topic_filter(title, summary, str(definition.get("topic_filter") or "")):
+            continue
+        canon_url = canonical_source_url(url)
+        base_score = float(definition.get("score", 90)) + _builder_adjustment(title, summary)
         items.append(
             SourceItem(
-                id=_identifier(url),
+                id=_identifier(canon_url),
                 title=title,
                 url=url,
                 source=str(definition["name"]),
@@ -358,16 +501,64 @@ def collect_page_index(
                 summary=summary,
                 authority="primary",
                 organization=str(definition.get("organization", definition["name"])),
-                category=str(definition.get("category", "models")),
+                category=_infer_category(str(definition.get("category", "models")), title, summary),
                 metadata={
-                    "canonical_url": url,
+                    "canonical_url": canon_url,
                     "source_kind": "announcement",
-                    "score": float(definition.get("score", 90)),
+                    "score": base_score,
                     "selection_reason": "Official announcement within the rolling window",
                 },
             )
         )
     return items
+
+
+def _classify_hn_target_authority(url: str, extracted_summary: str) -> tuple[str, str]:
+    parsed = urlparse(url)
+    host = parsed.netloc.lower().removeprefix("www.")
+    if host in DISCOVERY_ONLY_HOSTS:
+        return "signal", "trend"
+    if host == "github.com":
+        parts = [p for p in parsed.path.split("/") if p]
+        if len(parts) >= 2 and parts[0] not in {"trending", "topics", "orgs", "features"}:
+            return "primary", "developer tools"
+    if any(host == dom or host.endswith(f".{dom}") for dom in PRIMARY_ARTIFACT_HOSTS):
+        cat = "research" if host in {"arxiv.org", "research.google", "epoch.ai", "metr.org"} else "developer tools"
+        return "primary", cat
+    if len(extracted_summary.split()) >= 14:
+        return "independent", "developer tools"
+    return "signal", "trend"
+
+
+def _fetch_linked_meta_summary(url: str, *, opener: Callable[..., Any] = urlopen) -> str:
+    parsed = urlparse(url)
+    host = parsed.netloc.lower().removeprefix("www.")
+    if host in DISCOVERY_ONLY_HOSTS or url.lower().endswith(".pdf"):
+        return ""
+    try:
+        raw_html = _request(url, opener=opener, timeout=6).decode("utf-8", errors="replace")[:160_000]
+    except Exception:
+        return ""
+    meta = _ArticleMetaParser()
+    try:
+        meta.feed(raw_html)
+    except Exception:
+        return ""
+    desc = _plain_text(
+        meta.meta.get("og:description", "")
+        or meta.meta.get("twitter:description", "")
+        or meta.meta.get("description", ""),
+        limit=900,
+    )
+    if len(desc.split()) >= 8:
+        return desc
+    # Fallback: extract first substantive paragraph
+    paragraphs = re.findall(r"<p[^>]*>(.*?)</p>", raw_html, flags=re.I | re.S)
+    for para in paragraphs[:6]:
+        clean = _plain_text(para, limit=700)
+        if len(clean.split()) >= 14:
+            return clean
+    return desc
 
 
 def collect_hacker_news(
@@ -376,49 +567,138 @@ def collect_hacker_news(
     end: datetime,
     limit: int,
     topic_filter: str = "",
+    min_points: int = 50,
+    use_algolia: bool | None = None,
+    enrich_links: bool | None = None,
     opener: Callable[..., Any] = urlopen,
 ) -> list[SourceItem]:
-    ids = json.loads(_request("https://hacker-news.firebaseio.com/v0/topstories.json", opener=opener))[:limit]
+    if use_algolia is None:
+        use_algolia = opener is urlopen
+    if enrich_links is None:
+        enrich_links = opener is urlopen
+
+    raw_stories: list[dict[str, Any]] = []
+    if use_algolia:
+        params = urlencode(
+            {
+                "tags": "story",
+                "numericFilters": f"created_at_i>={int(start.timestamp())},created_at_i<={int(end.timestamp())},points>={min_points}",
+                "hitsPerPage": min(100, max(limit * 2, 60)),
+            }
+        )
+        payload = json.loads(_request(f"https://hn.algolia.com/api/v1/search?{params}", opener=opener))
+        seen_canon: set[str] = set()
+        hits = sorted(payload.get("hits", []), key=lambda h: (-int(h.get("points") or 0), -int(h.get("num_comments") or 0)))
+        for hit in hits:
+            url = str(hit.get("url") or "").strip()
+            title = str(hit.get("title") or "").strip()
+            if not url or not title:
+                continue
+            canon = canonical_source_url(url)
+            if canon in seen_canon:
+                continue
+            url_host = urlparse(url).netloc.lower().removeprefix("www.")
+            domain_hint = url_host if any(url_host == d or url_host.endswith(f".{d}") for d in PRIMARY_ARTIFACT_HOSTS) else ""
+            if not _matches_topic_filter(title, domain_hint, topic_filter):
+                continue
+            seen_canon.add(canon)
+            raw_stories.append(
+                {
+                    "id": str(hit.get("objectID") or ""),
+                    "title": title,
+                    "url": url,
+                    "canonical_url": canon,
+                    "points": int(hit.get("points") or 0),
+                    "comments": int(hit.get("num_comments") or 0),
+                    "published": datetime.fromtimestamp(int(hit.get("created_at_i") or 0), tz=UTC),
+                }
+            )
+            if len(raw_stories) >= limit:
+                break
+    else:
+        ids = json.loads(_request("https://hacker-news.firebaseio.com/v0/topstories.json", opener=opener))[:limit]
+        for story_id in ids:
+            raw = json.loads(_request(f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json", opener=opener))
+            if raw.get("type") != "story" or not raw.get("url") or not raw.get("title"):
+                continue
+            if not _matches_topic_filter(str(raw["title"]), "", topic_filter):
+                continue
+            published = datetime.fromtimestamp(int(raw.get("time", 0)), tz=UTC)
+            if not start <= published <= end:
+                continue
+            url = str(raw["url"])
+            raw_stories.append(
+                {
+                    "id": str(story_id),
+                    "title": str(raw["title"]),
+                    "url": url,
+                    "canonical_url": canonical_source_url(url),
+                    "points": int(raw.get("score", 0) or 0),
+                    "comments": int(raw.get("descendants", 0) or 0),
+                    "published": published,
+                }
+            )
+
+    summaries_by_id: dict[str, str] = {}
+    if enrich_links and raw_stories:
+        to_enrich = raw_stories[:18]
+        if opener is urlopen and len(to_enrich) > 1:
+            with ThreadPoolExecutor(max_workers=8, thread_name_prefix="hn-meta") as pool:
+                fetched = list(pool.map(lambda s: (s["id"], _fetch_linked_meta_summary(s["url"], opener=opener)), to_enrich))
+            summaries_by_id = dict(fetched)
+        else:
+            summaries_by_id = {s["id"]: _fetch_linked_meta_summary(s["url"], opener=opener) for s in to_enrich}
+
     items: list[SourceItem] = []
-    for story_id in ids:
-        raw = json.loads(_request(f"https://hacker-news.firebaseio.com/v0/item/{story_id}.json", opener=opener))
-        if raw.get("type") != "story" or not raw.get("url") or not raw.get("title"):
-            continue
-        if not _matches_topic_filter(str(raw["title"]), "", topic_filter):
-            continue
-        published = datetime.fromtimestamp(int(raw.get("time", 0)), tz=UTC)
-        if not start <= published <= end:
-            continue
-        url = str(raw["url"])
-        score = min(85, 25 + int(raw.get("score", 0)) / 10 + int(raw.get("descendants", 0)) / 20)
+    for story in raw_stories:
+        points = int(story["points"])
+        comments = int(story["comments"])
+        url = str(story["url"])
+        canon_url = str(story["canonical_url"])
+        title = str(story["title"])
+        extracted = summaries_by_id.get(story["id"], "")
+        if extracted:
+            summary = f"{extracted} (Hacker News: {points} points, {comments} comments.)"[:1200]
+        else:
+            summary = f"Hacker News signal: {points} points and {comments} comments."
+        authority, category = _classify_hn_target_authority(url, extracted)
+        category = _infer_category(category, title, summary)
+        adj = _builder_adjustment(title, extracted or title)
+        score = min(
+            96.0,
+            max(
+                25.0,
+                46.0 + math.log1p(points) * 5.8 + math.log1p(comments) * 1.8 + max(-35.0, adj * 0.5),
+            ),
+        )
         items.append(
             SourceItem(
-                id=f"hn-{story_id}",
-                title=str(raw["title"]),
+                id=f"hn-{story['id']}",
+                title=title,
                 url=url,
                 source="Hacker News",
-                published_at=published.isoformat().replace("+00:00", "Z"),
-                summary=f"Hacker News signal: {raw.get('score', 0)} points and {raw.get('descendants', 0)} comments.",
-                authority="signal",
+                published_at=story["published"].isoformat().replace("+00:00", "Z"),
+                summary=summary,
+                authority=authority,
                 organization=urlparse(url).netloc.removeprefix("www."),
-                category="trend",
+                category=category,
                 metadata={
-                    "canonical_url": url,
+                    "canonical_url": canon_url,
                     "source_kind": "community_discussion",
-                    "discussion_url": f"https://news.ycombinator.com/item?id={story_id}",
+                    "discussion_url": f"https://news.ycombinator.com/item?id={story['id']}",
                     "community_signal": True,
                     "community_signal_type": "hacker_news",
-                    "hn_points": int(raw.get("score", 0) or 0),
-                    "hn_comments": int(raw.get("descendants", 0) or 0),
+                    "hn_points": points,
+                    "hn_comments": comments,
                     "momentum_score": min(
                         4,
-                        int(int(raw.get("score", 0) or 0) >= 20)
-                        + int(int(raw.get("score", 0) or 0) >= 75)
-                        + int(int(raw.get("descendants", 0) or 0) >= 40)
-                        + int(int(raw.get("score", 0) or 0) >= 250),
+                        int(points >= 30)
+                        + int(points >= 100)
+                        + int(comments >= 50 or points >= 200)
+                        + int(points >= 350),
                     ),
-                    "score": score,
-                    "selection_reason": "Strong developer-community attention",
+                    "score": round(score, 2),
+                    "selection_reason": "High-engagement developer-community attention",
                 },
             )
         )
@@ -448,7 +728,9 @@ def collect_hugging_face(
             if not paper_id or not title or not summary:
                 continue
             url = f"https://huggingface.co/papers/{paper_id}"
+            canon_url = canonical_source_url(url)
             organization = (paper.get("organization") or {}).get("fullname") or "Research authors"
+            upvotes = int(paper.get("upvotes", 0) or 0)
             items.append(
                 SourceItem(
                     id=f"hf-paper-{paper_id}",
@@ -461,13 +743,13 @@ def collect_hugging_face(
                     organization=str(organization),
                     category="research",
                     metadata={
-                        "canonical_url": url,
+                        "canonical_url": canon_url,
                         "source_kind": "daily_paper",
                         "community_signal": True,
                         "community_signal_type": "hugging_face",
-                        "hf_upvotes": int(paper.get("upvotes", 0) or 0),
-                        "momentum_score": min(4, int(int(paper.get("upvotes", 0) or 0) / 10)),
-                        "score": 60 + int(paper.get("upvotes", 0)),
+                        "hf_upvotes": upvotes,
+                        "momentum_score": min(4, int(upvotes >= 10) + int(upvotes >= 25) + int(upvotes >= 50) + int(upvotes >= 100)),
+                        "score": min(96, 62 + upvotes * 0.6),
                         "selection_reason": "Fresh primary research selected by the Hugging Face community",
                     },
                 )
@@ -482,29 +764,38 @@ def collect_hugging_face(
             if not model_id:
                 continue
             url = f"https://huggingface.co/{model_id}"
-            tags = ", ".join(str(tag) for tag in model.get("tags", [])[:6])
+            tags_list = [str(tag) for tag in model.get("tags", [])[:8]]
+            tags = ", ".join(tags_list)
+            likes = int(model.get("likes", 0) or 0)
+            downloads = int(model.get("downloads", 0) or 0)
+            trending_score = float(model.get("trendingScore", 0) or 0)
+            momentum = min(4, int(likes >= 25) + int(likes >= 100) + int(trending_score >= 50) + int(trending_score >= 200))
             items.append(
                 SourceItem(
                     id=f"hf-model-{_identifier(model_id)}",
-                    title=f"{model_id} trends on Hugging Face",
+                    title=f"{model_id} open weights release on Hugging Face",
                     url=url,
                     source="Hugging Face model card",
                     published_at=published.isoformat().replace("+00:00", "Z"),
-                    summary=f"The model card reports {model.get('likes', 0)} likes and tags: {tags}.",
+                    summary=(
+                        f"Open weights and inference artifacts for {model_id} ({likes} likes, "
+                        f"{downloads} downloads); tags: {tags}."
+                    ),
                     authority="primary",
                     organization=model_id.split("/", 1)[0],
                     category="models",
                     metadata={
-                        "canonical_url": url,
+                        "canonical_url": canonical_source_url(url),
                         "source_kind": "model_card",
                         "signal_key": f"hf-model:{model_id}",
                         "community_signal": True,
                         "community_signal_type": "hugging_face",
-                        "hf_likes": int(model.get("likes", 0) or 0),
-                        "hf_downloads": int(model.get("downloads", 0) or 0),
-                        "hf_trending_score": float(model.get("trendingScore", 0) or 0),
-                        "score": min(95, 55 + float(model.get("trendingScore", 0)) / 50),
-                        "selection_reason": "New model with strong open-source trend activity",
+                        "hf_likes": likes,
+                        "hf_downloads": downloads,
+                        "hf_trending_score": trending_score,
+                        "momentum_score": momentum,
+                        "score": min(94, 58 + trending_score / 45),
+                        "selection_reason": "New open-weight model with strong Hugging Face trend activity",
                     },
                 )
             )
@@ -528,8 +819,9 @@ TOPIC_STOP_WORDS = STOP_WORDS | {
 PRODUCT_FAMILY_PATTERNS = {
     "ollama": (r"\bollama\b",),
     "vllm": (r"\bvllm\b",),
+    "sglang": (r"\bsglang\b", r"github\.com/sgl-project/sglang"),
     "llama.cpp": (r"\bllama\.cpp\b", r"github\.com/ggml-org/llama\.cpp"),
-    "qwen": (r"\bqwen(?:\d+(?:\.\d+)*)?\b",),
+    "qwen": (r"\bqwen(?:\s*\d+(?:\.\d+)*)?\b",),
     "transformers": (r"github\.com/huggingface/transformers",),
 }
 
@@ -549,7 +841,8 @@ def _title_tokens(title: str) -> set[str]:
 
 def _topic_tokens(item: SourceItem) -> set[str]:
     return {
-        token for token in _title_tokens(f"{item.title} {item.summary}")
+        token
+        for token in _title_tokens(f"{item.title} {item.summary}")
         if len(token) > 3 and token not in TOPIC_STOP_WORDS
     }
 
@@ -571,7 +864,9 @@ def _item_organizations(item: SourceItem, organizations: dict[str, str]) -> set[
 
 
 def _without_entity_topics(
-    topics: set[str], item: SourceItem, item_organizations: set[str],
+    topics: set[str],
+    item: SourceItem,
+    item_organizations: set[str],
 ) -> set[str]:
     entity_tokens = {
         token
@@ -588,17 +883,23 @@ def _product_family(item: SourceItem) -> str:
     configured = str(item.metadata.get("product_family") or "").strip().casefold()
     if configured:
         return configured
-    text = f"{item.title} {item.summary} {item.url}".casefold()
+    # Match only title and URL (never summary) so papers mentioning vLLM or Qwen
+    # as benchmark baselines do not collapse into product release clusters.
+    subject_text = f"{item.title} {item.url}".casefold()
+    if re.search(r"\b(?:vs\.?|versus|beat[s]?|over|against|for|on|using|improve[s]?)\s+qwen", item.title.casefold()):
+        return ""
     for product_family, patterns in PRODUCT_FAMILY_PATTERNS.items():
-        if any(re.search(pattern, text) for pattern in patterns):
+        if any(re.search(pattern, subject_text) for pattern in patterns):
             return product_family
     return ""
 
 
 def assign_story_clusters(
-    items: list[SourceItem], *, organizations: Iterable[str] = (),
+    items: list[SourceItem],
+    *,
+    organizations: Iterable[str] = (),
 ) -> list[SourceItem]:
-    """Group explicit product families before URL/headline similarity."""
+    """Group explicit product families and canonical URLs before headline similarity."""
     ordered = sorted(
         items,
         key=lambda item: (
@@ -609,49 +910,69 @@ def assign_story_clusters(
     )
     organization_map = {
         name.casefold(): _organization_key(name)
-        for name in organizations if name.strip()
+        for name in organizations
+        if name.strip()
     }
     organization_labels = {
         _organization_key(name): name
-        for name in organizations if name.strip()
+        for name in organizations
+        if name.strip()
     }
     representatives: list[tuple[str, str, set[str], set[str], set[str]]] = []
     result: list[SourceItem] = []
     for item in ordered:
-        canonical = str(item.metadata.get("canonical_url") or item.url).rstrip("/")
+        canonical = canonical_source_url(str(item.metadata.get("canonical_url") or item.url))
         tokens = _title_tokens(item.title)
         item_organizations = _item_organizations(item, organization_map)
+        non_entity_title_tokens = _without_entity_topics(tokens, item, item_organizations)
         topic_tokens = _without_entity_topics(
-            _topic_tokens(item), item, item_organizations,
+            _topic_tokens(item),
+            item,
+            item_organizations,
         )
         product_family = _product_family(item)
         cluster_id = (
             f"product-{re.sub(r'[^a-z0-9]+', '-', product_family).strip('-')}"
-            if product_family else ""
+            if product_family
+            else ""
         )
         if not cluster_id:
             for existing_id, existing_url, existing_tokens, existing_topics, existing_organizations in representatives:
                 overlap = len(tokens & existing_tokens)
                 union = len(tokens | existing_tokens) or 1
                 shared_topics = topic_tokens & existing_topics
+                existing_non_entity = existing_tokens - {
+                    tok for org in existing_organizations for tok in re.findall(r"[a-z0-9]+", org)
+                }
                 meaningful_title_overlap = {
-                    token for token in tokens & existing_tokens if len(token) >= 8
+                    token
+                    for token in (non_entity_title_tokens & existing_non_entity)
+                    if len(token) >= 8
                 }
                 same_theme = bool(
                     item_organizations & existing_organizations
                     and meaningful_title_overlap
                     and bool(shared_topics)
                 )
-                if canonical == existing_url or same_theme or (overlap >= 3 and overlap / union >= 0.6):
+                if (
+                    (canonical and canonical == existing_url)
+                    or same_theme
+                    or (overlap >= 3 and overlap / union >= 0.6)
+                ):
                     cluster_id = existing_id
                     break
         if not cluster_id:
             cluster_id = re.sub(r"[^a-z0-9]+", "-", item.title.casefold()).strip("-")[:80] or item.id
         if not any(existing_id == cluster_id for existing_id, *_ in representatives):
             representatives.append((
-                cluster_id, canonical, tokens, topic_tokens, item_organizations,
+                cluster_id,
+                canonical,
+                tokens,
+                topic_tokens,
+                item_organizations,
             ))
         metadata = dict(item.metadata)
+        metadata["canonical_url"] = canonical or item.url
         metadata["cluster_id"] = cluster_id
         metadata["theme_key"] = cluster_id
         metadata["mentioned_organizations"] = sorted(item_organizations)
@@ -690,13 +1011,18 @@ def collect_sources(
     hn = raw.get("hacker_news") or {}
     if hn.get("enabled"):
         try:
-            collected.extend(collect_hacker_news(
-                start=start,
-                end=end,
-                limit=int(hn.get("limit", 20)),
-                topic_filter=str(hn.get("topic_filter") or ""),
-                opener=opener,
-            ))
+            collected.extend(
+                collect_hacker_news(
+                    start=start,
+                    end=end,
+                    limit=int(hn.get("limit", 40)),
+                    min_points=int(hn.get("min_points", 50)),
+                    use_algolia=hn.get("use_algolia") if opener is urlopen else False,
+                    enrich_links=hn.get("enrich_links") if opener is urlopen else False,
+                    topic_filter=str(hn.get("topic_filter") or ""),
+                    opener=opener,
+                )
+            )
         except Exception as error:
             log.warning("source failed: Hacker News: %s", error)
     hf = raw.get("hugging_face") or {}
@@ -755,10 +1081,13 @@ def collect_sources(
 
 
 def collect_github_momentum(
-    repositories: list[Any], *, start: datetime, end: datetime, opener: Callable[..., Any] = urlopen,
+    repositories: list[Any],
+    *,
+    start: datetime,
+    end: datetime,
+    opener: Callable[..., Any] = urlopen,
 ) -> list[SourceItem]:
-    """Collect public GitHub release momentum as signal metadata."""
-
+    """Collect public GitHub release momentum as primary release artifacts."""
     items: list[SourceItem] = []
     for configured in repositories:
         if isinstance(configured, dict):
@@ -777,7 +1106,7 @@ def collect_github_momentum(
             continue
         for release in raw:
             published = _parse_datetime(str(release.get("published_at") or release.get("created_at") or ""))
-            if published is None or not start <= published <= end or release.get("draft"):
+            if published is None or not start <= published <= end or release.get("draft") or release.get("prerelease"):
                 continue
             tag = str(release.get("tag_name") or "").strip()
             title = str(release.get("name") or tag or repository).strip()
@@ -785,41 +1114,48 @@ def collect_github_momentum(
             stars = int(repo.get("stargazers_count", 0) or 0)
             forks = int(repo.get("forks_count", 0) or 0)
             issues = int(repo.get("open_issues_count", 0) or 0)
-            momentum_score = min(4, max(0, round(stars / 25_000 + forks / 10_000 + issues / 2_000)))
-            items.append(SourceItem(
-                id=f"github-{_identifier(str(release.get('html_url') or repository))}",
-                title=f"{repository} {title}",
-                url=str(release.get("html_url") or f"https://github.com/{repository}/releases"),
-                source="GitHub releases",
-                published_at=published.isoformat().replace("+00:00", "Z"),
-                summary=body or f"GitHub release {tag} for {repository}.",
-                authority="primary",
-                organization=repository.split("/", 1)[0],
-                category="developer tools",
-                metadata={
-                    "canonical_url": str(release.get("html_url") or repository),
-                    "source_kind": "release_feed",
-                    "signal_key": f"github:{repository}",
-                    "community_signal_candidate": True,
-                    "community_signal_type": "github",
-                    "momentum": True,
-                    "momentum_score": momentum_score,
-                    "repository_stars": stars,
-                    "repository_forks": forks,
-                    "repository_open_issues": issues,
-                    "score": 60 + momentum_score * 4,
-                    **({"product_family": product_family} if product_family else {}),
-                },
-            ))
+            momentum_score = min(4, max(0, round(stars / 25_000 + forks / 10_000)))
+            html_url = str(release.get("html_url") or f"https://github.com/{repository}/releases")
+            canon_url = canonical_source_url(html_url)
+            items.append(
+                SourceItem(
+                    id=f"github-{_identifier(canon_url)}",
+                    title=f"{repository} {title}",
+                    url=html_url,
+                    source="GitHub releases",
+                    published_at=published.isoformat().replace("+00:00", "Z"),
+                    summary=body or f"GitHub release {tag} for {repository}.",
+                    authority="primary",
+                    organization=repository.split("/", 1)[0],
+                    category="developer tools",
+                    metadata={
+                        "canonical_url": canon_url,
+                        "source_kind": "release_feed",
+                        "signal_key": f"github:{repository}",
+                        "community_signal_candidate": True,
+                        "community_signal_type": "github",
+                        "momentum": True,
+                        "momentum_score": momentum_score,
+                        "repository_stars": stars,
+                        "repository_forks": forks,
+                        "repository_open_issues": issues,
+                        "score": 60 + momentum_score * 4,
+                        **({"product_family": product_family} if product_family else {}),
+                    },
+                )
+            )
     return items
 
 
 def collect_x_panel(
-    accounts: list[Any], *, start: datetime, end: datetime, topic_filter: str = "",
+    accounts: list[Any],
+    *,
+    start: datetime,
+    end: datetime,
+    topic_filter: str = "",
     fetcher: Callable[[str], list[dict[str, Any]]] | None = None,
 ) -> XPanelResult:
     """Collect approved-account observations with one bounded retry."""
-
     if fetcher is None:
         fetcher = _twitter_cli_fetcher
     items: list[SourceItem] = []
@@ -839,6 +1175,7 @@ def collect_x_panel(
             normalized_accounts.append((account, organization, required))
     required_configured = sum(required for _, _, required in normalized_accounts)
     required_successful = 0
+
     def fetch_account(entry: tuple[str, str, bool]) -> tuple[str, str, bool, list[dict[str, Any]] | None]:
         account, organization, required = entry
         posts: list[dict[str, Any]] | None = None
@@ -846,7 +1183,7 @@ def collect_x_panel(
         for attempt in range(attempts):
             try:
                 if fetcher is _twitter_cli_fetcher:
-                    payload = fetcher(account, timeout_seconds=30 if required else 10)
+                    payload = _twitter_cli_fetcher(account, timeout_seconds=30 if required else 10)
                 else:
                     payload = fetcher(account)
                 if not isinstance(payload, list):
@@ -874,7 +1211,6 @@ def collect_x_panel(
         for post in posts:
             published = _parse_datetime(str(post.get("published_at") or ""))
             if published is None:
-                # The compact twitter CLI omits the year for recent posts.
                 raw_time = str(post.get("published_at") or "").strip()
                 try:
                     published = datetime.strptime(f"{end.year} {raw_time}", "%Y %b %d %H:%M").replace(tzinfo=UTC)
@@ -898,25 +1234,33 @@ def collect_x_panel(
                 + int(engagement >= 500)
                 + int(engagement >= 2_000),
             )
-            items.append(SourceItem(
-                id=f"x-{_identifier(url)}", title=f"@{account}: {text[:100]}", url=url,
-                source="Approved X panel", published_at=published.isoformat().replace("+00:00", "Z"),
-                summary=text, authority="analysis", organization=organization, category="expert analysis",
-                metadata={
-                    "canonical_url": url,
-                    "source_kind": "x_post",
-                    "affiliated_organization": organization,
-                    "kind": "expert_analysis",
-                    "community_signal": True,
-                    "community_signal_type": "x",
-                    "x_account": account,
-                    "x_likes": likes,
-                    "x_retweets": retweets,
-                    "x_engagement": engagement,
-                    "momentum_score": momentum_score,
-                    "score": 35 + momentum_score * 8,
-                },
-            ))
+            items.append(
+                SourceItem(
+                    id=f"x-{_identifier(url)}",
+                    title=f"@{account}: {text[:100]}",
+                    url=url,
+                    source="Approved X panel",
+                    published_at=published.isoformat().replace("+00:00", "Z"),
+                    summary=text,
+                    authority="analysis",
+                    organization=organization,
+                    category="expert analysis",
+                    metadata={
+                        "canonical_url": url,
+                        "source_kind": "x_post",
+                        "affiliated_organization": organization,
+                        "kind": "expert_analysis",
+                        "community_signal": True,
+                        "community_signal_type": "x",
+                        "x_account": account,
+                        "x_likes": likes,
+                        "x_retweets": retweets,
+                        "x_engagement": engagement,
+                        "momentum_score": momentum_score,
+                        "score": 35 + momentum_score * 8,
+                    },
+                )
+            )
     return XPanelResult(
         items=tuple(items),
         health=XPanelHealth(
@@ -933,7 +1277,6 @@ def collect_x_panel(
 
 def _twitter_cli_fetcher(account: str, *, timeout_seconds: int = 45) -> list[dict[str, Any]]:
     """Read approved-account posts through the installed read-only X CLI."""
-
     executable = shutil.which("twitter")
     if not executable:
         raise RuntimeError("twitter CLI is not installed")
@@ -957,13 +1300,15 @@ def _twitter_cli_fetcher(account: str, *, timeout_seconds: int = 45) -> list[dic
         raw_time = str(post.get("time") or "").strip()
         if not tweet_id or not raw_time:
             continue
-        posts.append({
-            "published_at": raw_time,
-            "url": f"https://x.com/{account}/status/{tweet_id}",
-            "text": str(post.get("text") or ""),
-            "likes": int(post.get("likes", 0) or 0),
-            "retweets": int(post.get("rts", post.get("retweets", 0)) or 0),
-        })
+        posts.append(
+            {
+                "published_at": raw_time,
+                "url": f"https://x.com/{account}/status/{tweet_id}",
+                "text": str(post.get("text") or ""),
+                "likes": int(post.get("likes", 0) or 0),
+                "retweets": int(post.get("rts", post.get("retweets", 0)) or 0),
+            }
+        )
     return posts
 
 

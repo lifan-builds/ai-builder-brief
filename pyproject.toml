@@ -32,3 +32,15 @@ where = ["src"]
 testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "-q"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+
+[tool.mypy]
+mypy_path = ["src"]
+check_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = ["castforge.*", "yaml", "faster_whisper", "dotenv"]
+ignore_missing_imports = true

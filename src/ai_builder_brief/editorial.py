@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from dataclasses import dataclass, replace
 from datetime import UTC, datetime
 from pathlib import Path
@@ -10,24 +11,47 @@ from typing import Any, Iterable
 
 from castforge.models import SourceItem, StoryCluster
 
-ROUTINE_TERMS = {
-    "chore", "ci", "continuous integration", "bump version", "dependency update",
-    "release candidate", "rc.", "roundup", "weekly roundup", "cloud wrapper",
-    "marketing", "sponsored", "launch recap", "minor fix", "documentation only",
-}
-LOW_VALUE_PATTERNS = {
+ROUTINE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    ("ci", re.compile(r"\bci\b", re.IGNORECASE)),
+    ("chore", re.compile(r"\bchore\b", re.IGNORECASE)),
+    ("continuous integration", re.compile(r"\bcontinuous\s+integration\b", re.IGNORECASE)),
+    ("bump version", re.compile(r"\bbump\s+version\b", re.IGNORECASE)),
+    ("dependency update", re.compile(r"\bdependency\s+update\b", re.IGNORECASE)),
+    ("release candidate", re.compile(r"\brelease\s+candidate\b|\brc\.?\d+\b", re.IGNORECASE)),
+    ("roundup", re.compile(r"\b(?:weekly\s+)?roundup\b|^\[?ainews\]?\b", re.IGNORECASE)),
+    ("cloud wrapper", re.compile(r"\bcloud\s+wrapper\b", re.IGNORECASE)),
+    ("marketing", re.compile(r"\bmarketing\s+campaign\b|\bad\s+campaign\b", re.IGNORECASE)),
+    ("sponsored", re.compile(r"\bsponsored\b", re.IGNORECASE)),
+    ("launch recap", re.compile(r"\blaunch\s+recap\b", re.IGNORECASE)),
+    ("minor fix", re.compile(r"\bminor\s+fix\b", re.IGNORECASE)),
+    ("documentation only", re.compile(r"\bdocumentation\s+only\b", re.IGNORECASE)),
+)
+
+LOW_VALUE_PATTERNS: dict[str, tuple[re.Pattern[str], ...]] = {
     "cloud availability without a new builder capability": (
-        "available on aws", "available in aws", "available on azure", "available in azure",
-        "available on google cloud", "available in google cloud",
+        re.compile(r"\bavailable\s+(?:on|in)\s+(?:aws|azure|google\s+cloud)\b", re.IGNORECASE),
+        re.compile(r"\b(?:now\s+|generally\s+)?available\s+in\s+github\s+copilot\b", re.IGNORECASE),
+        re.compile(r"\bpurchasing\s+channel\b", re.IGNORECASE),
     ),
     "narrow autonomous-driving research": (
-        "autonomous driving", "vehicle-to-vehicle driving", "cooperative driving",
+        re.compile(r"\b(?:autonomous|vehicle-to-vehicle|cooperative)\s+driving\b", re.IGNORECASE),
+    ),
+    "corporate fundraising, IPO, or promo fluff": (
+        re.compile(r"\braises\s+\$\d|\bseed\s+round\b|\bseries\s+[a-f]\b|\btargets\s+\$\d[\w.]*\s+in\s+(?:annual\s+)?revenue\b", re.IGNORECASE),
+        re.compile(r"\bfiles\s+s-1\b|\binitial\s+public\s+offering\b|\bipo\s+filing\b", re.IGNORECASE),
+        re.compile(r"\btechcrunch\s+disrupt\b|\$\d+\s+deal\s+for\s+your\b", re.IGNORECASE),
+        re.compile(r"\bbefore\s+anyone\s+asks\b|\bleads\s+in\s+legal\s+intelligence\b", re.IGNORECASE),
+    ),
+    "generic index or landing page": (
+        re.compile(r"^research\s+reports$", re.IGNORECASE),
     ),
 }
+
 PRACTICAL_TERMS = {
-    "api", "sdk", "inference", "weights", "model", "benchmark", "security",
-    "latency", "context", "training", "open source", "repository", "agent",
-    "developer", "migration", "license", "available", "research",
+    "agent", "api", "available", "benchmark", "code", "compiler", "context",
+    "developer", "eval", "harness", "inference", "kernel", "latency", "license",
+    "migration", "open source", "quantization", "repository", "sdk", "security",
+    "training", "verification", "weights",
 }
 BUILDER_ACTIONS = frozenset({"use", "build", "test", "monitor", "reconsider"})
 EDITORIAL_FAILURE_TYPES = frozenset({"timeout", "proxy", "invalid_response"})
@@ -36,6 +60,7 @@ EDITORIAL_FAILURE_STAGES = frozenset({
     "editorial_coverage", "editorial_input", "editorial_batch", "editorial_validation",
 })
 EDITORIAL_CLASS_CAPS = {"maintenance_release": 2, "research": 2}
+MAX_PREPROCESS_PER_ORG = 3
 
 
 @dataclass(frozen=True, slots=True)
@@ -72,8 +97,6 @@ class EditorialDecision:
 
     @property
     def score(self) -> float:
-        # Weights are the approved 35/20/15/10/10/5/5 rubric. Values are
-        # normalized from the strict 0–4 review scale to 100 points.
         points = (
             self.impact * 35
             + self.actionability * 20
@@ -112,11 +135,13 @@ def _text(item: SourceItem) -> str:
 
 def reject_reason(item: SourceItem) -> str | None:
     text = _text(item)
-    for term in ROUTINE_TERMS:
-        if term in text:
-            return f"routine or excluded pattern: {term}"
+    title_clean = item.title.strip()
+    for label, pattern in ROUTINE_PATTERNS:
+        if pattern.search(text):
+            return f"routine or excluded pattern: {label}"
     for reason, patterns in LOW_VALUE_PATTERNS.items():
-        if any(pattern in text for pattern in patterns):
+        target = title_clean if reason == "generic index or landing page" else text
+        if any(pattern.search(target) for pattern in patterns):
             return reason
     if item.authority == "signal":
         return "signal-only evidence cannot qualify a story"
@@ -156,7 +181,6 @@ def _momentum_score(item: SourceItem) -> int:
         value = float(raw)
     except (TypeError, ValueError):
         return 0
-    # Collectors may provide either the normalized 0–4 value or a raw signal.
     if value <= 4:
         return max(0, min(4, int(round(value))))
     return max(0, min(4, int(round(value / 25))))
@@ -168,10 +192,14 @@ def _is_community_signal(item: SourceItem) -> bool:
 
 def _has_qualifying_evidence(items: Iterable[SourceItem]) -> bool:
     sources = list(items)
-    return (
-        any(item.authority == "primary" for item in sources)
-        or sum(item.authority == "independent" for item in sources) >= 2
-    )
+    if any(item.authority == "primary" for item in sources):
+        return True
+    distinct_independent = {
+        item.source.strip().casefold()
+        for item in sources
+        if item.authority == "independent" and item.source.strip()
+    }
+    return len(distinct_independent) >= 2
 
 
 def _editorial_class(items: Iterable[SourceItem]) -> str:
@@ -197,15 +225,31 @@ def _editorial_class(items: Iterable[SourceItem]) -> str:
 
 def _admission_adjustment(editorial_class: str) -> int:
     return {
-        "maintenance_release": -30,
-        "research": -15,
+        "maintenance_release": -25,
+        "research": -12,
     }.get(editorial_class, 0)
 
 
+def _cluster_primary_org(items: list[SourceItem]) -> str:
+    for item in items:
+        if item.authority == "primary" and item.organization.strip():
+            return item.organization.strip().casefold()
+    subjects = [
+        str(org).strip().casefold()
+        for item in items
+        for org in item.metadata.get("subject_organizations", [])
+        if str(org).strip()
+    ]
+    return subjects[0] if len(set(subjects)) == 1 and subjects else ""
+
+
 def preprocess(
-    items: Iterable[SourceItem], *, limit: int = 24, as_of: datetime | None = None,
+    items: Iterable[SourceItem],
+    *,
+    limit: int = 24,
+    as_of: datetime | None = None,
 ) -> tuple[list[SourceItem], list[dict[str, Any]]]:
-    prepared: list[tuple[str, list[SourceItem], bool, str, float]] = []
+    prepared: list[tuple[str, list[SourceItem], bool, str, float, str]] = []
     decisions_by_id: dict[str, dict[str, Any]] = {}
     grouped: dict[str, list[SourceItem]] = {}
     for item in items:
@@ -223,7 +267,10 @@ def preprocess(
             metadata = dict(item.metadata)
             metadata.update({
                 "preprocessed": True,
-                "builder_impact": min(4, 1 + sum(1 for term in ("available", "api", "weights", "security", "inference") if term in _text(item))),
+                "builder_impact": min(
+                    4,
+                    1 + sum(1 for term in ("available", "api", "weights", "security", "inference", "sdk", "benchmark") if term in _text(item)),
+                ),
                 "momentum_score": _momentum_score(item),
                 "recency_score": _recency_score(item.published_at, as_of),
             })
@@ -253,12 +300,14 @@ def preprocess(
             })
             for item in kept
         ]
+        corroboration_bonus = 6.0 if community_led and qualifying_evidence and len(enriched) >= 2 else 0.0
         admission_score = (
             max(float(item.metadata.get("score", 0)) for item in enriched)
             + max(_momentum_score(item) for item in enriched) * 5
+            + corroboration_bonus
             + _admission_adjustment(editorial_class)
         )
-        prepared.append((cluster_id, enriched, community_led, editorial_class, admission_score))
+        prepared.append((cluster_id, enriched, community_led, editorial_class, admission_score, _cluster_primary_org(enriched)))
 
     community_slots = limit // 2
     primary_slots = limit - community_slots
@@ -271,28 +320,61 @@ def preprocess(
         key=lambda record: (-record[4], record[0]),
     )
     class_counts: dict[str, int] = {}
+    org_counts: dict[str, int] = {}
+    admitted_ids: set[str] = set()
 
     def admit_balanced(
-        ranked: list[tuple[str, list[SourceItem], bool, str, float]], slots: int,
-    ) -> list[tuple[str, list[SourceItem], bool, str, float]]:
-        admitted = []
+        ranked: list[tuple[str, list[SourceItem], bool, str, float, str]],
+        slots: int,
+        *,
+        enforce_org_cap: bool = True,
+    ) -> list[tuple[str, list[SourceItem], bool, str, float, str]]:
+        admitted: list[tuple[str, list[SourceItem], bool, str, float, str]] = []
         for record in ranked:
+            if record[0] in admitted_ids:
+                continue
             editorial_class = record[3]
             cap = EDITORIAL_CLASS_CAPS.get(editorial_class)
             if cap is not None and class_counts.get(editorial_class, 0) >= cap:
                 continue
+            org = record[5]
+            if enforce_org_cap and org and org_counts.get(org, 0) >= MAX_PREPROCESS_PER_ORG:
+                continue
             admitted.append(record)
+            admitted_ids.add(record[0])
             class_counts[editorial_class] = class_counts.get(editorial_class, 0) + 1
+            if org:
+                org_counts[org] = org_counts.get(org, 0) + 1
             if len(admitted) >= slots:
                 break
         return admitted
 
     community = admit_balanced(community_ranked, community_slots)
     primary = admit_balanced(primary_ranked, primary_slots)
-    selected_ids = {record[0] for record in (*community, *primary)}
-    accepted = [item for record in (*community, *primary) for item in record[1]]
 
-    for cluster_id, kept, community_led, editorial_class, _ in prepared:
+    # Spillover backfill: if either pool has unused slots, fill from remaining candidates
+    remaining_slots = limit - (len(community) + len(primary))
+    spillover: list[tuple[str, list[SourceItem], bool, str, float, str]] = []
+    if remaining_slots > 0:
+        combined_rest = sorted(
+            (r for r in prepared if r[0] not in admitted_ids),
+            key=lambda r: (-r[4], r[0]),
+        )
+        spillover = admit_balanced(combined_rest, remaining_slots, enforce_org_cap=True)
+        if len(community) + len(primary) + len(spillover) < limit:
+            spillover.extend(
+                admit_balanced(
+                    combined_rest,
+                    limit - (len(community) + len(primary) + len(spillover)),
+                    enforce_org_cap=False,
+                )
+            )
+
+    all_admitted = (*community, *primary, *spillover)
+    selected_ids = {record[0] for record in all_admitted}
+    accepted = [item for record in all_admitted for item in record[1]]
+
+    for cluster_id, kept, community_led, editorial_class, _, _ in prepared:
         admitted = cluster_id in selected_ids
         kept_ids = {item.id for item in kept}
         decisions_by_id[cluster_id] = {
@@ -314,6 +396,76 @@ def preprocess(
     return accepted, decisions
 
 
+def score_candidates_deterministically(packets: Iterable[dict[str, Any]]) -> dict[str, list[dict[str, Any]]]:
+    """Deterministically score candidate packets into strict `EDITORIAL_SCHEMA` decisions.
+
+    Used by `--dry-run` and offline benchmarks so full selection/review artifacts
+    can be generated and evaluated without invoking external LLM endpoints.
+    """
+    decisions: list[dict[str, Any]] = []
+    deep_assigned = False
+    for packet in packets:
+        cluster_id = str(packet["cluster_id"])
+        title = str(packet.get("title") or "")
+        summary = str(packet.get("summary") or "")
+        url = str(packet.get("url") or "")
+        text = f"{title} {summary}".casefold()
+        editorial_class = str(packet.get("editorial_class") or "major_development")
+        qualifying = bool(packet.get("qualifying_evidence"))
+        authority = str(packet.get("authority") or "signal")
+        hn_points = int(packet.get("hn_points") or 0)
+        momentum = int(packet.get("momentum_score") or 0)
+
+        artifact_hits = sum(
+            1
+            for term in ("api", "sdk", "weights", "open source", "benchmark", "eval", "inference", "cli", "mcp", "security", "vulnerability", "release", "v1.", "v0.")
+            if term in text
+        )
+        has_quant = bool(re.search(r"\b\d+(?:\.\d+)?(?:\s*(?:%|×|x\b|ms|gb|gib|mtok)|\.\d+)\b|\$\d+", f"{title} {summary}", re.I))
+        is_major_release = editorial_class == "major_development" or bool(re.search(r"\bv1\.0(?:\.0)?\b", title, re.I))
+
+        impact = min(4, max(2, 2 + int(artifact_hits >= 2 or hn_points >= 250) + int((artifact_hits >= 4 or hn_points >= 600 or has_quant) and (is_major_release or hn_points >= 400))))
+        actionability = min(4, max(2, 2 + int(any(t in text for t in ("api", "sdk", "cli", "weights", "release", "migration", "benchmark", "verification"))) + int("github.com/" in url.lower() or has_quant)))
+        novelty = min(4, max(2, 2 + int(hn_points >= 150 or momentum >= 3 or qualifying) + int((hn_points >= 500 or ("arxiv.org" in url.lower() and has_quant)) and editorial_class != "maintenance_release")))
+        evidence = 4 if (qualifying and has_quant) else (3 if qualifying else (3 if authority == "independent" and len(summary.split()) >= 20 else 2))
+        audience_breadth = min(4, max(2, 2 + int(hn_points >= 120 or momentum >= 2 or authority == "primary") + int(hn_points >= 400 or any(t in text for t in ("openai", "anthropic", "claude", "gemini", "qwen", "deepseek", "vllm", "llama.cpp", "openrouter", "coding agent")))))
+
+        actions: list[str] = []
+        if any(t in text for t in ("release", "sdk", "api", "cli", "weights")):
+            actions.append("use")
+        if any(t in text for t in ("benchmark", "eval", "latency", "speed", "accuracy", "verification")):
+            actions.append("test")
+        if any(t in text for t in ("breaking", "vulnerability", "telemetry", "backdoor", "leak", "regression", "removes")):
+            actions.append("reconsider")
+        if not actions:
+            actions.append("monitor")
+
+        accept = qualifying and impact >= 3 and evidence >= 3 and editorial_class != "maintenance_release"
+        if editorial_class == "research" and not (impact == 4 and novelty >= 3 and has_quant):
+            accept = False
+        depth = "brief"
+        if accept and not deep_assigned and impact == 4 and evidence == 4:
+            depth = "deep"
+            deep_assigned = True
+
+        decisions.append({
+            "cluster_id": cluster_id,
+            "decision": "accept" if accept else "reject",
+            "impact": impact,
+            "actionability": actionability,
+            "novelty": novelty,
+            "evidence": evidence,
+            "audience_breadth": audience_breadth,
+            "builder_actions": sorted(set(actions))[:3],
+            "why_now": f"Published in rolling window ({packet.get('published_at', '')}) with momentum={momentum} and hn_points={hn_points}.",
+            "rationale": f"Deterministic builder triage ({editorial_class}, authority={authority}, artifact_signals={artifact_hits}).",
+            "caveats": "Verify benchmark scope, licensing, and workload fit against primary documentation before production rollout.",
+            "depth_recommendation": depth,
+            "source_ids": list(packet.get("source_ids") or [cluster_id]),
+        })
+    return {"decisions": decisions}
+
+
 def validate_review(
     payload: Any,
     candidate_ids: set[str],
@@ -323,7 +475,11 @@ def validate_review(
         raise ValueError("editorial response must be an object with decisions")
     decisions: list[EditorialDecision] = []
     seen: set[str] = set()
-    required = {"cluster_id", "decision", "impact", "actionability", "novelty", "evidence", "audience_breadth", "builder_actions", "why_now", "rationale", "caveats", "depth_recommendation", "source_ids"}
+    required = {
+        "cluster_id", "decision", "impact", "actionability", "novelty",
+        "evidence", "audience_breadth", "builder_actions", "why_now",
+        "rationale", "caveats", "depth_recommendation", "source_ids",
+    }
     for raw in payload["decisions"]:
         if not isinstance(raw, dict) or set(raw) != required:
             raise ValueError("editorial decision is missing strict-schema fields")
@@ -335,19 +491,32 @@ def validate_review(
         decisions.append(EditorialDecision(
             cluster_id=cluster_id,
             decision=str(raw["decision"]),
-            impact=int(raw["impact"]), actionability=int(raw["actionability"]), novelty=int(raw["novelty"]),
-            evidence=int(raw["evidence"]), audience_breadth=int(raw["audience_breadth"]),
+            impact=int(raw["impact"]),
+            actionability=int(raw["actionability"]),
+            novelty=int(raw["novelty"]),
+            evidence=int(raw["evidence"]),
+            audience_breadth=int(raw["audience_breadth"]),
             builder_actions=tuple(str(item) for item in raw["builder_actions"]),
-            why_now=str(raw["why_now"]), rationale=str(raw["rationale"]), caveats=str(raw["caveats"]),
-            depth_recommendation=str(raw["depth_recommendation"]), source_ids=tuple(str(item) for item in raw.get("source_ids", [])),
-            momentum=int(metadata.get("momentum_score", 0)), recency=int(metadata.get("recency_score", 0)),
+            why_now=str(raw["why_now"]),
+            rationale=str(raw["rationale"]),
+            caveats=str(raw["caveats"]),
+            depth_recommendation=str(raw["depth_recommendation"]),
+            source_ids=tuple(str(item) for item in raw.get("source_ids", [])),
+            momentum=int(metadata.get("momentum_score", 0)),
+            recency=int(metadata.get("recency_score", 0)),
         ))
     if seen != candidate_ids:
         raise ValueError("editorial response must cover every candidate exactly once")
     return decisions
 
 
-def select_clusters(clusters: Iterable[StoryCluster], decisions: Iterable[EditorialDecision], *, minimum: int = 3, maximum: int = 6) -> tuple[StoryCluster, ...]:
+def select_clusters(
+    clusters: Iterable[StoryCluster],
+    decisions: Iterable[EditorialDecision],
+    *,
+    minimum: int = 3,
+    maximum: int = 6,
+) -> tuple[StoryCluster, ...]:
     by_id = {decision.cluster_id: decision for decision in decisions}
     ranked: list[tuple[float, StoryCluster, EditorialDecision]] = []
     for cluster in clusters:
@@ -373,7 +542,17 @@ def select_clusters(clusters: Iterable[StoryCluster], decisions: Iterable[Editor
                 decision = replace(decision, depth_recommendation="brief")
             else:
                 deep_claimed = True
-        selected.append(replace(cluster, metadata={**cluster.metadata, "editorial": {**decision.to_dict(), "diversity_penalty": penalty, "adjusted_score": adjusted}}))
+        selected.append(replace(
+            cluster,
+            metadata={
+                **cluster.metadata,
+                "editorial": {
+                    **decision.to_dict(),
+                    "diversity_penalty": penalty,
+                    "adjusted_score": adjusted,
+                },
+            },
+        ))
     return tuple(selected)
 
 
@@ -382,7 +561,6 @@ def is_podcast_ready(
     sources: Iterable[SourceItem] | None = None,
 ) -> bool:
     """Return whether a reviewed candidate passes the episode evidence gate."""
-
     return (
         decision.decision == "accept"
         and decision.score >= 70
@@ -402,10 +580,13 @@ def write_ledger(
     metadata: dict[str, Any] | None = None,
 ) -> Path:
     records = [item.to_dict() if isinstance(item, EditorialDecision) else item for item in decisions]
-    body = {"schema_version": 1, "episode_date": episode_date, "status": status, "decisions": records}
+    body: dict[str, Any] = {
+        "schema_version": 1,
+        "episode_date": episode_date,
+        "status": status,
+        "decisions": records,
+    }
     if metadata:
-        # Failure metadata is an operational diagnostic, not a second channel
-        # for proxy output.  Copy only the three controlled scalar fields.
         safe: dict[str, str | int] = {}
         failure_type = metadata.get("failure_type")
         if isinstance(failure_type, str) and failure_type in EDITORIAL_FAILURE_TYPES:

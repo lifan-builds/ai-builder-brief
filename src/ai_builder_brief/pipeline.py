@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import xml.etree.ElementTree as ET
 from dataclasses import replace
@@ -17,9 +18,17 @@ from castforge.publishers.r2 import R2Publisher
 from castforge.rss import write_episode
 from castforge.runner import run_episode
 
+from ai_builder_brief.benchmark import canonicalize_url
 from ai_builder_brief.collectors import CollectionResult, collect_sources, read_sources, write_sources
-from ai_builder_brief.editorial import preprocess, select_clusters, validate_review, write_ledger
+from ai_builder_brief.editorial import (
+    preprocess,
+    score_candidates_deterministically,
+    select_clusters,
+    validate_review,
+    write_ledger,
+)
 from ai_builder_brief.editorial_client import EditorialReviewError, review_candidates_batched
+from ai_builder_brief.journal import _parse_ranked_items
 from ai_builder_brief.review import write_review_artifacts
 from ai_builder_brief.site import render_site
 from ai_builder_brief.transcription import load_fixture, transcribe, write_chapters, write_vtt
@@ -51,8 +60,6 @@ def _fixture_config(config, root: Path):
     return replace(
         config,
         source=replace(config.source, fixture=root / "fixtures" / "sources.json"),
-        # The bundled two-story fixture proves the mechanics; production keeps
-        # the approved minimum of three decision-changing stories.
         selection=replace(config.selection, recent_days=0, min_stories=1),
         audio=AudioConfig(
             provider="fixture",
@@ -93,15 +100,26 @@ def _working_config(config, root: Path, episode_date: date):
 
 
 def _cluster(items):
-    grouped = {}
+    grouped: dict[str, list[SourceItem]] = {}
     for item in items:
         grouped.setdefault(str(item.metadata.get("cluster_id") or item.id), []).append(item)
     clusters = []
     for cluster_id, sources in grouped.items():
-        lead = sorted(sources, key=lambda item: item.id)[0]
+        lead = min(
+            sources,
+            key=lambda item: (
+                {"primary": 0, "independent": 1, "analysis": 2, "signal": 3}[item.authority],
+                -float(item.metadata.get("score", 0)),
+                item.id,
+            ),
+        )
         cluster = StoryCluster(
-            id=cluster_id, title=lead.title, summary=lead.summary, category=lead.category,
-            organization=lead.organization, sources=tuple(sources),
+            id=cluster_id,
+            title=lead.title,
+            summary=lead.summary,
+            category=lead.category,
+            organization=lead.organization,
+            sources=tuple(sources),
             selection_reason=str(lead.metadata.get("selection_reason") or "Editorial review"),
             kind=str(lead.metadata.get("kind", "development") or "development"),
             metadata=dict(lead.metadata),
@@ -121,12 +139,15 @@ def _merge_editorial_ledger(deterministic, decisions):
 
 def _apply_snapshot_deltas(items):
     """Attach measured 24-hour/seven-day deltas to the latest signal item."""
-
     metric_names = (
         "repository_stars", "repository_forks", "repository_open_issues",
         "hf_likes", "hf_downloads", "hf_trending_score",
     )
-    grouped = {}
+    adoption_metrics = {
+        "repository_stars", "repository_forks",
+        "hf_likes", "hf_downloads", "hf_trending_score",
+    }
+    grouped: dict[str, list[SourceItem]] = {}
     passthrough = []
     for item in items:
         key = str(item.metadata.get("signal_key") or "")
@@ -154,21 +175,24 @@ def _apply_snapshot_deltas(items):
 
         delta_24 = deltas(baseline_24)
         delta_7 = deltas(baseline_7)
-        positive = sum(max(value, 0) for value in (*delta_24.values(), *delta_7.values()))
+        pos_24 = sum(max(val, 0.0) for name, val in delta_24.items() if name in adoption_metrics)
+        pos_7 = sum(max(val, 0.0) for name, val in delta_7.items() if name in adoption_metrics)
+        positive = max(pos_24, pos_7)
         measured_momentum = min(4, int(positive > 0) + int(positive >= 10) + int(positive >= 100) + int(positive >= 1000))
         is_github = str(latest.metadata.get("signal_key", "")).startswith("github:")
+        has_prior_snapshot = len(ordered) > 1
         enriched.append(replace(latest, metadata={
             **latest.metadata,
             "delta_24h": delta_24,
             "delta_7d": delta_7,
             "momentum_score": (
                 measured_momentum
-                if is_github
+                if (is_github and has_prior_snapshot)
                 else max(int(latest.metadata.get("momentum_score", 0) or 0), measured_momentum)
             ),
             "community_signal": (
                 measured_momentum > 0
-                if is_github
+                if (is_github and has_prior_snapshot)
                 else bool(latest.metadata.get("community_signal"))
             ),
         }))
@@ -177,7 +201,6 @@ def _apply_snapshot_deltas(items):
 
 def _eligible_editorial_items(items, *, start: datetime, end: datetime):
     """Keep one current copy of each source inside the strict review window."""
-
     eligible: dict[str, SourceItem] = {}
     for item in items:
         try:
@@ -194,13 +217,10 @@ def _eligible_editorial_items(items, *, start: datetime, end: datetime):
     return list(eligible.values())
 
 
-def _historical_story_keys(root: Path, *, episode_date: date, lookback_days: int = 14) -> set[str]:
-    """Return story keys recently used in saved editorial artifacts.
-
-    Feed freshness is not audience freshness: a new article about an already
-    covered event must not be promoted without a material update.
-    """
-    keys: set[str] = set()
+def _historical_story_keys(root: Path, *, episode_date: date, lookback_days: int = 14) -> tuple[set[str], set[str]]:
+    """Return `(story_slugs, canonical_urls)` covered in the prior `lookback_days`."""
+    slugs: set[str] = set()
+    urls: set[str] = set()
     start = episode_date - timedelta(days=lookback_days)
     for path in (root / "build" / "editorial").glob("*.json"):
         try:
@@ -210,27 +230,50 @@ def _historical_story_keys(root: Path, *, episode_date: date, lookback_days: int
             payload = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError, json.JSONDecodeError):
             continue
-        records = payload if isinstance(payload, list) else payload.get("candidates", [])
+        records: list[dict] = []
+        if isinstance(payload, list):
+            records = [r for r in payload if isinstance(r, dict)]
+        elif isinstance(payload, dict):
+            records.extend(r for r in payload.get("candidates", []) if isinstance(r, dict))
+            records.extend(
+                r for r in payload.get("decisions", [])
+                if isinstance(r, dict) and r.get("decision") in {"accept", "candidate"}
+            )
         for record in records:
-            if not isinstance(record, dict):
-                continue
             key = str(record.get("theme_key") or record.get("cluster_id") or "").strip().casefold()
             if key:
-                keys.add(key)
-    # Committed daily notes are the durable public history when build artifacts
-    # have been cleaned up. Keep the extracted text as fallback fingerprints.
+                slugs.add(key)
+            for ev in record.get("evidence", []):
+                if isinstance(ev, dict) and ev.get("url"):
+                    cu = canonicalize_url(str(ev["url"]))
+                    if cu:
+                        urls.add(cu)
+
     for path in (root / "history").glob("*.md"):
+        if "-x-" in path.name or not re.match(r"^\d{4}-\d{2}-\d{2}\.md$", path.name):
+            continue
         try:
-            day = date.fromisoformat(path.stem.split("-x-")[0])
+            day = date.fromisoformat(path.stem)
             if day < start or day >= episode_date:
                 continue
-            for line in path.read_text(encoding="utf-8").splitlines():
-                text = line.strip().casefold()
-                if text and (text[0].isdigit() or text.startswith("- ")):
-                    keys.add(text)
+            md_text = path.read_text(encoding="utf-8")
         except (OSError, ValueError):
             continue
-    return keys
+        top_section = re.split(
+            r"^(?:##\s+|\*\*)(?:Watchlist|Source panel|What changed)",
+            md_text,
+            maxsplit=1,
+            flags=re.M | re.I,
+        )[0]
+        for raw_url in re.findall(r"https?://[^\s\)\]>]+", top_section):
+            cu = canonicalize_url(raw_url)
+            if cu and "/" in cu:
+                urls.add(cu)
+        for story_title, _, _, _ in _parse_ranked_items(md_text):
+            slug = re.sub(r"[^a-z0-9]+", "-", story_title.casefold()).strip("-")[:80]
+            if len(slug) >= 12:
+                slugs.add(slug)
+    return slugs, urls
 
 
 def _load_event_registry(root: Path) -> set[str]:
@@ -243,24 +286,26 @@ def _load_event_registry(root: Path) -> set[str]:
 
 
 def _suppress_historical_repeats(items: list[SourceItem], *, root: Path, episode_date: date) -> list[SourceItem]:
-    """Drop repeat events unless a collector explicitly marks a material update."""
-    prior = _historical_story_keys(root, episode_date=episode_date) | _load_event_registry(root)
-    if not prior:
+    """Drop exact URL or canonical event repeats from prior 14 days unless marked material_update."""
+    prior_slugs, prior_urls = _historical_story_keys(root, episode_date=episode_date)
+    prior_slugs |= _load_event_registry(root)
+    if not prior_slugs and not prior_urls:
         return items
     kept: list[SourceItem] = []
     for item in items:
+        if bool(item.metadata.get("material_update")):
+            kept.append(item)
+            continue
         key = str(item.metadata.get("theme_key") or item.metadata.get("cluster_id") or item.id).strip().casefold()
-        repeated = key in prior or any(
-            key and key in historical for historical in prior
-        )
-        if repeated and not bool(item.metadata.get("material_update")):
+        canon_url = canonicalize_url(str(item.metadata.get("canonical_url") or item.url))
+        if (key and key in prior_slugs) or (canon_url and canon_url in prior_urls):
             continue
         kept.append(item)
     return kept
 
 
 def _ledger_evidence(deterministic, candidates):
-    grouped = {}
+    grouped: dict[str, list[SourceItem]] = {}
     for item in candidates:
         grouped.setdefault(str(item.metadata.get("cluster_id") or item.id), []).append(item)
     records = []
@@ -295,7 +340,7 @@ def _ledger_evidence(deterministic, candidates):
 
 
 def _represent_candidates(candidates):
-    grouped = {}
+    grouped: dict[str, list[SourceItem]] = {}
     for item in candidates:
         grouped.setdefault(str(item.metadata.get("cluster_id") or item.id), []).append(item)
     representatives = []
@@ -339,7 +384,11 @@ def _represent_candidates(candidates):
         story_organization = (
             next(iter(common_subjects))
             if len(common_subjects) == 1
-            else ""
+            else (
+                lead.organization
+                if lead.authority == "primary" and "." not in lead.organization
+                else ""
+            )
         )
         community_sources = sorted(
             (item for item in group if item.metadata.get("community_signal")),
@@ -347,6 +396,7 @@ def _represent_candidates(candidates):
         )
         aggregate = {
             "source_ids": [item.id for item in group],
+            "cluster_urls": sorted({item.url for item in group if item.url}),
             "source_types": sorted({item.source for item in group}),
             "source_authorities": sorted({item.authority for item in group}),
             "story_organization": story_organization,
@@ -393,7 +443,6 @@ def _represent_candidates(candidates):
 
 def _editorial_packet(representatives):
     """Keep model review bounded while retaining the evidence needed to judge impact."""
-
     return [
         {
             "cluster_id": str(item.metadata.get("cluster_id") or item.id),
@@ -461,14 +510,15 @@ def run_daily(
     fixture: bool = False,
     shadow: bool = False,
     review_only: bool = False,
+    dry_run: bool = False,
 ) -> str:
     root = Path(config_path).resolve().parent
     public_config = load_config(config_path)
     episode_id = f"{public_config.show.episode_guid_prefix}-{episode_date.isoformat()}"
-    if review_only:
+    if review_only or dry_run:
         for suffix in ("json", "md"):
             (root / "build" / "review" / f"{episode_date.isoformat()}.{suffix}").unlink(missing_ok=True)
-    if not fixture and not shadow and not review_only and is_published(public_config.outputs.feed, episode_id):
+    if not fixture and not shadow and not review_only and not dry_run and is_published(public_config.outputs.feed, episode_id):
         return "already-published"
 
     collection_result: CollectionResult | None = None
@@ -494,6 +544,8 @@ def run_daily(
         public_config.show.publication_hour,
         tzinfo=ZoneInfo(public_config.show.timezone),
     ).astimezone(UTC)
+    if dry_run and episode_date == date.today():
+        end = max(end, datetime.now(UTC))
 
     if not fixture:
         try:
@@ -513,7 +565,7 @@ def run_daily(
         snapshot_dir = root / "build" / "snapshots"
         snapshot_dir.mkdir(parents=True, exist_ok=True)
         write_sources(normalized, snapshot_dir / f"{episode_date.isoformat()}.json")
-        if review_only and collection_result is not None and not collection_result.healthy:
+        if (review_only or dry_run) and collection_result is not None and not collection_result.healthy:
             write_ledger(
                 [],
                 root / "build" / "editorial" / f"{episode_date.isoformat()}.json",
@@ -538,7 +590,9 @@ def run_daily(
             end=end,
         )
         normalized = _suppress_historical_repeats(
-            normalized, root=root, episode_date=episode_date,
+            normalized,
+            root=root,
+            episode_date=episode_date,
         )
     candidates, deterministic = preprocess(normalized, as_of=end)
     deterministic = _ledger_evidence(deterministic, candidates)
@@ -546,10 +600,31 @@ def run_daily(
     clusters = _cluster(candidates)
     ledger_path = root / "build" / "editorial" / f"{episode_date.isoformat()}.json"
     try:
-        response = {"decisions": [
-            {"cluster_id": str(item.metadata.get("cluster_id") or item.id), "decision": "accept", "impact": 4, "actionability": 4, "novelty": 3, "evidence": 4, "audience_breadth": 3, "builder_actions": ["use"], "why_now": "fixture candidate", "rationale": "fixture candidate", "caveats": "", "depth_recommendation": "brief", "source_ids": list(item.metadata.get("source_ids", [item.id]))}
-            for item in representatives
-        ]} if fixture else review_candidates_batched(_editorial_packet(representatives))
+        if fixture:
+            response: dict = {
+                "decisions": [
+                    {
+                        "cluster_id": str(item.metadata.get("cluster_id") or item.id),
+                        "decision": "accept",
+                        "impact": 4,
+                        "actionability": 4,
+                        "novelty": 3,
+                        "evidence": 4,
+                        "audience_breadth": 3,
+                        "builder_actions": ["use"],
+                        "why_now": "fixture candidate",
+                        "rationale": "fixture candidate",
+                        "caveats": "",
+                        "depth_recommendation": "brief",
+                        "source_ids": list(item.metadata.get("source_ids", [item.id])),
+                    }
+                    for item in representatives
+                ]
+            }
+        elif dry_run:
+            response = score_candidates_deterministically(_editorial_packet(representatives))
+        else:
+            response = review_candidates_batched(_editorial_packet(representatives))
         decisions = validate_review(
             response,
             set(candidate_metadata),
@@ -565,9 +640,6 @@ def run_daily(
         )
         return "no-episode"
     except Exception:
-        # Validation errors are intentionally collapsed to the same safe
-        # category.  The raw model response and exception text never enter the
-        # ledger.
         write_ledger(
             deterministic,
             ledger_path,
@@ -577,7 +649,7 @@ def run_daily(
         )
         return "no-episode"
     write_ledger(_merge_editorial_ledger(deterministic, decisions), ledger_path, episode_date=episode_date.isoformat())
-    if review_only:
+    if review_only or dry_run:
         write_review_artifacts(
             episode_date,
             representatives,
@@ -588,10 +660,10 @@ def run_daily(
             source_health=(
                 collection_result.health_dict()
                 if collection_result is not None
-                else {"healthy": True, "mode": "fixture"}
+                else {"healthy": True, "mode": "fixture" if fixture else "dry-run"}
             ),
         )
-        return "review-ready"
+        return "dry-run-ready" if dry_run else "review-ready"
     selected = select_clusters(clusters, decisions, minimum=public_config.selection.min_stories, maximum=public_config.selection.max_stories)
     if len(selected) < public_config.selection.min_stories:
         write_ledger(_merge_editorial_ledger(deterministic, decisions), ledger_path, episode_date=episode_date.isoformat(), status="no-episode")
@@ -681,5 +753,5 @@ def run_daily(
     _move(manifest_stage, manifest_final)
     _move(site_stage, site_final)
     _move(ledger_path, ledger_final)
-    _move(feed_stage, feed_final)  # Feed moves last: it is the public commit point.
+    _move(feed_stage, feed_final)
     return "shadow" if shadow else "published"

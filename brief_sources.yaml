@@ -1,5 +1,5 @@
 version: 1
-description: Source catalog for the daily AI news brief. This is separate from the podcast collector configuration.
+description: Source catalog for the daily AI news brief, aligned with practitioner engineering feeds and machine-readable endpoints.
 
 policy:
   storage: metadata_only
@@ -9,95 +9,113 @@ policy:
   paywalls: do_not_bypass
 
 roles:
-  primary: Official or directly authored factual evidence.
-  independent: Reporting, analysis, criticism, or replication that adds useful context.
-  adoption: Time-bounded usage, ecosystem, or benchmark measurements.
-  discovery: Leads that require stronger evidence before qualification.
+  primary: Official or directly authored factual evidence, code, release notes, advisories, and papers.
+  independent: Original practitioner analysis, empirical benchmarks, criticism, or reporting that adds verifiable context.
+  adoption: Time-bounded usage, ecosystem, or benchmark measurements with explicit units.
+  discovery: Community and search leads (including Algolia HN) that require primary or independent artifact verification.
 
 coverage_lanes:
   models_and_apis:
     - openai_news
     - anthropic_news
+    - deepmind_blog
     - google_ai
     - meta_ai
     - mistral_news
     - deepseek_news
-    - qwen_modelscope
+    - qwen_docs
     - provider_docs
+    - provider_changelogs
   developer_tools_and_agents:
+    - claude_dev_blog
+    - cursor_blog
+    - github_changelog
     - github_releases
     - huggingface_blog
-    - practitioner_engineering
+    - simon_willison
+    - latent_space
     - github_activity
     - hacker_news
   infrastructure_and_economics:
+    - cloudflare_ai
+    - together_ai
     - provider_docs
     - provider_status
     - provider_changelogs
     - openrouter_rankings
     - artificial_analysis
     - epoch_ai
-    - infrastructure_reporting
+    - semianalysis
   research_and_evaluation:
+    - hf_daily_papers
     - arxiv_ai
-    - research_labs
+    - anthropic_research
+    - google_research
     - eval_methodology
-    - practitioner_engineering
+    - interconnects
+    - ahead_of_ai
+    - simon_willison
   security_and_policy:
-    - cisa_kev
     - osv_github_advisories
+    - cisa_kev
     - security_research
     - policy_primary
-    - independent_reporting
+    - ars
+    - techcrunch
   builder_behavior:
+    - hacker_news
     - github_activity
     - huggingface_models
     - openrouter_rankings
     - package_ecosystem
     - npm_usage
-    - chinese_technical
+    - ithome_ai
     - community_discovery
     - reddit_local_llama
 
 sources:
-  - {id: openai_news, name: OpenAI News, role: primary, language: en, url: https://openai.com/news/}
-  - {id: anthropic_news, name: Anthropic News, role: primary, language: en, url: https://www.anthropic.com/news}
-  - {id: google_ai, name: Google AI and DeepMind, role: primary, language: en, url: https://blog.google/technology/ai/}
-  - {id: meta_ai, name: Meta AI, role: primary, language: en, url: https://ai.meta.com/blog/}
-  - {id: mistral_news, name: Mistral AI, role: primary, language: en, url: https://mistral.ai/news/}
-  - {id: deepseek_news, name: DeepSeek, role: primary, language: en, url: https://www.deepseek.com/}
-  - {id: qwen_modelscope, name: Qwen and ModelScope, role: primary, language: zh, url: https://www.modelscope.cn/}
-  - {id: provider_docs, name: Provider documentation, role: primary, language: en, url: https://platform.openai.com/docs/}
-  - {id: provider_changelogs, name: Provider API changelogs and release notes, role: primary, language: en, url: https://docs.anthropic.com/en/release-notes/api}
-  - {id: provider_status, name: Provider status pages, role: primary, language: en, url: https://status.openai.com/}
-  - {id: github_releases, name: GitHub project release feeds, role: primary, language: en, url: https://github.com/vllm-project/vllm/releases}
-  - {id: huggingface_blog, name: Hugging Face Blog, role: primary, language: en, url: https://huggingface.co/blog}
-  - {id: arxiv_ai, name: arXiv AI and ML, role: primary, language: en, url: https://arxiv.org/list/cs.AI/recent}
-  - {id: research_labs, name: Research lab publication pages, role: primary, language: en, url: https://research.google/}
-  - {id: cisa_kev, name: CISA Known Exploited Vulnerabilities, role: primary, language: en, url: https://www.cisa.gov/known-exploited-vulnerabilities-catalog}
-  - {id: osv_github_advisories, name: OSV and GitHub Security Advisories, role: primary, language: en, url: https://osv.dev/}
-  - {id: policy_primary, name: Government and standards sources, role: primary, language: en, url: https://www.nist.gov/artificial-intelligence}
-  - {id: reuters, name: Reuters, role: independent, language: en, url: https://www.reuters.com/technology/artificial-intelligence/}
-  - {id: techcrunch, name: TechCrunch AI, role: independent, language: en, url: https://techcrunch.com/category/artificial-intelligence/}
-  - {id: ars, name: Ars Technica, role: independent, language: en, url: https://arstechnica.com/ai/}
-  - {id: mit_technology_review, name: MIT Technology Review AI, role: independent, language: en, url: https://www.technologyreview.com/topic/artificial-intelligence/}
-  - {id: independent_reporting, name: Independent reporting, role: independent, language: en, url: https://www.theverge.com/ai-artificial-intelligence}
-  - {id: infrastructure_reporting, name: Infrastructure and economics reporting, role: independent, language: en, url: https://www.semianalysis.com/}
-  - {id: security_research, name: Security research and incident reporting, role: independent, language: en, url: https://googleprojectzero.blogspot.com/}
-  - {id: practitioner_engineering, name: Researcher and practitioner writing, role: independent, language: en, url: https://simonwillison.net/}
-  - {id: artificial_analysis, name: Artificial Analysis, role: adoption, language: en, url: https://artificialanalysis.ai/}
-  - {id: epoch_ai, name: Epoch AI, role: adoption, language: en, url: https://epoch.ai/}
-  - {id: eval_methodology, name: METR, LMSYS, and benchmark methodology, role: adoption, language: en, url: https://metr.org/}
-  - {id: openrouter_rankings, name: OpenRouter rankings, role: adoption, language: en, url: https://openrouter.ai/rankings}
-  - {id: huggingface_models, name: Hugging Face model activity, role: adoption, language: en, url: https://huggingface.co/models}
-  - {id: github_activity, name: GitHub activity and repository artifacts, role: adoption, language: en, url: https://github.com/trending}
-  - {id: package_ecosystem, name: PyPI package usage, role: adoption, language: en, url: https://pypistats.org/}
-  - {id: npm_usage, name: npm package usage, role: adoption, language: en, url: https://www.npmjs.com/}
-  - {id: qbitai, name: 量子位 QbitAI, role: independent, language: zh, url: https://www.qbitai.com/}
-  - {id: jiqizhixin, name: 机器之心, role: independent, language: zh, url: https://www.jiqizhixin.com/}
-  - {id: geekpark, name: 极客公园 Founder Park, role: independent, language: zh, url: https://www.geekpark.net/}
-  - {id: chinese_technical, name: Chinese technical and local-language sources, role: independent, language: zh, url: https://www.leiphone.com/}
-  - {id: hacker_news, name: Hacker News, role: discovery, language: en, url: https://news.ycombinator.com/}
-  - {id: community_discovery, name: Public community and social discovery, role: discovery, language: en, url: https://x.com/}
-  - {id: reddit_local_llama, name: r/LocalLLaMA lead-only discovery, role: discovery, language: en, url: https://www.reddit.com/r/LocalLLaMA/}
-
+  - {id: openai_news, name: OpenAI News RSS, role: primary, language: en, weight: 94, url: https://openai.com/news/rss.xml}
+  - {id: anthropic_news, name: Anthropic News, role: primary, language: en, weight: 92, url: https://www.anthropic.com/news}
+  - {id: claude_dev_blog, name: Claude Developer & Engineering Blog, role: primary, language: en, weight: 95, url: https://claude.dev/blog}
+  - {id: anthropic_research, name: Anthropic Research, role: primary, language: en, weight: 92, url: https://www.anthropic.com/research}
+  - {id: deepmind_blog, name: Google DeepMind Blog RSS, role: primary, language: en, weight: 92, url: https://deepmind.google/blog/rss.xml}
+  - {id: google_ai, name: Google AI Blog RSS, role: primary, language: en, weight: 86, url: https://blog.google/technology/ai/rss/}
+  - {id: google_research, name: Google Research Blog RSS, role: primary, language: en, weight: 88, url: https://research.google/blog/rss/}
+  - {id: meta_ai, name: Meta AI Blog, role: primary, language: en, weight: 85, url: https://ai.meta.com/blog/}
+  - {id: mistral_news, name: Mistral AI News, role: primary, language: en, weight: 90, url: https://mistral.ai/news/}
+  - {id: deepseek_news, name: DeepSeek API Release Notes, role: primary, language: en, weight: 92, url: https://api-docs.deepseek.com/news/}
+  - {id: qwen_docs, name: QwenCloud Model Changelog, role: primary, language: en, weight: 90, url: https://docs.qwencloud.com/changelog/models}
+  - {id: cursor_blog, name: Cursor Engineering & Product Blog, role: primary, language: en, weight: 90, url: https://cursor.com/blog}
+  - {id: cloudflare_ai, name: Cloudflare AI Engineering RSS, role: primary, language: en, weight: 90, url: https://blog.cloudflare.com/tag/ai/rss/}
+  - {id: together_ai, name: Together AI Engineering & Research Blog, role: primary, language: en, weight: 88, url: https://www.together.ai/blog}
+  - {id: github_changelog, name: GitHub Changelog RSS, role: primary, language: en, weight: 88, url: https://github.blog/changelog/feed/}
+  - {id: provider_docs, name: OpenAI Platform Documentation, role: primary, language: en, weight: 88, url: https://platform.openai.com/docs/}
+  - {id: provider_changelogs, name: Anthropic API Release Notes, role: primary, language: en, weight: 90, url: https://docs.anthropic.com/en/release-notes/api}
+  - {id: provider_status, name: OpenAI Status API Summary, role: primary, language: en, weight: 75, url: https://status.openai.com/api/v2/summary.json}
+  - {id: github_releases, name: Core Inference & Agent SDK GitHub Releases, role: primary, language: en, weight: 88, url: https://github.com/vllm-project/vllm/releases.atom}
+  - {id: huggingface_blog, name: Hugging Face Technical Blog RSS, role: primary, language: en, weight: 90, url: https://huggingface.co/blog/feed.xml}
+  - {id: hf_daily_papers, name: Hugging Face Daily Papers API, role: primary, language: en, weight: 88, url: https://huggingface.co/api/daily_papers}
+  - {id: arxiv_ai, name: arXiv cs.AI RSS, role: primary, language: en, weight: 55, url: https://rss.arxiv.org/rss/cs.AI}
+  - {id: cisa_kev, name: CISA Known Exploited Vulnerabilities JSON, role: primary, language: en, weight: 85, url: https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json}
+  - {id: osv_github_advisories, name: OSV and GitHub Security Advisories, role: primary, language: en, weight: 85, url: https://osv.dev/}
+  - {id: policy_primary, name: NIST AI Standards and Guidelines, role: primary, language: en, weight: 70, url: https://www.nist.gov/artificial-intelligence}
+  - {id: simon_willison, name: Simon Willison Weblog Atom, role: independent, language: en, weight: 90, url: https://simonwillison.net/atom/everything/}
+  - {id: latent_space, name: Latent Space Engineering Essays RSS, role: independent, language: en, weight: 86, url: https://www.latent.space/feed}
+  - {id: interconnects, name: Interconnects (Nathan Lambert) RSS, role: independent, language: en, weight: 84, url: https://www.interconnects.ai/feed}
+  - {id: ahead_of_ai, name: Ahead of AI (Sebastian Raschka) RSS, role: independent, language: en, weight: 84, url: https://magazine.sebastianraschka.com/feed}
+  - {id: semianalysis, name: SemiAnalysis Infrastructure Feed, role: independent, language: en, weight: 82, url: https://newsletter.semianalysis.com/feed}
+  - {id: security_research, name: Google Project Zero Security Research, role: independent, language: en, weight: 86, url: https://googleprojectzero.blogspot.com/feeds/posts/default}
+  - {id: ars, name: Ars Technica Technology Lab RSS, role: independent, language: en, weight: 62, url: https://feeds.arstechnica.com/arstechnica/technology-lab}
+  - {id: techcrunch, name: TechCrunch AI RSS, role: independent, language: en, weight: 58, url: https://techcrunch.com/category/artificial-intelligence/feed/}
+  - {id: ithome_ai, name: IT之家 Technical & AI Feed, role: independent, language: zh, weight: 74, url: https://www.ithome.com/rss/}
+  - {id: artificial_analysis, name: Artificial Analysis Benchmarks, role: adoption, language: en, weight: 84, url: https://artificialanalysis.ai/}
+  - {id: epoch_ai, name: Epoch AI Research & Data, role: adoption, language: en, weight: 84, url: https://epoch.ai/}
+  - {id: eval_methodology, name: METR Evaluation & Autonomy Research, role: adoption, language: en, weight: 85, url: https://metr.org/blog}
+  - {id: openrouter_rankings, name: OpenRouter Token Rankings, role: adoption, language: en, weight: 78, url: https://openrouter.ai/rankings}
+  - {id: huggingface_models, name: Hugging Face Trending Models API, role: adoption, language: en, weight: 80, url: "https://huggingface.co/api/models?sort=trendingScore&limit=20"}
+  - {id: github_activity, name: GitHub Trending Repositories, role: adoption, language: en, weight: 78, url: https://github.com/trending}
+  - {id: package_ecosystem, name: PyPI Stats API, role: adoption, language: en, weight: 75, url: https://pypistats.org/}
+  - {id: npm_usage, name: npm Registry Downloads API, role: adoption, language: en, weight: 75, url: https://api.npmjs.org/downloads/point/last-week/@modelcontextprotocol/sdk}
+  - {id: hacker_news, name: Hacker News Algolia High-Engagement Search API, role: discovery, language: en, weight: 92, url: "https://hn.algolia.com/api/v1/search?tags=story&numericFilters=points%3E100"}
+  - {id: community_discovery, name: Approved X Practitioner Discovery Panel, role: discovery, language: en, weight: 70, url: https://x.com/}
+  - {id: reddit_local_llama, name: r/LocalLLaMA Lead-Only Discovery, role: discovery, language: en, weight: 65, url: https://www.reddit.com/r/LocalLLaMA/}
