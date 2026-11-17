@@ -1,0 +1,174 @@
+{
+  "briefing_date": "2026-11-15",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-11-15T18:06:02.190928+00:00",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2122027760482968009",
+  "verified_post_count": 11,
+  "error": null,
+  "method": "explicit inline reply chain",
+  "profile_posts_before": 461,
+  "profile_posts_after": 472,
+  "posts": [
+    {
+      "index": 0,
+      "url": "https://x.com/LifanBuilds/status/2122027760482968009",
+      "parent_url": null,
+      "exact_text": "AI Builder Brief — Nov 15, 2026. Ten stories on leaked agent traces, knowing when to stay silent, useful coding memory, RoPE traps, code-based tools, agent-accessible UI, verifier rewards, open browsers, video APIs and full-duplex models. Sources below.",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 1,
+      "url": "https://x.com/LifanBuilds/status/2122027873058029612",
+      "parent_url": "https://x.com/LifanBuilds/status/2122027760482968009",
+      "exact_text": "1/ Cursor's new breach report traces a Fireworks-exposed key through historical agent logs to a tampered extension cache. Up to 5,000 users potentially received malicious builds, not confirmed infections. Retained traces need real secret controls. https://cursor.com/blog/security-incident-update",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 2,
+      "url": "https://x.com/LifanBuilds/status/2122028027072884874",
+      "parent_url": "https://x.com/LifanBuilds/status/2122027873058029612",
+      "exact_text": "2/ Deepnote tests when workplace agents should stay silent: 12 models, 50 synthetic situations. Correct silence averages 62.5%; needless interventions cost about 1.8x more. Test already-handled cases, not just whether an agent writes a good reply. https://deepnote.com/research/benchmark",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 3,
+      "url": "https://x.com/LifanBuilds/status/2122028050141544623",
+      "parent_url": "https://x.com/LifanBuilds/status/2122028027072884874",
+      "exact_text": "3/ CoReMem values coding memory on the NEXT task, keeping code locations and executable checks. Its 27B system improves resolution 21.0%→25.7% with fewer total tokens. Author-run gains include actor training, not just a better memory file. https://arxiv.org/abs/2611.17316",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 4,
+      "url": "https://x.com/LifanBuilds/status/2122028070458859589",
+      "parent_url": "https://x.com/LifanBuilds/status/2122028050141544623",
+      "exact_text": "4/ Raschka's new RoPE derivation exposes a checkpoint-porting trap: split-half and interleaved rotations match only with corresponding feature reordering. Test conventions before swapping code; longer position support alone proves no context extension. https://magazine.sebastianraschka.com/p/understanding-positional-embeddings",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 5,
+      "url": "https://x.com/LifanBuilds/status/2122028093720416564",
+      "parent_url": "https://x.com/LifanBuilds/status/2122028070458859589",
+      "exact_text": "5/ Claude Code's experimental Code Mode batches tool calls in JavaScript and filters what the model reads. Native interactive terminal only, with major account/surface limits. Auto mode reviews the code, not every individual call. https://code.claude.com/docs/en/code-mode",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 6,
+      "url": "https://x.com/LifanBuilds/status/2122028117632139468",
+      "parent_url": "https://x.com/LifanBuilds/status/2122028093720416564",
+      "exact_text": "6/ Vercel UI SDK lets agents read component state and invoke actions. A small same-form trial reports 10→2 calls and 9.6→3.7 seconds, five successes each. Promising beta; verify final state because callbacks can cancel changes without failing the call. https://ai.satyajit.si/articles/vercel-ui-sdk",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 7,
+      "url": "https://x.com/LifanBuilds/status/2122028139085980133",
+      "parent_url": "https://x.com/LifanBuilds/status/2122028117632139468",
+      "exact_text": "7/ NOPO treats incomplete-verifier passes as unlabeled and learns from trusted failures. Author-run 4B/8B results improve pass@16, while GRPO still wins some pass@1 tests. Passing partial tests is not proof of correctness—or a safe positive reward. https://arxiv.org/abs/2611.17287",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 8,
+      "url": "https://x.com/LifanBuilds/status/2122028164537032829",
+      "parent_url": "https://x.com/LifanBuilds/status/2122028139085980133",
+      "exact_text": "8/ Cloudflare open-sources Kitesurf: a CDP browser engine on Workers without a Chromium container. Hosted since August; the new event is Apache-2.0 source access. Compatibility is experimental, and cloud deployment needs a paid Workers plan. https://blog.cloudflare.com/kitesurf-open-source/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 9,
+      "url": "https://x.com/LifanBuilds/status/2122028189321142540",
+      "parent_url": "https://x.com/LifanBuilds/status/2122028164537032829",
+      "exact_text": "9/ Seedance 2.5 Flash now has documented API access, after coming-soon coverage. Supports 4–30s video at 480p/720p; a 5s 720p example costs 4.97 yuan vs 7.56 for full 2.5. Funded-account rules apply; paid generation not tested here. https://docs.volcengine.com/docs/ark/seedance-2-5?lang=zh",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 10,
+      "url": "https://x.com/LifanBuilds/status/2122028220157657494",
+      "parent_url": "https://x.com/LifanBuilds/status/2122028189321142540",
+      "exact_text": "10/ inclusionAI ships Duo weights and real streaming branches for full-duplex audiovisual interaction. Research preview: default eight GPUs, one active session. Code is Apache-2.0; model terms exclude US/EU/UK/South Korea without separate licensing. https://github.com/inclusionAI/Duo",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    }
+  ],
+  "source_link_verification": [
+    {
+      "index": 1,
+      "short_url": "https://t.co/pAx3hYbbRN",
+      "expected_destination": "https://cursor.com/blog/security-incident-update",
+      "resolved_destination": "https://cursor.com/blog/security-incident-update",
+      "matches": true
+    },
+    {
+      "index": 2,
+      "short_url": "https://t.co/YqlaoHJpl2",
+      "expected_destination": "https://deepnote.com/research/benchmark",
+      "resolved_destination": "https://deepnote.com/research/benchmark",
+      "matches": true
+    },
+    {
+      "index": 3,
+      "short_url": "https://t.co/ykTPGW9p37",
+      "expected_destination": "https://arxiv.org/abs/2611.17316",
+      "resolved_destination": "https://arxiv.org/abs/2611.17316",
+      "matches": true
+    },
+    {
+      "index": 4,
+      "short_url": "https://t.co/I7jkDjKbz4",
+      "expected_destination": "https://magazine.sebastianraschka.com/p/understanding-positional-embeddings",
+      "resolved_destination": "https://magazine.sebastianraschka.com/p/understanding-positional-embeddings",
+      "matches": true
+    },
+    {
+      "index": 5,
+      "short_url": "https://t.co/P6rOOHY4Fn",
+      "expected_destination": "https://code.claude.com/docs/en/code-mode",
+      "resolved_destination": "https://code.claude.com/docs/en/code-mode",
+      "matches": true
+    },
+    {
+      "index": 6,
+      "short_url": "https://t.co/07tdJekBpi",
+      "expected_destination": "https://ai.satyajit.si/articles/vercel-ui-sdk",
+      "resolved_destination": "https://ai.satyajit.si/articles/vercel-ui-sdk",
+      "matches": true
+    },
+    {
+      "index": 7,
+      "short_url": "https://t.co/8KnrdQRopf",
+      "expected_destination": "https://arxiv.org/abs/2611.17287",
+      "resolved_destination": "https://arxiv.org/abs/2611.17287",
+      "matches": true
+    },
+    {
+      "index": 8,
+      "short_url": "https://t.co/a10VQSmr9R",
+      "expected_destination": "https://blog.cloudflare.com/kitesurf-open-source/",
+      "resolved_destination": "https://blog.cloudflare.com/kitesurf-open-source/",
+      "matches": true
+    },
+    {
+      "index": 9,
+      "short_url": "https://t.co/WxqMrU2K7y",
+      "expected_destination": "https://docs.volcengine.com/docs/ark/seedance-2-5?lang=zh",
+      "resolved_destination": "https://docs.volcengine.com/docs/ark/seedance-2-5?lang=zh",
+      "matches": true
+    },
+    {
+      "index": 10,
+      "short_url": "https://t.co/i8VNQFDQGA",
+      "expected_destination": "https://github.com/inclusionAI/Duo",
+      "resolved_destination": "https://github.com/inclusionAI/Duo",
+      "matches": true
+    }
+  ]
+}

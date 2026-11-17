@@ -1,0 +1,77 @@
+{
+  "briefing_date": "2026-11-06",
+  "account": "@LifanBuilds",
+  "status": "partial",
+  "published_at_utc": null,
+  "opening_post_url": "https://x.com/LifanBuilds/status/2118800816907936228",
+  "verified_post_count": 8,
+  "error": "Story 7 Cursor was attached to story 5 rather than story 6. Permanent deletion approval requested; remaining stories not sent. No duplicate send attempted.",
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2118800816907936228",
+    "https://x.com/LifanBuilds/status/2118808659639902615",
+    "https://x.com/LifanBuilds/status/2118808837419680024",
+    "https://x.com/LifanBuilds/status/2118808974439133341",
+    "https://x.com/LifanBuilds/status/2118809063517790504",
+    "https://x.com/LifanBuilds/status/2118809145738670106",
+    "https://x.com/LifanBuilds/status/2118809262680068410",
+    "https://x.com/LifanBuilds/status/2118809338894835991"
+  ],
+  "expected_post_count": 11,
+  "checked_at_utc": "2026-11-06T20:58:03.894365+00:00",
+  "verified_prose_count": 8,
+  "verified_link_count": 7,
+  "links": [
+    {
+      "index": 1,
+      "short_url": "https://t.co/NzENExRXrr",
+      "resolved_destination": "https://metr.org/blog/2026-11-05-anthropic-ai-rd-acceleration-assessment/",
+      "expected_destination": "https://metr.org/blog/2026-11-05-anthropic-ai-rd-acceleration-assessment/",
+      "verified": true
+    },
+    {
+      "index": 2,
+      "short_url": "https://t.co/WfJr2I1P6k",
+      "resolved_destination": "https://dropbox.tech/machine-learning/how-two-engineer-side-projects-became-the-agent-taking-action-inside-dropbox",
+      "expected_destination": "https://dropbox.tech/machine-learning/how-two-engineer-side-projects-became-the-agent-taking-action-inside-dropbox",
+      "verified": true
+    },
+    {
+      "index": 3,
+      "short_url": "https://t.co/MgU8E8dpNZ",
+      "resolved_destination": "https://github.com/anthropics/claude-code/blob/main/mods/privacy/README.md",
+      "expected_destination": "https://github.com/anthropics/claude-code/blob/main/mods/privacy/README.md",
+      "verified": true
+    },
+    {
+      "index": 4,
+      "short_url": "https://t.co/BHOItT48xA",
+      "resolved_destination": "https://thinkingmachines.ai/news/inkling-2-small/",
+      "expected_destination": "https://thinkingmachines.ai/news/inkling-2-small/",
+      "verified": true
+    },
+    {
+      "index": 5,
+      "short_url": "https://t.co/3fIpPV5Ad5",
+      "resolved_destination": "https://developer.nvidia.com/blog/use-nvidia-nemo-to-turn-agent-failures-into-tests-and-harness-fixes/",
+      "expected_destination": "https://developer.nvidia.com/blog/use-nvidia-nemo-to-turn-agent-failures-into-tests-and-harness-fixes/",
+      "verified": true
+    },
+    {
+      "index": 6,
+      "short_url": "https://t.co/XAYF1vLlJW",
+      "resolved_destination": "https://arxiv.org/html/2611.07962v1",
+      "expected_destination": "https://arxiv.org/html/2611.07962v1",
+      "verified": true
+    },
+    {
+      "index": 7,
+      "short_url": "https://t.co/xl1wmhvRyK",
+      "resolved_destination": "https://cursor.com/changelog/build-live-apps",
+      "expected_destination": "https://cursor.com/changelog/build-live-apps",
+      "verified": true
+    }
+  ],
+  "profile_count_before": 403,
+  "profile_count_after": 411,
+  "screenshot_path": "/Users/lfan/.codex/visualizations/2026/11/06/01a1b133-a573-7eb1-90fe-2788fb43d69d/x-partial-publication.jpg"
+}

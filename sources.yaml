@@ -89,14 +89,21 @@ x_panel:
 
     # Independent interpreters and primary researchers. They supply early
     # practical implications and open-research signals, not factual authority.
-    - karpathy
-    - {account: NoamShazeer, organization: OpenAI}
-    - simonw
-    - swyx
-    - emollick
-    - {account: ylecun, organization: Meta}
-    - {account: percyliang, organization: Stanford}
-    - {account: DrJimFan, organization: NVIDIA}
-    - lilianweng
-    - HamelHusain
-    - sh_reya
+    - {account: karpathy, required: false}
+    - {account: NoamShazeer, organization: OpenAI, required: false}
+    - {account: simonw, required: false}
+    - {account: swyx, required: false}
+    - {account: emollick, required: false}
+    - {account: ylecun, organization: Meta, required: false}
+    - {account: percyliang, organization: Stanford, required: false}
+    - {account: DrJimFan, organization: NVIDIA, required: false}
+    - {account: lilianweng, required: false}
+    - {account: HamelHusain, required: false}
+    - {account: sh_reya, required: false}
+
+    # Comparable public brief creators. These are optional discovery inputs:
+    # they can reveal launches, workflows, and availability changes that our
+    # primary feeds miss, but they never qualify a claim on their own.
+    - {account: TheRundownAI, organization: The Rundown AI, required: false}
+    - {account: rowancheung, organization: Rowan Cheung, required: false}
+    - {account: theneurondaily, organization: The Neuron, required: false}

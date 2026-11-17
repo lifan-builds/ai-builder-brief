@@ -1,0 +1,169 @@
+{
+  "briefing_date": "2026-10-26",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-10-27T01:45:59.469076+00:00",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2114894926127468774",
+  "verified_post_count": 11,
+  "publication_method": "explicit_reply_chain",
+  "error": null,
+  "profile_count_before": 287,
+  "verified_at_utc": "2026-10-27T01:45:59.469076+00:00",
+  "profile_count_after": 298,
+  "account_verified": true,
+  "exact_text_verified": true,
+  "reply_order_verified": true,
+  "source_links_verified": true,
+  "posts": [
+    {
+      "index": 0,
+      "url": "https://x.com/LifanBuilds/status/2114894926127468774",
+      "parent_url": null,
+      "text_sha256": "7cd02b7f40c256ce9cab0e133d6c0c3679d4dd4d3f5057fe20e37616ae6d7630",
+      "source_url": null
+    },
+    {
+      "index": 1,
+      "url": "https://x.com/LifanBuilds/status/2114895216893415757",
+      "parent_url": "https://x.com/LifanBuilds/status/2114894926127468774",
+      "text_sha256": "f81af7e781b368eb886220f0d16dba4b6d069eef24acf8485705953c4a1a86d6",
+      "source_url": "https://openai.com/index/introducing-gpt-6-1-terra/"
+    },
+    {
+      "index": 2,
+      "url": "https://x.com/LifanBuilds/status/2114895545198403926",
+      "parent_url": "https://x.com/LifanBuilds/status/2114895216893415757",
+      "text_sha256": "00db8ff11651721183eb47669da144a6822d7e2c9719d1287b134f83eb7d15b8",
+      "source_url": "https://www.streetinsider.com/Reuters/Anthropic%2Bdiscloses%2Bmonth-long%2Btraining%2Bpause%2C%2BAI%2Bsecurity%2Bbreaches%2Bin%2BIPO%2Bfiling/27232869.html"
+    },
+    {
+      "index": 3,
+      "url": "https://x.com/LifanBuilds/status/2114895585367269732",
+      "parent_url": "https://x.com/LifanBuilds/status/2114895545198403926",
+      "text_sha256": "77c88bfa584f3f5efdf9060bb132545a1ef74b47c92a412d158c73019c0e1e6a",
+      "source_url": "https://www.langchain.com/blog/components-building-company-harness"
+    },
+    {
+      "index": 4,
+      "url": "https://x.com/LifanBuilds/status/2114895617126461879",
+      "parent_url": "https://x.com/LifanBuilds/status/2114895585367269732",
+      "text_sha256": "d666dc1127930789805a54e3e67dcc6f80392aeb3ad92534ff15491a706a0af8",
+      "source_url": "https://github.com/microsoft/Agensh"
+    },
+    {
+      "index": 5,
+      "url": "https://x.com/LifanBuilds/status/2114895654938120287",
+      "parent_url": "https://x.com/LifanBuilds/status/2114895617126461879",
+      "text_sha256": "e7dfb5310d0ad6c471a46ed8548342b4e4cc530b535e03b459b86e33bba61b13",
+      "source_url": "https://huggingface.co/Nanbeige/Nanbeige4.3-33B"
+    },
+    {
+      "index": 6,
+      "url": "https://x.com/LifanBuilds/status/2114895701637497290",
+      "parent_url": "https://x.com/LifanBuilds/status/2114895654938120287",
+      "text_sha256": "b3dddc08f252a9dc0c07df92dc0285f943d1105438b0d474d57f6a93f193d5de",
+      "source_url": "https://huggingface.co/tencent/Hy-SimulMT-30B-A3B"
+    },
+    {
+      "index": 7,
+      "url": "https://x.com/LifanBuilds/status/2114895754590658679",
+      "parent_url": "https://x.com/LifanBuilds/status/2114895701637497290",
+      "text_sha256": "c9ef5f8dd47c5d9726b7b6b09bdbeb74212ceec04f1e65a81fafc5b5f8be67a6",
+      "source_url": "https://whbl.com/2026/10/25/moonshot-resets-subscriber-quotas-after-kimi-k3-1-pro-launch-issues/"
+    },
+    {
+      "index": 8,
+      "url": "https://x.com/LifanBuilds/status/2114895831518339396",
+      "parent_url": "https://x.com/LifanBuilds/status/2114895754590658679",
+      "text_sha256": "9c4ed2c7a2e899950bab701822a5eae3325d64305145cca093ebb87c7db29dcd",
+      "source_url": "https://github.com/qlabs-eng/noise/pull/46"
+    },
+    {
+      "index": 9,
+      "url": "https://x.com/LifanBuilds/status/2114895869149692352",
+      "parent_url": "https://x.com/LifanBuilds/status/2114895831518339396",
+      "text_sha256": "68e80bbe5c9635e2dc5f4ca575b45d30ce7631c1ee1d6a24f612257019fed40d",
+      "source_url": "https://www.ajc.com/politics/2026/10/ai-bot-access-georgia-voting-data/"
+    },
+    {
+      "index": 10,
+      "url": "https://x.com/LifanBuilds/status/2114895905572942171",
+      "parent_url": "https://x.com/LifanBuilds/status/2114895869149692352",
+      "text_sha256": "256cca51f497e8ee52e46be3f594109df6278e94fd2d2418b4b1cfb35f261cef",
+      "source_url": "https://minimaxir.com/2026/10/cheap-llms/"
+    }
+  ],
+  "link_checks": [
+    {
+      "index": 1,
+      "short_url": "https://t.co/ix0PbLBBGB",
+      "expected": "https://openai.com/index/introducing-gpt-6-1-terra/",
+      "resolved": "https://openai.com/index/introducing-gpt-6-1-terra/",
+      "match": true
+    },
+    {
+      "index": 2,
+      "short_url": "https://t.co/HVODfiAYg1",
+      "expected": "https://www.streetinsider.com/Reuters/Anthropic%2Bdiscloses%2Bmonth-long%2Btraining%2Bpause%2C%2BAI%2Bsecurity%2Bbreaches%2Bin%2BIPO%2Bfiling/27232869.html",
+      "resolved": "https://www.streetinsider.com/Reuters/Anthropic%2Bdiscloses%2Bmonth-long%2Btraining%2Bpause%2C%2BAI%2Bsecurity%2Bbreaches%2Bin%2BIPO%2Bfiling/27232869.html",
+      "match": true
+    },
+    {
+      "index": 3,
+      "short_url": "https://t.co/4ohjHHUR7m",
+      "expected": "https://www.langchain.com/blog/components-building-company-harness",
+      "resolved": "https://www.langchain.com/blog/components-building-company-harness",
+      "match": true
+    },
+    {
+      "index": 4,
+      "short_url": "https://t.co/ZTKfvaOxam",
+      "expected": "https://github.com/microsoft/Agensh",
+      "resolved": "https://github.com/microsoft/Agensh",
+      "match": true
+    },
+    {
+      "index": 5,
+      "short_url": "https://t.co/Zz1p8xD6LU",
+      "expected": "https://huggingface.co/Nanbeige/Nanbeige4.3-33B",
+      "resolved": "https://huggingface.co/Nanbeige/Nanbeige4.3-33B",
+      "match": true
+    },
+    {
+      "index": 6,
+      "short_url": "https://t.co/ExsaORD2Zg",
+      "expected": "https://huggingface.co/tencent/Hy-SimulMT-30B-A3B",
+      "resolved": "https://huggingface.co/tencent/Hy-SimulMT-30B-A3B",
+      "match": true
+    },
+    {
+      "index": 7,
+      "short_url": "https://t.co/wm40I1D10a",
+      "expected": "https://whbl.com/2026/10/25/moonshot-resets-subscriber-quotas-after-kimi-k3-1-pro-launch-issues/",
+      "resolved": "https://whbl.com/2026/10/25/moonshot-resets-subscriber-quotas-after-kimi-k3-1-pro-launch-issues/",
+      "match": true
+    },
+    {
+      "index": 8,
+      "short_url": "https://t.co/PVWVCix1ZU",
+      "expected": "https://github.com/qlabs-eng/noise/pull/46",
+      "resolved": "https://github.com/qlabs-eng/noise/pull/46",
+      "match": true
+    },
+    {
+      "index": 9,
+      "short_url": "https://t.co/1yZAwHdTwf",
+      "expected": "https://www.ajc.com/politics/2026/10/ai-bot-access-georgia-voting-data/",
+      "resolved": "https://www.ajc.com/politics/2026/10/ai-bot-access-georgia-voting-data/",
+      "match": true
+    },
+    {
+      "index": 10,
+      "short_url": "https://t.co/osVsDbHITU",
+      "expected": "https://minimaxir.com/2026/10/cheap-llms/",
+      "resolved": "https://minimaxir.com/2026/10/cheap-llms/",
+      "match": true
+    }
+  ],
+  "opening_published_at_utc": "2026-10-27T01:40:48.822236+00:00"
+}

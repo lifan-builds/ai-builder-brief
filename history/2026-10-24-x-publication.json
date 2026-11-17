@@ -1,0 +1,104 @@
+{
+  "briefing_date": "2026-10-24",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-10-24T13:33:19.834760+00:00",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2113986358964617279",
+  "verified_post_count": 11,
+  "publication_method": "explicit_reply_chain",
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2113986358964617279",
+    "https://x.com/LifanBuilds/status/2113986615383323102",
+    "https://x.com/LifanBuilds/status/2113986744739848401",
+    "https://x.com/LifanBuilds/status/2113986754470707620",
+    "https://x.com/LifanBuilds/status/2113986763060654508",
+    "https://x.com/LifanBuilds/status/2113986834351243494",
+    "https://x.com/LifanBuilds/status/2113986846023987324",
+    "https://x.com/LifanBuilds/status/2113986855293321365",
+    "https://x.com/LifanBuilds/status/2113986882195595680",
+    "https://x.com/LifanBuilds/status/2113986892652048567",
+    "https://x.com/LifanBuilds/status/2113986902915461220"
+  ],
+  "verification": {
+    "exact_composer_text": true,
+    "live_body_text": true,
+    "reply_order": true,
+    "all_source_links_resolved": true,
+    "profile_posts_before": 267,
+    "profile_posts_after": 278,
+    "saved_draft_fingerprints_match": true
+  },
+  "link_verification": [
+    {
+      "rank": 1,
+      "short_link": "https://t.co/Q2HWEBdQmU",
+      "resolved_to": "https://openai.com/index/securing-our-frontier-model-training-environment/",
+      "expected": "https://openai.com/index/securing-our-frontier-model-training-environment/",
+      "matches": true
+    },
+    {
+      "rank": 2,
+      "short_link": "https://t.co/QMT8t5Uc6O",
+      "resolved_to": "https://arxiv.org/abs/2610.30755",
+      "expected": "https://arxiv.org/abs/2610.30755",
+      "matches": true
+    },
+    {
+      "rank": 3,
+      "short_link": "https://t.co/YgMDhrdsej",
+      "resolved_to": "https://arxiv.org/abs/2610.31351",
+      "expected": "https://arxiv.org/abs/2610.31351",
+      "matches": true
+    },
+    {
+      "rank": 4,
+      "short_link": "https://t.co/1FTvXn0h9K",
+      "resolved_to": "https://tanstack.com/blog/tanstack-ai-1-0",
+      "expected": "https://tanstack.com/blog/tanstack-ai-1-0",
+      "matches": true
+    },
+    {
+      "rank": 5,
+      "short_link": "https://t.co/UfJesfGwKB",
+      "resolved_to": "https://microsoft.ai/news/building-medical-superintelligence/",
+      "expected": "https://microsoft.ai/news/building-medical-superintelligence/",
+      "matches": true
+    },
+    {
+      "rank": 6,
+      "short_link": "https://t.co/umV0eCNhCw",
+      "resolved_to": "https://arxiv.org/abs/2610.30949",
+      "expected": "https://arxiv.org/abs/2610.30949",
+      "matches": true
+    },
+    {
+      "rank": 7,
+      "short_link": "https://t.co/rHAPjSe7Pe",
+      "resolved_to": "https://github.com/Tencent/WeVisOne-VL",
+      "expected": "https://github.com/Tencent/WeVisOne-VL",
+      "matches": true
+    },
+    {
+      "rank": 8,
+      "short_link": "https://t.co/f7j6wp8dra",
+      "resolved_to": "https://arxiv.org/abs/2610.30418",
+      "expected": "https://arxiv.org/abs/2610.30418",
+      "matches": true
+    },
+    {
+      "rank": 9,
+      "short_link": "https://t.co/UAUySDpwPN",
+      "resolved_to": "https://block.xyz/dessa",
+      "expected": "https://block.xyz/dessa",
+      "matches": true
+    },
+    {
+      "rank": 10,
+      "short_link": "https://t.co/L62hMQt9dR",
+      "resolved_to": "https://www.gov.uk/government/news/introducing-the-ai-biosecurity-lab",
+      "expected": "https://www.gov.uk/government/news/introducing-the-ai-biosecurity-lab",
+      "matches": true
+    }
+  ],
+  "error": null
+}

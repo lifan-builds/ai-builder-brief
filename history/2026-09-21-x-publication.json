@@ -1,0 +1,9 @@
+{
+  "briefing_date": "2026-09-21",
+  "account": "@LifanBuilds",
+  "status": "blocked",
+  "published_at_utc": null,
+  "opening_post_url": null,
+  "verified_post_count": 0,
+  "error": "Live profile reconciliation showed 116 posts, unchanged from the September 20 check. Chrome was signed out of X; the available Google sign-in returned to X onboarding rather than the existing @LifanBuilds account. No composer was opened, no account was created, and no posts were sent."
+}

@@ -1,0 +1,103 @@
+version: 1
+description: Source catalog for the daily AI news brief. This is separate from the podcast collector configuration.
+
+policy:
+  storage: metadata_only
+  reddit: discovery_only
+  social: discovery_only
+  newsletters: discovery_only
+  paywalls: do_not_bypass
+
+roles:
+  primary: Official or directly authored factual evidence.
+  independent: Reporting, analysis, criticism, or replication that adds useful context.
+  adoption: Time-bounded usage, ecosystem, or benchmark measurements.
+  discovery: Leads that require stronger evidence before qualification.
+
+coverage_lanes:
+  models_and_apis:
+    - openai_news
+    - anthropic_news
+    - google_ai
+    - meta_ai
+    - mistral_news
+    - deepseek_news
+    - qwen_modelscope
+    - provider_docs
+  developer_tools_and_agents:
+    - github_releases
+    - huggingface_blog
+    - practitioner_engineering
+    - github_activity
+    - hacker_news
+  infrastructure_and_economics:
+    - provider_docs
+    - provider_status
+    - provider_changelogs
+    - openrouter_rankings
+    - artificial_analysis
+    - epoch_ai
+    - infrastructure_reporting
+  research_and_evaluation:
+    - arxiv_ai
+    - research_labs
+    - eval_methodology
+    - practitioner_engineering
+  security_and_policy:
+    - cisa_kev
+    - osv_github_advisories
+    - security_research
+    - policy_primary
+    - independent_reporting
+  builder_behavior:
+    - github_activity
+    - huggingface_models
+    - openrouter_rankings
+    - package_ecosystem
+    - npm_usage
+    - chinese_technical
+    - community_discovery
+    - reddit_local_llama
+
+sources:
+  - {id: openai_news, name: OpenAI News, role: primary, language: en, url: https://openai.com/news/}
+  - {id: anthropic_news, name: Anthropic News, role: primary, language: en, url: https://www.anthropic.com/news}
+  - {id: google_ai, name: Google AI and DeepMind, role: primary, language: en, url: https://blog.google/technology/ai/}
+  - {id: meta_ai, name: Meta AI, role: primary, language: en, url: https://ai.meta.com/blog/}
+  - {id: mistral_news, name: Mistral AI, role: primary, language: en, url: https://mistral.ai/news/}
+  - {id: deepseek_news, name: DeepSeek, role: primary, language: en, url: https://www.deepseek.com/}
+  - {id: qwen_modelscope, name: Qwen and ModelScope, role: primary, language: zh, url: https://www.modelscope.cn/}
+  - {id: provider_docs, name: Provider documentation, role: primary, language: en, url: https://platform.openai.com/docs/}
+  - {id: provider_changelogs, name: Provider API changelogs and release notes, role: primary, language: en, url: https://docs.anthropic.com/en/release-notes/api}
+  - {id: provider_status, name: Provider status pages, role: primary, language: en, url: https://status.openai.com/}
+  - {id: github_releases, name: GitHub project release feeds, role: primary, language: en, url: https://github.com/vllm-project/vllm/releases}
+  - {id: huggingface_blog, name: Hugging Face Blog, role: primary, language: en, url: https://huggingface.co/blog}
+  - {id: arxiv_ai, name: arXiv AI and ML, role: primary, language: en, url: https://arxiv.org/list/cs.AI/recent}
+  - {id: research_labs, name: Research lab publication pages, role: primary, language: en, url: https://research.google/}
+  - {id: cisa_kev, name: CISA Known Exploited Vulnerabilities, role: primary, language: en, url: https://www.cisa.gov/known-exploited-vulnerabilities-catalog}
+  - {id: osv_github_advisories, name: OSV and GitHub Security Advisories, role: primary, language: en, url: https://osv.dev/}
+  - {id: policy_primary, name: Government and standards sources, role: primary, language: en, url: https://www.nist.gov/artificial-intelligence}
+  - {id: reuters, name: Reuters, role: independent, language: en, url: https://www.reuters.com/technology/artificial-intelligence/}
+  - {id: techcrunch, name: TechCrunch AI, role: independent, language: en, url: https://techcrunch.com/category/artificial-intelligence/}
+  - {id: ars, name: Ars Technica, role: independent, language: en, url: https://arstechnica.com/ai/}
+  - {id: mit_technology_review, name: MIT Technology Review AI, role: independent, language: en, url: https://www.technologyreview.com/topic/artificial-intelligence/}
+  - {id: independent_reporting, name: Independent reporting, role: independent, language: en, url: https://www.theverge.com/ai-artificial-intelligence}
+  - {id: infrastructure_reporting, name: Infrastructure and economics reporting, role: independent, language: en, url: https://www.semianalysis.com/}
+  - {id: security_research, name: Security research and incident reporting, role: independent, language: en, url: https://googleprojectzero.blogspot.com/}
+  - {id: practitioner_engineering, name: Researcher and practitioner writing, role: independent, language: en, url: https://simonwillison.net/}
+  - {id: artificial_analysis, name: Artificial Analysis, role: adoption, language: en, url: https://artificialanalysis.ai/}
+  - {id: epoch_ai, name: Epoch AI, role: adoption, language: en, url: https://epoch.ai/}
+  - {id: eval_methodology, name: METR, LMSYS, and benchmark methodology, role: adoption, language: en, url: https://metr.org/}
+  - {id: openrouter_rankings, name: OpenRouter rankings, role: adoption, language: en, url: https://openrouter.ai/rankings}
+  - {id: huggingface_models, name: Hugging Face model activity, role: adoption, language: en, url: https://huggingface.co/models}
+  - {id: github_activity, name: GitHub activity and repository artifacts, role: adoption, language: en, url: https://github.com/trending}
+  - {id: package_ecosystem, name: PyPI package usage, role: adoption, language: en, url: https://pypistats.org/}
+  - {id: npm_usage, name: npm package usage, role: adoption, language: en, url: https://www.npmjs.com/}
+  - {id: qbitai, name: 量子位 QbitAI, role: independent, language: zh, url: https://www.qbitai.com/}
+  - {id: jiqizhixin, name: 机器之心, role: independent, language: zh, url: https://www.jiqizhixin.com/}
+  - {id: geekpark, name: 极客公园 Founder Park, role: independent, language: zh, url: https://www.geekpark.net/}
+  - {id: chinese_technical, name: Chinese technical and local-language sources, role: independent, language: zh, url: https://www.leiphone.com/}
+  - {id: hacker_news, name: Hacker News, role: discovery, language: en, url: https://news.ycombinator.com/}
+  - {id: community_discovery, name: Public community and social discovery, role: discovery, language: en, url: https://x.com/}
+  - {id: reddit_local_llama, name: r/LocalLLaMA lead-only discovery, role: discovery, language: en, url: https://www.reddit.com/r/LocalLLaMA/}
+

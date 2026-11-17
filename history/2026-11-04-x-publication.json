@@ -1,0 +1,45 @@
+{
+  "briefing_date": "2026-11-04",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-11-04T17:15:54.842922+00:00",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2118028200244867190",
+  "verified_post_count": 11,
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2118028200244867190",
+    "https://x.com/LifanBuilds/status/2118028359875891515",
+    "https://x.com/LifanBuilds/status/2118028594530439216",
+    "https://x.com/LifanBuilds/status/2118028712725864547",
+    "https://x.com/LifanBuilds/status/2118028767566438578",
+    "https://x.com/LifanBuilds/status/2118028831986700394",
+    "https://x.com/LifanBuilds/status/2118028890526671203",
+    "https://x.com/LifanBuilds/status/2118028974970597887",
+    "https://x.com/LifanBuilds/status/2118029031325270493",
+    "https://x.com/LifanBuilds/status/2118029085779914968",
+    "https://x.com/LifanBuilds/status/2118029145045385257"
+  ],
+  "error": null,
+  "verification": {
+    "account": "@LifanBuilds",
+    "exact_saved_text": true,
+    "live_prose_verified": true,
+    "explicit_parent_chain": true,
+    "shortened_link_destinations_verified": 10,
+    "profile_count_before": 381,
+    "profile_count_after": 392
+  },
+  "screenshot": "/Users/lfan/.codex/visualizations/2026/11/04/01a1a6e5-6ea2-7ed0-9dfa-f9e3fb7d39c9/x-publication.jpg",
+  "journal": {
+    "status": "published",
+    "commit": "965228c8f13fad4e2759838589f9773699a9998c",
+    "archive_url": "https://clifan.com/journal/ai-builder-brief/",
+    "entry_url": "https://clifan.com/journal/ai-builder-brief/2026-11-04.html",
+    "verified_at_utc": "2026-11-04T17:18:22.523418+00:00",
+    "archive_http_status": 200,
+    "entry_http_status": 200,
+    "live_html_matches_local": true,
+    "story_card_count": 10,
+    "pages_run_id": 41875977083,
+    "pages_conclusion": "success"
+  }
+}

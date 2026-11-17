@@ -1,0 +1,27 @@
+{
+  "briefing_date": "2026-10-28",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-10-28T20:46:19.184000Z",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2115545247749140744",
+  "verified_post_count": 11,
+  "error": null,
+  "publication_method": "explicit_reply_chain",
+  "profile_post_count_before": 305,
+  "profile_post_count_after": 316,
+  "verification": "All saved prose verified live with account/order; ten t.co destinations match saved links. Reply 2 notification timeout reconciled from live post without resend.",
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2115545247749140744",
+    "https://x.com/LifanBuilds/status/2115545363981775128",
+    "https://x.com/LifanBuilds/status/2115545466876354747",
+    "https://x.com/LifanBuilds/status/2115545549776826751",
+    "https://x.com/LifanBuilds/status/2115545586355286092",
+    "https://x.com/LifanBuilds/status/2115545607624658980",
+    "https://x.com/LifanBuilds/status/2115545629686653408",
+    "https://x.com/LifanBuilds/status/2115545654567358880",
+    "https://x.com/LifanBuilds/status/2115545673630429342",
+    "https://x.com/LifanBuilds/status/2115545694698357247",
+    "https://x.com/LifanBuilds/status/2115545719751037377"
+  ],
+  "thread_sha256": "58073b65e125614a352ff5b60c4475f868d47502bd77570483ebde94829aeb8d"
+}

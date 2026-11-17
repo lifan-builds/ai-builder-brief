@@ -1,0 +1,55 @@
+{
+  "briefing_date": "2026-11-03",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-11-03T17:03:37.000Z",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2117663526055821498",
+  "verified_post_count": 11,
+  "error": null,
+  "publication_method": "explicit_reply_chain",
+  "profile_post_count_before": 370,
+  "profile_post_count_after": 381,
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2117663526055821498",
+    "https://x.com/LifanBuilds/status/2117663668343349633",
+    "https://x.com/LifanBuilds/status/2117663836325241094",
+    "https://x.com/LifanBuilds/status/2117663871213396230",
+    "https://x.com/LifanBuilds/status/2117663882244472867",
+    "https://x.com/LifanBuilds/status/2117663904973439158",
+    "https://x.com/LifanBuilds/status/2117663915459158193",
+    "https://x.com/LifanBuilds/status/2117663943577755938",
+    "https://x.com/LifanBuilds/status/2117663954931732565",
+    "https://x.com/LifanBuilds/status/2117663990075765090",
+    "https://x.com/LifanBuilds/status/2117664001945747636"
+  ],
+  "verification": {
+    "account": true,
+    "exact_composer_text": true,
+    "live_prose": true,
+    "order": true,
+    "explicit_parent_targets": true,
+    "x_length_validation": true,
+    "shortened_links": 10,
+    "link_destinations_match": true
+  },
+  "journal": {
+    "status": "published",
+    "journal_commit": "342bf72bd61aeb08a276467af2dfd82f3a9b4d17",
+    "pushed_head": "342bf72bd61aeb08a276467af2dfd82f3a9b4d17",
+    "pages_run_id": 41680691047,
+    "checks": [
+      {
+        "url": "https://clifan.com/journal/ai-builder-brief/",
+        "status": 200,
+        "bytes_match": true,
+        "story_cards": 0
+      },
+      {
+        "url": "https://clifan.com/journal/ai-builder-brief/2026-11-03.html",
+        "status": 200,
+        "bytes_match": true,
+        "story_cards": 10
+      }
+    ]
+  }
+}

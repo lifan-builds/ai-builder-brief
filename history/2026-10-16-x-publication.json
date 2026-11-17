@@ -1,0 +1,31 @@
+{
+  "briefing_date": "2026-10-16",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-10-16T18:16:17Z",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2111158441054290125",
+  "verified_post_count": 11,
+  "error": null,
+  "verification": {
+    "method": "explicit_reply_chain",
+    "profile_count_before": 184,
+    "profile_count_after": 195,
+    "exact_text": "Each composer compared with saved draft and each live post inspected",
+    "order": "Each numbered reply sent under immediately preceding verified status",
+    "length": "11/11 <=280 with t.co URL length; every send enabled in X",
+    "links": "One intended source per story; matching source cards verified"
+  },
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2111158441054290125",
+    "https://x.com/LifanBuilds/status/2111158578791006250",
+    "https://x.com/LifanBuilds/status/2111158736358449227",
+    "https://x.com/LifanBuilds/status/2111158836279275584",
+    "https://x.com/LifanBuilds/status/2111158877349879911",
+    "https://x.com/LifanBuilds/status/2111158935277445491",
+    "https://x.com/LifanBuilds/status/2111158991862796744",
+    "https://x.com/LifanBuilds/status/2111159041166856447",
+    "https://x.com/LifanBuilds/status/2111159101959114797",
+    "https://x.com/LifanBuilds/status/2111159204518203750",
+    "https://x.com/LifanBuilds/status/2111159251788017915"
+  ]
+}

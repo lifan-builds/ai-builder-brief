@@ -1,0 +1,97 @@
+{
+  "briefing_date": "2026-10-20",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-10-21T04:29:50.948825+00:00",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2112762538010214842",
+  "verified_post_count": 11,
+  "error": null,
+  "publication_method": "explicit_reply_chain",
+  "profile_count_before": 223,
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2112762538010214842",
+    "https://x.com/LifanBuilds/status/2112762674350301243",
+    "https://x.com/LifanBuilds/status/2112762836678304123",
+    "https://x.com/LifanBuilds/status/2112763052127142393",
+    "https://x.com/LifanBuilds/status/2112763075359371758",
+    "https://x.com/LifanBuilds/status/2112763083768922530",
+    "https://x.com/LifanBuilds/status/2112763113686835463",
+    "https://x.com/LifanBuilds/status/2112763122662695116",
+    "https://x.com/LifanBuilds/status/2112763130459856963",
+    "https://x.com/LifanBuilds/status/2112763156825272691",
+    "https://x.com/LifanBuilds/status/2112763167428522184"
+  ],
+  "profile_count_after": 234,
+  "verification": "One opening and ten explicit chained replies; each composer exact-text and enabled validation checked; each live body, account, order, permalink and source card verified. All ten t.co URLs resolve to exact saved source URLs. Profile increased 223 to 234.",
+  "source_link_checks": [
+    {
+      "short": "https://t.co/lAgVTUex3s",
+      "expected": "https://hamel.dev/blog/posts/decision-model-evals/index.html",
+      "redirect": "https://hamel.dev/blog/posts/decision-model-evals/index.html",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/uWsRke1xNx",
+      "expected": "https://github.com/deepseek-ai/DeepInfer",
+      "redirect": "https://github.com/deepseek-ai/DeepInfer",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/Hv8Bj01Sp2",
+      "expected": "https://huggingface.co/blog/hf-torchtpu",
+      "redirect": "https://huggingface.co/blog/hf-torchtpu",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/zDkGfz9rJv",
+      "expected": "https://www.minimax.io/blog/minimax-m31f",
+      "redirect": "https://www.minimax.io/blog/minimax-m31f",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/E931eweDqI",
+      "expected": "https://norforge.com/blog/inside_cairn",
+      "redirect": "https://norforge.com/blog/inside_cairn",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/VQNjZIlbEB",
+      "expected": "https://github.com/MemTensor/MemT-1.0",
+      "redirect": "https://github.com/MemTensor/MemT-1.0",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/KiIp9RN4tA",
+      "expected": "https://www.inceptionlabs.ai/blog/introducing-mercury-3",
+      "redirect": "https://www.inceptionlabs.ai/blog/introducing-mercury-3",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/GUzrnAsftt",
+      "expected": "https://blog.cloudflare.com/clairic-extraction-model/",
+      "redirect": "https://blog.cloudflare.com/clairic-extraction-model/",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/S49bzSIldO",
+      "expected": "https://huggingface.co/blog/ibm-research/altk-evolve-bc",
+      "redirect": "https://huggingface.co/blog/ibm-research/altk-evolve-bc",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/s5TmJbE453",
+      "expected": "https://mistral.ai/news/voxtral-3/",
+      "redirect": "https://mistral.ai/news/voxtral-3/",
+      "matches": true
+    }
+  ],
+  "journal": {
+    "commit": "7f0ec2131f9c7176ec31877dcbf729fcdbdb5d9c",
+    "status": "published",
+    "archive_url": "https://clifan.com/journal/ai-builder-brief/",
+    "entry_url": "https://clifan.com/journal/ai-builder-brief/2026-10-20.html",
+    "verified_at_utc": "2026-10-21T04:31:08.991380+00:00",
+    "http_status": 200,
+    "story_count": 10
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "briefing_date": "2026-11-17",
+  "account": "@LifanBuilds",
+  "status": "blocked",
+  "published_at_utc": null,
+  "opening_post_url": null,
+  "verified_post_count": 0,
+  "error": "MV3 extension not connected on ws://127.0.0.1:19222/ext; bridge remained disconnected after documented setup retry. Signed-in profile/duplicate check unavailable. No posts sent.",
+  "draft_post_count": 11,
+  "offline_length_check": "All eleven posts <=280 after URLs counted as 23 characters; X composer validation unavailable."
+}

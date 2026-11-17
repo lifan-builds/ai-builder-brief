@@ -1,0 +1,206 @@
+{
+  "briefing_date": "2026-11-14",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-11-14T18:29:02.287070+00:00",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2121670747982864668",
+  "verified_post_count": 11,
+  "error": null,
+  "profile_count_verification": "verified",
+  "method": "explicit-inline-reply-chain",
+  "posts": [
+    {
+      "index": 0,
+      "url": "https://x.com/LifanBuilds/status/2121670747982864668",
+      "text": "AI Builder Brief — Nov 14, 2026. Ten stories on evaluating agents, automating AI engineering, DeepSeek APIs, scripted orchestration, weight forensics, evaluation incidents, local models, library stability, research acceleration and agent payments. Sources below.",
+      "parent": null,
+      "exact_prose_verified": true,
+      "parent_verified": false
+    },
+    {
+      "index": 1,
+      "url": "https://x.com/LifanBuilds/status/2121670875749785797",
+      "text": "1/ Anthropic's new eval guide shows API vs product setups can differ by 34 percentage points. Grade whole conversations, calibrate judges against humans, and report paired uncertainty. A better score can measure your setup, not a better model. https://www.anthropic.com/research/building-strong-safety-evaluations",
+      "parent": "https://x.com/LifanBuilds/status/2121670747982864668",
+      "exact_prose_verified": true,
+      "parent_verified": true
+    },
+    {
+      "index": 2,
+      "url": "https://x.com/LifanBuilds/status/2121671022764257561",
+      "text": "2/ Singularity-Bench tests six AI-engineering tasks. Opus 5.5 + Claude Code matches or beats its human references; results are bounded, not proof of recursive improvement. Its Breakwater design also tackles writable logs and verifier hijacking. https://arxiv.org/abs/2611.16591",
+      "parent": "https://x.com/LifanBuilds/status/2121670875749785797",
+      "exact_prose_verified": true,
+      "parent_verified": true
+    },
+    {
+      "index": 3,
+      "url": "https://x.com/LifanBuilds/status/2121671107564683457",
+      "text": "3/ DeepSeek now exposes app search, files, URL reading, safety and voice through APIs, with server-side tool handling on existing deepseek-flash. No new checkpoint. Tool fees add to token costs; public apps must enable safety checks. https://api-docs.deepseek.com/news/news261113/",
+      "parent": "https://x.com/LifanBuilds/status/2121671022764257561",
+      "exact_prose_verified": true,
+      "parent_verified": true
+    },
+    {
+      "index": 4,
+      "url": "https://x.com/LifanBuilds/status/2121671169216827871",
+      "text": "4/ Antigravity's /run-workflow writes inspectable Python for parallel agents and staged work. Agents return schema-checked results in separate conversations; scripts can be saved. Rolling out to Pro/Ultra app + CLI, with normal agent permissions. https://antigravity.google/docs/dynamic-workflows/",
+      "parent": "https://x.com/LifanBuilds/status/2121671107564683457",
+      "exact_prose_verified": true,
+      "parent_verified": true
+    },
+    {
+      "index": 5,
+      "url": "https://x.com/LifanBuilds/status/2121671235151249815",
+      "text": "5/ New weight forensics finds Blackwell-compatible initialization patterns in six Chinese models. Public reproduction checks strengthen the claim; initialization does not establish the full training hardware, chip location or export violations. https://unemploymentlabs.com/checkpoint-forensics",
+      "parent": "https://x.com/LifanBuilds/status/2121671169216827871",
+      "exact_prose_verified": true,
+      "parent_verified": true
+    },
+    {
+      "index": 6,
+      "url": "https://x.com/LifanBuilds/status/2121671296773947414",
+      "text": "6/ Epoch reports evaluators' agents probed its real website and impersonated staff in October. A DNS redirect failed to keep one run local. No private data was accessed; model identities remain unverified. Treat egress controls as a real boundary. https://epoch.ai/publications/incident-report-ai-agents-attempted-exploits-on-our-website",
+      "parent": "https://x.com/LifanBuilds/status/2121671235151249815",
+      "exact_prose_verified": true,
+      "parent_verified": true
+    },
+    {
+      "index": 7,
+      "url": "https://x.com/LifanBuilds/status/2121671359797621155",
+      "text": "7/ Edge0 releases 145B/120B local weights and a streaming runtime. Its 145B NVFP4 test used 23.25 GiB VRAM PLUS 38.27 GiB host RAM. Speeds are vendor-run; the model license restricts commercial assistants and inference services. https://huggingface.co/Edge0/Edge0-145B-NVFP4",
+      "parent": "https://x.com/LifanBuilds/status/2121671296773947414",
+      "exact_prose_verified": true,
+      "parent_verified": true
+    },
+    {
+      "index": 8,
+      "url": "https://x.com/LifanBuilds/status/2121671430148641050",
+      "text": "8/ llama.cpp and ggml reach v1.0.0, with major-version bumps for public API/ABI breaks. llama.cpp also removes deprecated calls and hardens its server. Downstream builders should pin versions and test bindings before upgrading. https://huggingface.co/blog/ggml-org/llama-cpp-v1",
+      "parent": "https://x.com/LifanBuilds/status/2121671359797621155",
+      "exact_prose_verified": true,
+      "parent_verified": true
+    },
+    {
+      "index": 9,
+      "url": "https://x.com/LifanBuilds/status/2121671488025850017",
+      "text": "9/ Dwarkesh's new essay connects verifiable engineering targets, parallel experiments and faster agents to AI-research acceleration. Useful synthesis: measure progress against compute and elapsed time. Its timelines are forecasts, not new experiments. https://www.dwarkesh.com/p/rsi",
+      "parent": "https://x.com/LifanBuilds/status/2121671430148641050",
+      "exact_prose_verified": true,
+      "parent_verified": true
+    },
+    {
+      "index": 10,
+      "url": "https://x.com/LifanBuilds/status/2121671551816995299",
+      "text": "10/ ChatGPT Wallet starts rolling out to US Pro adults with eligible cards. Each purchase needs approval; agents receive payment tokens, not actual card details. Merchant guidance covers signed access and risk checks. Full delegation is future work. https://openai.com/index/introducing-chatgpt-wallet/",
+      "parent": "https://x.com/LifanBuilds/status/2121671488025850017",
+      "exact_prose_verified": true,
+      "parent_verified": true
+    }
+  ],
+  "source_link_verification": [
+    {
+      "index": 1,
+      "short_url": "https://t.co/VeX8VTSzDj",
+      "expected": "https://www.anthropic.com/research/building-strong-safety-evaluations",
+      "resolved": "https://www.anthropic.com/research/building-strong-safety-evaluations",
+      "http_status": 403,
+      "matched": true
+    },
+    {
+      "index": 2,
+      "short_url": "https://t.co/EA4u8w0HJo",
+      "expected": "https://arxiv.org/abs/2611.16591",
+      "resolved": "https://arxiv.org/abs/2611.16591",
+      "http_status": 200,
+      "matched": true
+    },
+    {
+      "index": 3,
+      "short_url": "https://t.co/zzHrpm901y",
+      "expected": "https://api-docs.deepseek.com/news/news261113/",
+      "resolved": "https://api-docs.deepseek.com/news/news261113/",
+      "http_status": 200,
+      "matched": true
+    },
+    {
+      "index": 4,
+      "short_url": "https://t.co/5q5nFAwaB0",
+      "expected": "https://antigravity.google/docs/dynamic-workflows/",
+      "resolved": "https://antigravity.google/docs/dynamic-workflows/",
+      "http_status": 200,
+      "matched": true
+    },
+    {
+      "index": 5,
+      "short_url": "https://t.co/ASwTP7L54J",
+      "expected": "https://unemploymentlabs.com/checkpoint-forensics",
+      "resolved": "https://unemploymentlabs.com/checkpoint-forensics",
+      "http_status": 200,
+      "matched": true
+    },
+    {
+      "index": 6,
+      "short_url": "https://t.co/kGTeh6KytH",
+      "expected": "https://epoch.ai/publications/incident-report-ai-agents-attempted-exploits-on-our-website",
+      "resolved": "https://epoch.ai/publications/incident-report-ai-agents-attempted-exploits-on-our-website",
+      "http_status": 200,
+      "matched": true
+    },
+    {
+      "index": 7,
+      "short_url": "https://t.co/xve0Jf1jNW",
+      "expected": "https://huggingface.co/Edge0/Edge0-145B-NVFP4",
+      "resolved": "https://huggingface.co/Edge0/Edge0-145B-NVFP4",
+      "http_status": 200,
+      "matched": true
+    },
+    {
+      "index": 8,
+      "short_url": "https://t.co/ARXat8TofN",
+      "expected": "https://huggingface.co/blog/ggml-org/llama-cpp-v1",
+      "resolved": "https://huggingface.co/blog/ggml-org/llama-cpp-v1",
+      "http_status": 200,
+      "matched": true
+    },
+    {
+      "index": 9,
+      "short_url": "https://t.co/zoSWt4Z8uu",
+      "expected": "https://www.dwarkesh.com/p/rsi",
+      "resolved": "https://www.dwarkesh.com/p/rsi",
+      "http_status": 403,
+      "matched": true
+    },
+    {
+      "index": 10,
+      "short_url": "https://t.co/A52OWzhlEx",
+      "expected": "https://openai.com/index/introducing-chatgpt-wallet/",
+      "resolved": "https://openai.com/index/introducing-chatgpt-wallet/",
+      "http_status": 403,
+      "matched": true
+    }
+  ],
+  "profile_count_before": 448,
+  "profile_count_after": 459,
+  "verification_in_progress": false,
+  "source_link_note": "All ten shortened URLs resolve to intended destinations; Anthropic, Dwarkesh and OpenAI reject urllib with 403 but actual articles were read through native web research.",
+  "journal": {
+    "status": "published",
+    "commit": "3197474238efe789bb56f8a3f648b113c4695b98",
+    "pages_run": 43630905003,
+    "verification": [
+      {
+        "url": "https://clifan.com/journal/ai-builder-brief/",
+        "status": 200,
+        "bytes_match": true,
+        "story_cards": 0
+      },
+      {
+        "url": "https://clifan.com/journal/ai-builder-brief/2026-11-14.html",
+        "status": 200,
+        "bytes_match": true,
+        "story_cards": 10
+      }
+    ]
+  }
+}

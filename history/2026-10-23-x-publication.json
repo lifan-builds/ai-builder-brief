@@ -1,0 +1,104 @@
+{
+  "briefing_date": "2026-10-23",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-10-23T18:04:14.883820+00:00",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2113692068606529972",
+  "verified_post_count": 11,
+  "publication_method": "explicit_reply_chain",
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2113692068606529972",
+    "https://x.com/LifanBuilds/status/2113692310244626694",
+    "https://x.com/LifanBuilds/status/2113692439886352840",
+    "https://x.com/LifanBuilds/status/2113692450791498220",
+    "https://x.com/LifanBuilds/status/2113692478813680036",
+    "https://x.com/LifanBuilds/status/2113692494961750279",
+    "https://x.com/LifanBuilds/status/2113692508928794767",
+    "https://x.com/LifanBuilds/status/2113692563031113782",
+    "https://x.com/LifanBuilds/status/2113692575484031058",
+    "https://x.com/LifanBuilds/status/2113692587148333325",
+    "https://x.com/LifanBuilds/status/2113692598506565789"
+  ],
+  "verification": {
+    "exact_composer_text": true,
+    "live_body_text": true,
+    "reply_order": true,
+    "all_source_links_resolved": true,
+    "profile_posts_before": 256,
+    "profile_posts_after": 267,
+    "saved_draft_fingerprints_match": true
+  },
+  "link_verification": [
+    {
+      "rank": 1,
+      "short_link": "https://t.co/RL4w34IRIx",
+      "resolved_to": "https://www.anthropic.com/research/formal-verification",
+      "expected": "https://www.anthropic.com/research/formal-verification",
+      "verified": true
+    },
+    {
+      "rank": 2,
+      "short_link": "https://t.co/ormBpB7iGc",
+      "resolved_to": "https://www.aisi.gov.uk/blog/investigating-alignment-failures-in-aisis-incident",
+      "expected": "https://www.aisi.gov.uk/blog/investigating-alignment-failures-in-aisis-incident",
+      "verified": true
+    },
+    {
+      "rank": 3,
+      "short_link": "https://t.co/eGR4FAIrVN",
+      "resolved_to": "https://www.kimi.ai/blog/kimi-k3-1-pro",
+      "expected": "https://www.kimi.ai/blog/kimi-k3-1-pro",
+      "verified": true
+    },
+    {
+      "rank": 4,
+      "short_link": "https://t.co/gO6cRBC4D9",
+      "resolved_to": "https://xingjianbai.com/reactive-optimizers/",
+      "expected": "https://xingjianbai.com/reactive-optimizers/",
+      "verified": true
+    },
+    {
+      "rank": 5,
+      "short_link": "https://t.co/GhUBt7qKy3",
+      "resolved_to": "https://openai.com/index/decisions-api/",
+      "expected": "https://openai.com/index/decisions-api/",
+      "verified": true
+    },
+    {
+      "rank": 6,
+      "short_link": "https://t.co/oOd2Sj8vA4",
+      "resolved_to": "https://www.linuxfoundation.org/press/agentic-ai-foundation-announces-four-new-projects-agent-skills-open-responses-openenv-and-opensandbox",
+      "expected": "https://www.linuxfoundation.org/press/agentic-ai-foundation-announces-four-new-projects-agent-skills-open-responses-openenv-and-opensandbox",
+      "verified": true
+    },
+    {
+      "rank": 7,
+      "short_link": "https://t.co/tlRnib5MkM",
+      "resolved_to": "https://www.modular.com/blog/max-license",
+      "expected": "https://www.modular.com/blog/max-license",
+      "verified": true
+    },
+    {
+      "rank": 8,
+      "short_link": "https://t.co/chagTEV2Q1",
+      "resolved_to": "https://huggingface.co/MiniMaxAI/MiniMax-M3.1-Flash",
+      "expected": "https://huggingface.co/MiniMaxAI/MiniMax-M3.1-Flash",
+      "verified": true
+    },
+    {
+      "rank": 9,
+      "short_link": "https://t.co/kz3YmUkrsx",
+      "resolved_to": "https://huggingface.co/HuggingFaceBio/Carbon-X",
+      "expected": "https://huggingface.co/HuggingFaceBio/Carbon-X",
+      "verified": true
+    },
+    {
+      "rank": 10,
+      "short_link": "https://t.co/eGA35bj9Fk",
+      "resolved_to": "https://artificialanalysis.ai/methodology/coding-agents-benchmarking",
+      "expected": "https://artificialanalysis.ai/methodology/coding-agents-benchmarking",
+      "verified": true
+    }
+  ],
+  "error": null
+}

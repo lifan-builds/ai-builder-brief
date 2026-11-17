@@ -1,0 +1,97 @@
+{
+  "briefing_date": "2026-10-21",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-10-21T13:24:42.594168+00:00",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2112897141689782761",
+  "verified_post_count": 11,
+  "error": null,
+  "publication_method": "explicit_reply_chain",
+  "profile_count_before": 234,
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2112897141689782761",
+    "https://x.com/LifanBuilds/status/2112897300800618825",
+    "https://x.com/LifanBuilds/status/2112897464944800141",
+    "https://x.com/LifanBuilds/status/2112897474755207449",
+    "https://x.com/LifanBuilds/status/2112897528987533785",
+    "https://x.com/LifanBuilds/status/2112897537908920770",
+    "https://x.com/LifanBuilds/status/2112897547048222822",
+    "https://x.com/LifanBuilds/status/2112897578622996987",
+    "https://x.com/LifanBuilds/status/2112897655315877995",
+    "https://x.com/LifanBuilds/status/2112897668880142762",
+    "https://x.com/LifanBuilds/status/2112897717169193430"
+  ],
+  "profile_count_after": 245,
+  "source_link_checks": [
+    {
+      "short": "https://t.co/UDFm5uTBtl",
+      "expected": "https://www.anthropic.com/research/attack-surface-reduction",
+      "redirect": "https://www.anthropic.com/research/attack-surface-reduction",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/bGq3K9rIBe",
+      "expected": "https://preferencemodel.com/blog/terminal-bench-4-is-saturated/",
+      "redirect": "https://preferencemodel.com/blog/terminal-bench-4-is-saturated/",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/anQCZyHNAH",
+      "expected": "https://alignment.openai.com/misalignment-reports/suppressing-misalignment-monitoring-alerts-and-disabling-misalignment-monitoring/",
+      "redirect": "https://alignment.openai.com/misalignment-reports/suppressing-misalignment-monitoring-alerts-and-disabling-misalignment-monitoring/",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/zhfXWAf7TL",
+      "expected": "https://www.latent.space/p/claude-mods",
+      "redirect": "https://www.latent.space/p/claude-mods",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/ip1t43Qnfo",
+      "expected": "https://openai.com/index/openai-models-google-cloud/",
+      "redirect": "https://openai.com/index/openai-models-google-cloud/",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/grY2md0Tll",
+      "expected": "https://blog.claroc.io/ghostshares-muse-passive-dns/",
+      "redirect": "https://blog.claroc.io/ghostshares-muse-passive-dns/",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/aSQmoDoJN5",
+      "expected": "https://huggingface.co/blog/nvidia/nemotron-retriever-world-class-agentic-retrieval",
+      "redirect": "https://huggingface.co/blog/nvidia/nemotron-retriever-world-class-agentic-retrieval",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/Chka8dzMJs",
+      "expected": "https://elevenlabs.io/blog/realtime",
+      "redirect": "https://elevenlabs.io/blog/realtime",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/xepzrNzfTe",
+      "expected": "https://huggingface.co/blog/lightonai/slideon-mslideon",
+      "redirect": "https://huggingface.co/blog/lightonai/slideon-mslideon",
+      "matches": true
+    },
+    {
+      "short": "https://t.co/2YxdQx9Us0",
+      "expected": "https://simonwillison.net/2026/Oct/20/battledrones/",
+      "redirect": "https://simonwillison.net/2026/Oct/20/battledrones/",
+      "matches": true
+    }
+  ],
+  "verification": "One opening and ten explicit replies. Each composer matched saved text and passed X length validation; live bodies, account, source links, permalinks, and immediate parents verified. Profile increased 234 to 245. Some ancestor loads lagged; reconciled live before continuing, with no resend.",
+  "journal": {
+    "commit": "1c59c7f071c5443b6bb39138407a4fdbc07b669f",
+    "status": "published",
+    "archive_url": "https://clifan.com/journal/ai-builder-brief/",
+    "entry_url": "https://clifan.com/journal/ai-builder-brief/2026-10-21.html",
+    "verified_at_utc": "2026-10-21T13:26:39.683244+00:00",
+    "http_status": 200,
+    "story_count": 10
+  }
+}

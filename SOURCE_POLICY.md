@@ -11,7 +11,7 @@
 - Store titles, URLs, dates, attribution, and short feed/page summaries required to explain the event.
 - Link to the original source in the manifest, show notes, and chapters.
 - Do not republish full articles, bypass paywalls, or treat newsletter summaries as factual sources.
-- Do not ingest Reddit content. Reddit's API and user-content terms require a separately approved use case.
+- Public Reddit pages may be consulted as ephemeral discovery leads for the daily brief, but do not ingest or store posts, comments, usernames, or quotations. Reddit is never sole evidence for a ranked claim. Any broader use requires a separately approved use case.
 - Do not quote community comments unless the source and author permission clearly allow it.
 
 ## X discovery panel

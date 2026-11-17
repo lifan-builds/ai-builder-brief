@@ -1,0 +1,33 @@
+{
+  "briefing_date": "2026-10-19",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-10-19T13:20:33.543950+00:00",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2112171522853159394",
+  "verified_post_count": 9,
+  "error": null,
+  "publication_method": "explicit_reply_chain",
+  "profile_count_before": 214,
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2112171522853159394",
+    "https://x.com/LifanBuilds/status/2112171629824647569",
+    "https://x.com/LifanBuilds/status/2112171761974612301",
+    "https://x.com/LifanBuilds/status/2112171795034030516",
+    "https://x.com/LifanBuilds/status/2112171803150053401",
+    "https://x.com/LifanBuilds/status/2112171838961041683",
+    "https://x.com/LifanBuilds/status/2112171847634833557",
+    "https://x.com/LifanBuilds/status/2112171864948949360",
+    "https://x.com/LifanBuilds/status/2112171874977542532"
+  ],
+  "profile_count_after": 223,
+  "verification": "One opening plus eight explicit chained replies. Every composer matched saved text and passed X length validation; each live body, account, parent order, permalink and source card/link verified. Seven shortened external URLs resolved to exact saved destinations; story1 retained original OpenCode post as quote. Profile214 to223 after refresh.",
+  "journal": {
+    "commit": "cbadf2baa10bbb430c783d9b6c485ca1b6355bf9",
+    "status": "published",
+    "archive_url": "https://clifan.com/journal/ai-builder-brief/",
+    "entry_url": "https://clifan.com/journal/ai-builder-brief/2026-10-19.html",
+    "verified_at_utc": "2026-10-19T13:22:24.954955+00:00",
+    "http_status": 200,
+    "story_count": 8
+  }
+}

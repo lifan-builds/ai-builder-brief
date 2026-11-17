@@ -1,0 +1,82 @@
+{
+  "briefing_date": "2026-10-31",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-10-31T20:26:42.676914+00:00",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2116626650184204437",
+  "verified_post_count": 11,
+  "error": null,
+  "publication_method": "explicit_reply_chain",
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2116626650184204437",
+    "https://x.com/LifanBuilds/status/2116627505427943641",
+    "https://x.com/LifanBuilds/status/2116627614475665843",
+    "https://x.com/LifanBuilds/status/2116627637145850123",
+    "https://x.com/LifanBuilds/status/2116627644783694132",
+    "https://x.com/LifanBuilds/status/2116627663314141657",
+    "https://x.com/LifanBuilds/status/2116627671870575103",
+    "https://x.com/LifanBuilds/status/2116627688748445836",
+    "https://x.com/LifanBuilds/status/2116627697392931076",
+    "https://x.com/LifanBuilds/status/2116627726815871039",
+    "https://x.com/LifanBuilds/status/2116627736102076927"
+  ],
+  "profile_posts_before": 339,
+  "profile_posts_after": 350,
+  "verification": {
+    "exact_composer_text": 11,
+    "exact_live_prose": 11,
+    "ordered_immediate_parent_targets": 10,
+    "shortened_links_resolved": 9,
+    "native_quote_destination_verified": "https://x.com/jsnnsa/status/2115623382721126826",
+    "x_length_validation": "all eleven accepted within 280-character limit after URL shortening",
+    "recovery": "Opening sent before recovery; live 0-reply state reconciled, then stories sent once using a fresh task-owned Chrome tab"
+  },
+  "thread_sha256": "cf7bcc17a5a7ee2a0ff4528d988cfacc1f00faed08487ceaefd954eaa8b592c4",
+  "source_link_resolutions": [
+    [
+      "https://t.co/oT0K7ayuhl",
+      301,
+      "https://alignment.anthropic.com/2026/automated-em-search/"
+    ],
+    [
+      "https://t.co/8l5c7VRsLX",
+      301,
+      "https://epoch.ai/publications/open-weight-models-patch-gap"
+    ],
+    [
+      "https://t.co/YxoUPYYiNS",
+      301,
+      "https://latent.space/p/arca/"
+    ],
+    [
+      "https://t.co/WYKIie7VG8",
+      301,
+      "https://openai.com/index/helping-websites-express-ai-training-preferences/"
+    ],
+    [
+      "https://t.co/kKW59aAOdg",
+      301,
+      "https://arxiv.org/abs/2610.39545"
+    ],
+    [
+      "https://t.co/rEoIP2DnjL",
+      301,
+      "https://claude.com/pricing"
+    ],
+    [
+      "https://t.co/xRvp5li1w3",
+      301,
+      "https://github.com/pingdotgg/t3code/releases/tag/v0.1.6"
+    ],
+    [
+      "https://t.co/IGf986ikol",
+      301,
+      "https://github.com/milind-soni/OpenMausBot/releases/tag/v0.1.134"
+    ],
+    [
+      "https://t.co/USmft7o4Vk",
+      301,
+      "https://www.gov.uk/government/news/cma-opens-investigation-into-metas-commercial-terms--2"
+    ]
+  ]
+}

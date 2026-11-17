@@ -1,0 +1,90 @@
+{
+  "briefing_date": "2026-10-25",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-10-25T13:15:05.217320+00:00",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2114343772838662214",
+  "verified_post_count": 9,
+  "publication_method": "explicit_reply_chain",
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2114343772838662214",
+    "https://x.com/LifanBuilds/status/2114343928837353567",
+    "https://x.com/LifanBuilds/status/2114344236346949939",
+    "https://x.com/LifanBuilds/status/2114344454371033432",
+    "https://x.com/LifanBuilds/status/2114344479851495611",
+    "https://x.com/LifanBuilds/status/2114344505906520253",
+    "https://x.com/LifanBuilds/status/2114344549183348813",
+    "https://x.com/LifanBuilds/status/2114344580347048180",
+    "https://x.com/LifanBuilds/status/2114344632763158826"
+  ],
+  "verification": {
+    "exact_composer_text": true,
+    "live_body_text": true,
+    "reply_order": true,
+    "all_immediate_parents": true,
+    "all_source_links_resolved": true,
+    "x_length_validation": true,
+    "profile_posts_before": 278,
+    "profile_posts_after": 287,
+    "draft_sha256": "2f80dc8c18356701ff6c621d46f15088e76da928ed9f5cadd55bf729ecc75e9f"
+  },
+  "link_verification": [
+    {
+      "rank": 1,
+      "short_link": "https://t.co/WQSKjqO9NX",
+      "resolved_to": "https://www.redwoodresearch.org/blog/simulated-control-evaluations",
+      "expected": "https://www.redwoodresearch.org/blog/simulated-control-evaluations",
+      "matches": true
+    },
+    {
+      "rank": 2,
+      "short_link": "https://t.co/JZEdJAAt3l",
+      "resolved_to": "https://www.gr.inc/releases/avalon-m1",
+      "expected": "https://www.gr.inc/releases/avalon-m1",
+      "matches": true
+    },
+    {
+      "rank": 3,
+      "short_link": "https://t.co/e2M5EHQL0c",
+      "resolved_to": "https://docs.litellm.ai/blog/security-incident-oct-21-2026-attack-chain",
+      "expected": "https://docs.litellm.ai/blog/security-incident-oct-21-2026-attack-chain",
+      "matches": true
+    },
+    {
+      "rank": 4,
+      "short_link": "https://t.co/wlQK0qABNQ",
+      "resolved_to": "https://ollama.com/blog/speech-models",
+      "expected": "https://ollama.com/blog/speech-models",
+      "matches": true
+    },
+    {
+      "rank": 5,
+      "short_link": "https://t.co/tRzUds56nf",
+      "resolved_to": "https://arxiv.org/abs/2610.31650",
+      "expected": "https://arxiv.org/abs/2610.31650",
+      "matches": true
+    },
+    {
+      "rank": 6,
+      "short_link": "https://t.co/iG2FygGSwM",
+      "resolved_to": "https://www.cerebras.ai/blog/how-we-deploy-trillion-parameter-frontier-models-on-cerebras",
+      "expected": "https://www.cerebras.ai/blog/how-we-deploy-trillion-parameter-frontier-models-on-cerebras",
+      "matches": true
+    },
+    {
+      "rank": 7,
+      "short_link": "https://t.co/bUg8oraDrh",
+      "resolved_to": "https://huggingface.co/blog/Luo-Yihang/mundo-world-model",
+      "expected": "https://huggingface.co/blog/Luo-Yihang/mundo-world-model",
+      "matches": true
+    },
+    {
+      "rank": 8,
+      "short_link": "https://t.co/iJGv2iMLku",
+      "resolved_to": "https://huggingface.co/blog/allenai/olmoearth-v1-3",
+      "expected": "https://huggingface.co/blog/allenai/olmoearth-v1-3",
+      "matches": true
+    }
+  ],
+  "error": null
+}

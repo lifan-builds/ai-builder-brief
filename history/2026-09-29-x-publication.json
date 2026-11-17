@@ -1,0 +1,9 @@
+{
+  "briefing_date": "2026-09-29",
+  "account": "@LifanBuilds",
+  "status": "blocked",
+  "published_at_utc": null,
+  "opening_post_url": null,
+  "verified_post_count": 0,
+  "error": "Chrome profile check showed @LifanBuilds at 116 posts with no September 29 opening post, but the session is signed out and X displayed a login dialog. No composer was opened or posts sent."
+}

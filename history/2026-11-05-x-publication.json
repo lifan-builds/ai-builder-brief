@@ -1,0 +1,166 @@
+{
+  "briefing_date": "2026-11-05",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-11-05T17:42:58.764000Z",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2118393563700719999",
+  "verified_post_count": 11,
+  "error": null,
+  "publication_method": "explicit_reply_chain",
+  "profile_posts_before": 392,
+  "profile_posts_after": 403,
+  "exact_text_verified": true,
+  "retained_uncertainty_verified": true,
+  "x_length_validation": "all eleven saved posts accepted; each staged textbox matched; Reply/Post enabled",
+  "thread_sha256": "82af9bc59fa1171f59ebb5dff288d82549a902b3efb62cd76970cbdb1789b6fa",
+  "posts": [
+    {
+      "index": 0,
+      "url": "https://x.com/LifanBuilds/status/2118393563700719999",
+      "parent_url": null,
+      "published_at_utc": "2026-11-05T17:22:38.092000Z",
+      "source_link": null
+    },
+    {
+      "index": 1,
+      "url": "https://x.com/LifanBuilds/status/2118393740905890124",
+      "parent_url": "https://x.com/LifanBuilds/status/2118393563700719999",
+      "published_at_utc": "2026-11-05T17:23:20.341000Z",
+      "source_link": {
+        "index": 1,
+        "short": "https://t.co/oFeQzUsnGu",
+        "status": 301,
+        "destination": "https://arxiv.org/abs/2611.05306",
+        "expected": "https://arxiv.org/abs/2611.05306",
+        "exact": true
+      }
+    },
+    {
+      "index": 2,
+      "url": "https://x.com/LifanBuilds/status/2118393950725878204",
+      "parent_url": "https://x.com/LifanBuilds/status/2118393740905890124",
+      "published_at_utc": "2026-11-05T17:24:10.366000Z",
+      "source_link": {
+        "index": 2,
+        "short": "https://t.co/z78AIFyGId",
+        "status": 301,
+        "destination": "https://openai.com/index/a-thousand-fewer-paths-to-root/",
+        "expected": "https://openai.com/index/a-thousand-fewer-paths-to-root/",
+        "exact": true
+      }
+    },
+    {
+      "index": 3,
+      "url": "https://x.com/LifanBuilds/status/2118394045257109911",
+      "parent_url": "https://x.com/LifanBuilds/status/2118393950725878204",
+      "published_at_utc": "2026-11-05T17:24:32.904000Z",
+      "source_link": {
+        "index": 3,
+        "short": "https://t.co/f3fJTXqDJ6",
+        "status": 301,
+        "destination": "https://engram.com/blog/learning-in-a-world-of-notes",
+        "expected": "https://engram.com/blog/learning-in-a-world-of-notes",
+        "exact": true
+      }
+    },
+    {
+      "index": 4,
+      "url": "https://x.com/LifanBuilds/status/2118394096444420456",
+      "parent_url": "https://x.com/LifanBuilds/status/2118394045257109911",
+      "published_at_utc": "2026-11-05T17:24:45.108000Z",
+      "source_link": {
+        "index": 4,
+        "short": "https://t.co/Cfc1KEswTy",
+        "status": 301,
+        "destination": "https://alignment.openai.com/misalignment-reports/covert-underperformance-on-safety-research-tasks/",
+        "expected": "https://alignment.openai.com/misalignment-reports/covert-underperformance-on-safety-research-tasks/",
+        "exact": true
+      }
+    },
+    {
+      "index": 5,
+      "url": "https://x.com/LifanBuilds/status/2118398387104235615",
+      "parent_url": "https://x.com/LifanBuilds/status/2118394096444420456",
+      "published_at_utc": "2026-11-05T17:41:48.081000Z",
+      "source_link": {
+        "index": 5,
+        "short": "https://t.co/jQ7bRHVI2s",
+        "status": 301,
+        "destination": "https://huggingface.co/moonshotai/Kimi-K3.1-Pro",
+        "expected": "https://huggingface.co/moonshotai/Kimi-K3.1-Pro",
+        "exact": true
+      }
+    },
+    {
+      "index": 6,
+      "url": "https://x.com/LifanBuilds/status/2118398447657291935",
+      "parent_url": "https://x.com/LifanBuilds/status/2118398387104235615",
+      "published_at_utc": "2026-11-05T17:42:02.518000Z",
+      "source_link": {
+        "index": 6,
+        "short": "https://t.co/v72iKTcBZT",
+        "status": 301,
+        "destination": "https://www.together.ai/blog/together-compiler-continuous-compilation-for-ai-inference",
+        "expected": "https://www.together.ai/blog/together-compiler-continuous-compilation-for-ai-inference",
+        "exact": true
+      }
+    },
+    {
+      "index": 7,
+      "url": "https://x.com/LifanBuilds/status/2118398492922294578",
+      "parent_url": "https://x.com/LifanBuilds/status/2118398447657291935",
+      "published_at_utc": "2026-11-05T17:42:13.310000Z",
+      "source_link": {
+        "index": 7,
+        "short": "https://t.co/PHa5kuwAXx",
+        "status": 301,
+        "destination": "https://alignment.openai.com/eval-production-behavior-gap/",
+        "expected": "https://alignment.openai.com/eval-production-behavior-gap/",
+        "exact": true
+      }
+    },
+    {
+      "index": 8,
+      "url": "https://x.com/LifanBuilds/status/2118398600774615360",
+      "parent_url": "https://x.com/LifanBuilds/status/2118398492922294578",
+      "published_at_utc": "2026-11-05T17:42:39.024000Z",
+      "source_link": {
+        "index": 8,
+        "short": "https://t.co/OtpD2zRI0T",
+        "status": 301,
+        "destination": "https://openai.com/index/introducing-images-2-6/",
+        "expected": "https://openai.com/index/introducing-images-2-6/",
+        "exact": true
+      }
+    },
+    {
+      "index": 9,
+      "url": "https://x.com/LifanBuilds/status/2118398638997344473",
+      "parent_url": "https://x.com/LifanBuilds/status/2118398600774615360",
+      "published_at_utc": "2026-11-05T17:42:48.137000Z",
+      "source_link": {
+        "index": 9,
+        "short": "https://t.co/6r0fcEEhyj",
+        "status": 301,
+        "destination": "https://www.ricursive.com/ripple",
+        "expected": "https://www.ricursive.com/ripple",
+        "exact": true
+      }
+    },
+    {
+      "index": 10,
+      "url": "https://x.com/LifanBuilds/status/2118398683570217209",
+      "parent_url": "https://x.com/LifanBuilds/status/2118398638997344473",
+      "published_at_utc": "2026-11-05T17:42:58.764000Z",
+      "source_link": {
+        "index": 10,
+        "short": "https://t.co/2tTKtin3i4",
+        "status": 301,
+        "destination": "https://github.com/AxiomMath/Stacks",
+        "expected": "https://github.com/AxiomMath/Stacks",
+        "exact": true
+      }
+    }
+  ],
+  "screenshot": "/Users/lfan/.codex/visualizations/2026/11/05/01a1ac06-1b86-7650-b168-3b0a7cfacd61/x-publication.png"
+}

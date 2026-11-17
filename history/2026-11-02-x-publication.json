@@ -1,0 +1,53 @@
+{
+  "briefing_date": "2026-11-02",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-11-02T17:32:21.702Z",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2117307792453493018",
+  "verified_post_count": 9,
+  "error": null,
+  "publication_method": "explicit_reply_chain",
+  "profile_post_count_before": 360,
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2117307792453493018",
+    "https://x.com/LifanBuilds/status/2117307928827084802",
+    "https://x.com/LifanBuilds/status/2117308138454171703",
+    "https://x.com/LifanBuilds/status/2117308265977774210",
+    "https://x.com/LifanBuilds/status/2117308434580418750",
+    "https://x.com/LifanBuilds/status/2117308527605862785",
+    "https://x.com/LifanBuilds/status/2117308605183783191",
+    "https://x.com/LifanBuilds/status/2117308721747648516",
+    "https://x.com/LifanBuilds/status/2117308847941718213"
+  ],
+  "verification": {
+    "account": true,
+    "exact_composer_text": true,
+    "live_prose": true,
+    "order": true,
+    "explicit_parent_targets": true,
+    "x_length_validation": true,
+    "shortened_links": 7,
+    "native_quote_destination": "https://x.com/elonmusk/status/2116992258520064397"
+  },
+  "profile_post_count_after": 369,
+  "journal": {
+    "status": "published",
+    "journal_commit": "2600cf1c2102f19d671c6f7394e3e49d77440334",
+    "pushed_head": "fcbb3409882fbd68f9bff7f2d5fbf08273298f71",
+    "pages_run_id": 41492354319,
+    "checks": [
+      {
+        "url": "https://clifan.com/journal/ai-builder-brief/",
+        "status": 200,
+        "bytes_match": true,
+        "story_cards": 0
+      },
+      {
+        "url": "https://clifan.com/journal/ai-builder-brief/2026-11-02.html",
+        "status": 200,
+        "bytes_match": true,
+        "story_cards": 8
+      }
+    ]
+  }
+}

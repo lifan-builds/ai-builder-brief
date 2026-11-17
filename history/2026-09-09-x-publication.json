@@ -1,0 +1,25 @@
+{
+  "briefing_date": "2026-09-09",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-09-09T17:25:00Z",
+  "timestamp_precision": "minute, from X displayed timestamp",
+  "verified_at_utc": "2026-09-09T17:27:06.898618+00:00",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2097738148856082545",
+  "verified_post_count": 11,
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2097738148856082545",
+    "https://x.com/LifanBuilds/status/2097738153893515485",
+    "https://x.com/LifanBuilds/status/2097738157571903909",
+    "https://x.com/LifanBuilds/status/2097738161233473673",
+    "https://x.com/LifanBuilds/status/2097738164232413284",
+    "https://x.com/LifanBuilds/status/2097738168573563233",
+    "https://x.com/LifanBuilds/status/2097738171878674878",
+    "https://x.com/LifanBuilds/status/2097738174864957804",
+    "https://x.com/LifanBuilds/status/2097738177641603364",
+    "https://x.com/LifanBuilds/status/2097738179843678581",
+    "https://x.com/LifanBuilds/status/2097738183371026439"
+  ],
+  "verification": "Inspected all 11 live posts in the opening thread and its story-8 continuation; confirmed account, order and content against staged archive.",
+  "error": null
+}

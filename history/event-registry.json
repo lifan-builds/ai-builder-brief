@@ -1,0 +1,7 @@
+{
+  "schema_version": 1,
+  "description": "Canonical event keys already covered by AI Builder Brief; update only for material changes.",
+  "events": [
+    "gpt-5-6-sol-preview"
+  ]
+}

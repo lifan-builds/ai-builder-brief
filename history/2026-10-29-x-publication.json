@@ -1,0 +1,28 @@
+{
+  "briefing_date": "2026-10-29",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-10-30T00:46:15.708000Z",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2115968036276777156",
+  "verified_post_count": 11,
+  "error": null,
+  "publication_method": "explicit_reply_chain",
+  "profile_post_count_before": 317,
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2115968036276777156",
+    "https://x.com/LifanBuilds/status/2115968192388772165",
+    "https://x.com/LifanBuilds/status/2115968258071564563",
+    "https://x.com/LifanBuilds/status/2115968365688926607",
+    "https://x.com/LifanBuilds/status/2115968375759523896",
+    "https://x.com/LifanBuilds/status/2115968405962727797",
+    "https://x.com/LifanBuilds/status/2115968420659552273",
+    "https://x.com/LifanBuilds/status/2115968433410224213",
+    "https://x.com/LifanBuilds/status/2115968463906930832",
+    "https://x.com/LifanBuilds/status/2115968477840527806",
+    "https://x.com/LifanBuilds/status/2115968491014754435"
+  ],
+  "last_checked_at_utc": "2026-10-30T00:49:08.234206+00:00",
+  "verification": "All eleven saved/composed/live prose bodies and account match; all ten shortened links resolve to exact saved sources; all ten immediate parents verified live after revealing virtualized ancestors; profile increased 317 to 328.",
+  "thread_sha256": "4bc926132471d217e5da2cadc9e4082eaddd824197b76846b862f3757af26817",
+  "profile_post_count_after": 328
+}

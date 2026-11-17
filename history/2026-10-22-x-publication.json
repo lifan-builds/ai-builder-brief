@@ -1,0 +1,103 @@
+{
+  "briefing_date": "2026-10-22",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-10-22T16:36:07.498610+00:00",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2113303921167126841",
+  "verified_post_count": 11,
+  "publication_method": "explicit_reply_chain",
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2113303921167126841",
+    "https://x.com/LifanBuilds/status/2113304014561661109",
+    "https://x.com/LifanBuilds/status/2113304203208839513",
+    "https://x.com/LifanBuilds/status/2113304225791013054",
+    "https://x.com/LifanBuilds/status/2113304233571479966",
+    "https://x.com/LifanBuilds/status/2113304241314120048",
+    "https://x.com/LifanBuilds/status/2113304255981572380",
+    "https://x.com/LifanBuilds/status/2113304266563838292",
+    "https://x.com/LifanBuilds/status/2113304277913588035",
+    "https://x.com/LifanBuilds/status/2113304298394378565",
+    "https://x.com/LifanBuilds/status/2113304307051397506"
+  ],
+  "verification": {
+    "exact_composer_text": true,
+    "live_body_text": true,
+    "reply_order": true,
+    "all_source_links_resolved": true,
+    "profile_posts_before": 245,
+    "profile_posts_after": 256
+  },
+  "link_verification": [
+    {
+      "rank": 1,
+      "short_link": "https://t.co/jqleRwMKSv",
+      "resolved_to": "https://docs.litellm.ai/blog/security-incident-oct-21-2026",
+      "expected": "https://docs.litellm.ai/blog/security-incident-oct-21-2026",
+      "verified": true
+    },
+    {
+      "rank": 2,
+      "short_link": "https://t.co/sdKvU6kW5g",
+      "resolved_to": "https://thephp.foundation/blog/2026/10/21/todays-php-security-release-and-how-were-strengthening-php-security/",
+      "expected": "https://thephp.foundation/blog/2026/10/21/todays-php-security-release-and-how-were-strengthening-php-security/",
+      "verified": true
+    },
+    {
+      "rank": 3,
+      "short_link": "https://t.co/evrRd8Yf9D",
+      "resolved_to": "https://openai.com/policies/usage-policies/",
+      "expected": "https://openai.com/policies/usage-policies/",
+      "verified": true
+    },
+    {
+      "rank": 4,
+      "short_link": "https://t.co/aEg98kjeBJ",
+      "resolved_to": "https://sierra.ai/blog/tau-i18n",
+      "expected": "https://sierra.ai/blog/tau-i18n",
+      "verified": true
+    },
+    {
+      "rank": 5,
+      "short_link": "https://t.co/mf1IpVTday",
+      "resolved_to": "https://huggingface.co/blog/Dharma-AI/vocabx-vocabulary-specialization",
+      "expected": "https://huggingface.co/blog/Dharma-AI/vocabx-vocabulary-specialization",
+      "verified": true
+    },
+    {
+      "rank": 6,
+      "short_link": "https://t.co/nm20n5IBcL",
+      "resolved_to": "https://claude.com/resources/articles/claude-duet",
+      "expected": "https://claude.com/resources/articles/claude-duet",
+      "verified": true
+    },
+    {
+      "rank": 7,
+      "short_link": "https://t.co/nvLonoGaRU",
+      "resolved_to": "https://claude.com/resources/articles/claude-security-now-scans-continuously-and-tracks-fixes",
+      "expected": "https://claude.com/resources/articles/claude-security-now-scans-continuously-and-tracks-fixes",
+      "verified": true
+    },
+    {
+      "rank": 8,
+      "short_link": "https://t.co/rdgd5zhDob",
+      "resolved_to": "https://simedw.com/2026/10/21/world-model-terminal/",
+      "expected": "https://simedw.com/2026/10/21/world-model-terminal/",
+      "verified": true
+    },
+    {
+      "rank": 9,
+      "short_link": "https://t.co/MH50QQbhPe",
+      "resolved_to": "https://huggingface.co/blog/ibm-granite/granite-speech-5",
+      "expected": "https://huggingface.co/blog/ibm-granite/granite-speech-5",
+      "verified": true
+    },
+    {
+      "rank": 10,
+      "short_link": "https://t.co/M2AYEpgJh1",
+      "resolved_to": "https://www.qbitai.com/2026/10/504879.html",
+      "expected": "https://www.qbitai.com/2026/10/504879.html",
+      "verified": true
+    }
+  ],
+  "error": null
+}

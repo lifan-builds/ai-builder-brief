@@ -1,0 +1,107 @@
+{
+  "briefing_date": "2026-11-01",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-11-01T18:54:03.576000+00:00",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2116961915197161547",
+  "verified_post_count": 8,
+  "error": null,
+  "publication_method": "explicit-reply-chain",
+  "verification": {
+    "exact_composer_text": true,
+    "exact_live_prose": true,
+    "source_destinations_verified": 7,
+    "conversation_order_verified": true,
+    "immediate_parent_targets_verified": 7,
+    "profile_post_count_before": 350,
+    "profile_post_count_after": 358,
+    "x_length_validation_passed": true
+  },
+  "posts": [
+    {
+      "index": 0,
+      "url": "https://x.com/LifanBuilds/status/2116961915197161547",
+      "text": "AI Builder Brief — Nov 1, 2026. Today’s seven: testing AI-built infrastructure, DeepSeek’s proactive-agent prototype, harness recovery, small-model teams, MCP schema failures, shared ChatGPT/Codex allowances, and malware using AI for victim triage. Sources below.",
+      "parent": null,
+      "shortened_links": [],
+      "live_prose_exact": true
+    },
+    {
+      "index": 1,
+      "url": "https://x.com/LifanBuilds/status/2116962011280265673",
+      "parent": "https://x.com/LifanBuilds/status/2116961915197161547",
+      "text": "1/ Jepsen found 96 ParticleDB issues, mostly on healthy nodes. Generative tests exposed failures beneath documentation and claimed fixes. Orkes says a newer build fixes them; Jepsen has not tested it. Verify behavior before trusting AI-built systems. https://jepsen.io/analyses/particledb-1.1.4",
+      "live_prose_exact": true,
+      "shortened_links": [
+        "https://t.co/BJXA4056ME"
+      ],
+      "verified_source_destination": "https://jepsen.io/analyses/particledb-1.1.4"
+    },
+    {
+      "index": 2,
+      "url": "https://x.com/LifanBuilds/status/2116962202980855935",
+      "parent": "https://x.com/LifanBuilds/status/2116962011280265673",
+      "text": "2/ DeepSeek open-sourced a proactive coding-agent prototype for GitHub and Feishu. It separates context from authority and starts inferred work in observation mode. Research code, different from its internal system; directories are not sandboxes. https://github.com/deepseek-ai/dsh-superagent-prototype",
+      "live_prose_exact": true,
+      "shortened_links": [
+        "https://t.co/0kMNRO387e"
+      ],
+      "verified_source_destination": "https://github.com/deepseek-ai/dsh-superagent-prototype"
+    },
+    {
+      "index": 3,
+      "url": "https://x.com/LifanBuilds/status/2116962322250178933",
+      "parent": "https://x.com/LifanBuilds/status/2116962202980855935",
+      "text": "3/ Prospero’s new design account tackles unattended-agent stalls: time out approvals to denial, turn long commands into background jobs, and stop whole process trees. Useful patterns to test in your harness; its resource claims remain author-reported. https://nullprogram.com/blog/2026/10/31/",
+      "live_prose_exact": true,
+      "shortened_links": [
+        "https://t.co/WSfLIb1KBj"
+      ],
+      "verified_source_destination": "https://nullprogram.com/blog/2026/10/31/"
+    },
+    {
+      "index": 4,
+      "url": "https://x.com/LifanBuilds/status/2116962448918139317",
+      "parent": "https://x.com/LifanBuilds/status/2116962322250178933",
+      "text": "4/ Memdoor reports 49/50 successes on ten problems repeated five times. A reviewer invented a bad counterexample and replaced correct code. Published traces, tiny sample, possible contamination; this does not establish a general frontier-model win. https://github.com/guregodevo/memdoor/tree/main/examples/workflows/team-solve",
+      "live_prose_exact": true,
+      "shortened_links": [
+        "https://t.co/GvaA8VDVKp"
+      ],
+      "verified_source_destination": "https://github.com/guregodevo/memdoor/tree/main/examples/workflows/team-solve"
+    },
+    {
+      "index": 5,
+      "url": "https://x.com/LifanBuilds/status/2116962601771155566",
+      "parent": "https://x.com/LifanBuilds/status/2116962448918139317",
+      "text": "5/ SAM traced failed Gemini prompts to an MCP schema rewritten by OpenCode. One invalid field rejected the tool list before inference. Test schemas after the adapter transforms them. Code and tests are public; the live Vertex fix remains unverified. https://www.simple-agent-manager.org/blog/json-schema-isnt-always-portable/",
+      "live_prose_exact": true,
+      "shortened_links": [
+        "https://t.co/uGLXuXMR9z"
+      ],
+      "verified_source_destination": "https://www.simple-agent-manager.org/blog/json-schema-isnt-always-portable/"
+    },
+    {
+      "index": 6,
+      "url": "https://x.com/LifanBuilds/status/2116962727516356961",
+      "parent": "https://x.com/LifanBuilds/status/2116962601771155566",
+      "text": "6/ OpenAI plans one token-measured allowance across ChatGPT and Codex for Plus, Pro and Business starting in December. Instant chat is excluded. Budget reasoning and coding together; the notice gives no universal numerical allowance. https://help.openai.com/en/articles/20001625-understanding-chatgpt-and-codex-usage-limits",
+      "live_prose_exact": true,
+      "shortened_links": [
+        "https://t.co/bEXwMhDs3g"
+      ],
+      "verified_source_destination": "https://help.openai.com/en/articles/20001625-understanding-chatgpt-and-codex-usage-limits"
+    },
+    {
+      "index": 7,
+      "url": "https://x.com/LifanBuilds/status/2116967020025774461",
+      "parent": "https://x.com/LifanBuilds/status/2116962727516356961",
+      "text": "7/ Talos’s VOLTA analysis documents malware using an optional LLM stage to rank stolen assets and profile victims, with fallback models after refusals. It automates post-theft analysis. No campaign-scale or criminal-return measurements were published. https://blog.talosintelligence.com/appraisal-by-ai-model-driven-victim-prioritization-in-the-volta-infostealer/",
+      "live_prose_exact": true,
+      "shortened_links": [
+        "https://t.co/jVCT35x7h0"
+      ],
+      "verified_source_destination": "https://blog.talosintelligence.com/appraisal-by-ai-model-driven-victim-prioritization-in-the-volta-infostealer/"
+    }
+  ]
+}

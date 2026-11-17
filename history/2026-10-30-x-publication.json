@@ -1,0 +1,97 @@
+{
+  "briefing_date": "2026-10-30",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-10-30T13:29:26.136505+00:00",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2116158935225033027",
+  "verified_post_count": 11,
+  "error": null,
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2116158935225033027",
+    "https://x.com/LifanBuilds/status/2116159067894980729",
+    "https://x.com/LifanBuilds/status/2116159242948550925",
+    "https://x.com/LifanBuilds/status/2116159405008036249",
+    "https://x.com/LifanBuilds/status/2116159501695139866",
+    "https://x.com/LifanBuilds/status/2116159627905929467",
+    "https://x.com/LifanBuilds/status/2116159756972982688",
+    "https://x.com/LifanBuilds/status/2116159873906061441",
+    "https://x.com/LifanBuilds/status/2116159963559284895",
+    "https://x.com/LifanBuilds/status/2116160038830313958",
+    "https://x.com/LifanBuilds/status/2116160109697257726"
+  ],
+  "publication_method": "explicit reply chain",
+  "verification": {
+    "account": true,
+    "exact_composer_text": true,
+    "live_prose": true,
+    "post_order": true,
+    "immediate_reply_targets": true,
+    "length_validation": true,
+    "profile_count_before": 328,
+    "profile_count_after": 339,
+    "source_destinations": [
+      {
+        "post_url": "https://x.com/LifanBuilds/status/2116159067894980729",
+        "shortened_url": "https://t.co/VeQXuUP786",
+        "destination": "https://cursor.com/blog/claude-code-extension-security-notice"
+      },
+      {
+        "post_url": "https://x.com/LifanBuilds/status/2116159242948550925",
+        "shortened_url": "https://t.co/gpL4p0sIVE",
+        "destination": "https://posthog.com/blog/how-to-benchmark-ai-agents"
+      },
+      {
+        "post_url": "https://x.com/LifanBuilds/status/2116159405008036249",
+        "shortened_url": "https://t.co/Etm9flCXgG",
+        "destination": "https://forever.security/blog/embrace-hacking-5-ai-assistants-embedded-browsers-technical"
+      },
+      {
+        "post_url": "https://x.com/LifanBuilds/status/2116159501695139866",
+        "shortened_url": "https://t.co/z5zq4B6Dvi",
+        "destination": "https://huggingface.co/Diffuspace/Clover-35B-A3B-Preview"
+      },
+      {
+        "post_url": "https://x.com/LifanBuilds/status/2116159627905929467",
+        "shortened_url": "https://t.co/6mnwXg7GOH",
+        "destination": "https://www.langchain.com/blog/building-agent-memory-openwiki-graphs"
+      },
+      {
+        "post_url": "https://x.com/LifanBuilds/status/2116159756972982688",
+        "shortened_url": "https://t.co/O4RrBaKlHa",
+        "destination": "https://news.ycombinator.com/item?id=50284255"
+      },
+      {
+        "post_url": "https://x.com/LifanBuilds/status/2116159873906061441",
+        "shortened_url": "https://t.co/pXc0obifCQ",
+        "destination": "https://www.irregular.com/research/glm-5.3-multi-stage-cyber-operations-and-instruction-violations"
+      },
+      {
+        "post_url": "https://x.com/LifanBuilds/status/2116159963559284895",
+        "shortened_url": "https://t.co/2bexl2C0zk",
+        "destination": "https://www.langchain.com/blog/managed-deep-agents-browser-use-and-asynchronous-subagents"
+      },
+      {
+        "post_url": "https://x.com/LifanBuilds/status/2116160038830313958",
+        "shortened_url": "https://t.co/xdyIEfi8E6",
+        "destination": "https://huggingface.co/nvidia/NVIDIA-Nemotron-3.5-Transcribe-30B-A4B"
+      },
+      {
+        "post_url": "https://x.com/LifanBuilds/status/2116160109697257726",
+        "shortened_url": "https://t.co/POWasNLTIj",
+        "destination": "https://ir.aboutamazon.com/news-release/news-release-details/2026/Amazon-com-Announces-Third-Quarter-Results/default.aspx"
+      }
+    ],
+    "source_access_note": "All shortened URLs resolve to saved source destinations; Amazon returned HTTP 403 to one direct curl request, while web reader and X source card exposed the financial release."
+  },
+  "journal": {
+    "status": "published",
+    "commit": "3d2f9b3e26cbc928d1523ad95251bfb9dacf2b3b",
+    "pages_run": 41063174575,
+    "index_url": "https://clifan.com/journal/ai-builder-brief/",
+    "entry_url": "https://clifan.com/journal/ai-builder-brief/2026-10-30.html",
+    "index_http_status": 200,
+    "entry_http_status": 200,
+    "live_matches_local": true,
+    "story_count": 10
+  }
+}

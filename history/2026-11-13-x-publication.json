@@ -1,0 +1,200 @@
+{
+  "briefing_date": "2026-11-13",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-11-13T19:03:51.863000+00:00",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2121317773154627661",
+  "verified_post_count": 11,
+  "expected_post_count": 11,
+  "verified_prose_count": 11,
+  "verified_link_count": 10,
+  "error": null,
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2121317773154627661",
+    "https://x.com/LifanBuilds/status/2121317931447689443",
+    "https://x.com/LifanBuilds/status/2121318020253655412",
+    "https://x.com/LifanBuilds/status/2121318039283225008",
+    "https://x.com/LifanBuilds/status/2121318048816832582",
+    "https://x.com/LifanBuilds/status/2121318066231587185",
+    "https://x.com/LifanBuilds/status/2121318077283569708",
+    "https://x.com/LifanBuilds/status/2121318097940598974",
+    "https://x.com/LifanBuilds/status/2121318108547936766",
+    "https://x.com/LifanBuilds/status/2121318129972531699",
+    "https://x.com/LifanBuilds/status/2121318141867548933"
+  ],
+  "posts": [
+    "AI Builder Brief — Nov 13, 2026. Ten stories: measured agent loops, Inkling weights, automated red teams, structured instructions, self-hosted agents, AGENTS.md tests, Daybreak, native app workflows, cell-aware genomics and macOS VMs. Sources below.",
+    "1/ OpenRouter tested its localization loop: authored-check failures fell from 147/453 to 4/454. A separate judge caused retries without better final results, so it was removed. Self-reported, but a useful lesson: measure every check you add. https://openrouter.ai/blog/announcements/openrouter-in-8-languages/",
+    "2/ Inkling 2 Small weights are now downloadable under Apache 2.0, with serving and training integrations. This changes Nov 5's Tinker-only access. 594B total/17B active still needs about 500GB VRAM in NVFP4; “Small” isn't laptop-sized. https://huggingface.co/thinkingmachines/Inkling-2-Small",
+    "3/ Anthropic's Anvil beats human submissions on 23/24 bio test pairs, tying one. OpenAI separately shows gains from training on repeatable automated attacks. Test persistent adversaries; Anvil's privileged internal access limits direct comparisons. https://safeguards.anthropic.com/2026/automated-red-teaming/",
+    "4/ IBM's LLMON previews bind instructions to specific data using reserved tokens and addressable blocks. The 3B/8B weights and toolkit are public. Static injection tests improve, but a learned boundary still needs adaptive testing and tool controls. https://github.com/generative-computing/llmon",
+    "5/ Anthropic now offers self-hosted Managed Agents: run the service, agent loop and session storage yourself, beyond hosting sandboxes. Access is gated; inference still sends conversation data to your provider. Plan for operations and isolation. https://platform.claude.com/docs/en/managed-agents/self-hosted",
+    "6/ AAIF tested ~50 lines of AGENTS.md on one website: 7/9 to 9/9 correct runs, 36% fewer tokens, 26% lower estimated cost. Only 18 runs, one setup. The reusable part is the experiment: fresh checkouts, real tasks, builds and separate grading. https://aaif.io/blog/devex-for-your-agents-how-agents-md-cut-token-usage-and-cost",
+    "7/ Daybreak Red Team validates web-app vulnerabilities and checks patches; Defense Factory prepares fixes for engineer review. Early access/preview, not unrestricted rollout. Test the find–reproduce–fix loop on a bounded app before trusting coverage. https://openai.com/daybreak/red-team/",
+    "8/ ArtCraft's PhotoCraft makes native app behavior accessible through UI, CLI, JSON and MCP. New reporting and code show the workflow. It's alpha: feature breadth and professional readiness differ sharply; download claims are unverified. https://latent.space/p/artcraft/",
+    "9/ AlphaGenome 2 conditions DNA predictions on cell state, including new single-cell data without retraining. DeepMind reports higher variant recall. Noncommercial research API is available; commercial access is preview, and this isn't clinical validation. https://deepmind.google/blog/alphagenome-2-deciphering-how-cells-read-dna-to-better-understand-disease/",
+    "10/ Vercel Agent Desktop v1.3 adds clonable macOS VMs: separate disks and desktops, then headless starts. Useful for repeatable UI work. Guests share host-network reach, so this isn't a boundary for untrusted code; initial setup is manual. https://github.com/vercel-labs/agent-desktop/releases/tag/v1.3.0"
+  ],
+  "links": [
+    {
+      "index": 1,
+      "short_url": "https://t.co/95eaN405Cu",
+      "expected_destination": "https://openrouter.ai/blog/announcements/openrouter-in-8-languages/",
+      "resolved_destination": "https://openrouter.ai/blog/announcements/openrouter-in-8-languages/",
+      "verified": true,
+      "curl_exit": 0
+    },
+    {
+      "index": 2,
+      "short_url": "https://t.co/P2kSaglU8k",
+      "expected_destination": "https://huggingface.co/thinkingmachines/Inkling-2-Small",
+      "resolved_destination": "https://huggingface.co/thinkingmachines/Inkling-2-Small",
+      "verified": true,
+      "curl_exit": 0
+    },
+    {
+      "index": 3,
+      "short_url": "https://t.co/JWM0fGdX5X",
+      "expected_destination": "https://safeguards.anthropic.com/2026/automated-red-teaming/",
+      "resolved_destination": "https://safeguards.anthropic.com/2026/automated-red-teaming/",
+      "verified": true,
+      "curl_exit": 0
+    },
+    {
+      "index": 4,
+      "short_url": "https://t.co/80VDC4evON",
+      "expected_destination": "https://github.com/generative-computing/llmon",
+      "resolved_destination": "https://github.com/generative-computing/llmon",
+      "verified": true,
+      "curl_exit": 0
+    },
+    {
+      "index": 5,
+      "short_url": "https://t.co/cK0m37Ezke",
+      "expected_destination": "https://platform.claude.com/docs/en/managed-agents/self-hosted",
+      "resolved_destination": "https://platform.claude.com/docs/en/managed-agents/self-hosted",
+      "verified": true,
+      "curl_exit": 0
+    },
+    {
+      "index": 6,
+      "short_url": "https://t.co/RWrVO7nSXX",
+      "expected_destination": "https://aaif.io/blog/devex-for-your-agents-how-agents-md-cut-token-usage-and-cost",
+      "resolved_destination": "https://aaif.io/blog/devex-for-your-agents-how-agents-md-cut-token-usage-and-cost",
+      "verified": true,
+      "curl_exit": 0
+    },
+    {
+      "index": 7,
+      "short_url": "https://t.co/QnGbQ2nc9d",
+      "expected_destination": "https://openai.com/daybreak/red-team/",
+      "resolved_destination": "https://openai.com/daybreak/red-team/",
+      "verified": true,
+      "curl_exit": 56,
+      "destination_http_status": 403,
+      "note": "t.co resolves to the exact intended first-party URL. Direct curl is access-restricted (403); the primary page was read successfully through native web research."
+    },
+    {
+      "index": 8,
+      "short_url": "https://t.co/d2lLVeMlxs",
+      "expected_destination": "https://latent.space/p/artcraft/",
+      "resolved_destination": "https://latent.space/p/artcraft/",
+      "verified": true,
+      "curl_exit": 0
+    },
+    {
+      "index": 9,
+      "short_url": "https://t.co/x19QZJOyZv",
+      "expected_destination": "https://deepmind.google/blog/alphagenome-2-deciphering-how-cells-read-dna-to-better-understand-disease/",
+      "resolved_destination": "https://deepmind.google/blog/alphagenome-2-deciphering-how-cells-read-dna-to-better-understand-disease/",
+      "verified": true,
+      "curl_exit": 0
+    },
+    {
+      "index": 10,
+      "short_url": "https://t.co/vVTGovzWIW",
+      "expected_destination": "https://github.com/vercel-labs/agent-desktop/releases/tag/v1.3.0",
+      "resolved_destination": "https://github.com/vercel-labs/agent-desktop/releases/tag/v1.3.0",
+      "verified": true,
+      "curl_exit": 0
+    }
+  ],
+  "reply_chain": [
+    {
+      "index": 1,
+      "parent_post_url": "https://x.com/LifanBuilds/status/2121317773154627661",
+      "post_url": "https://x.com/LifanBuilds/status/2121317931447689443",
+      "verified": true
+    },
+    {
+      "index": 2,
+      "parent_post_url": "https://x.com/LifanBuilds/status/2121317931447689443",
+      "post_url": "https://x.com/LifanBuilds/status/2121318020253655412",
+      "verified": true
+    },
+    {
+      "index": 3,
+      "parent_post_url": "https://x.com/LifanBuilds/status/2121318020253655412",
+      "post_url": "https://x.com/LifanBuilds/status/2121318039283225008",
+      "verified": true
+    },
+    {
+      "index": 4,
+      "parent_post_url": "https://x.com/LifanBuilds/status/2121318039283225008",
+      "post_url": "https://x.com/LifanBuilds/status/2121318048816832582",
+      "verified": true
+    },
+    {
+      "index": 5,
+      "parent_post_url": "https://x.com/LifanBuilds/status/2121318048816832582",
+      "post_url": "https://x.com/LifanBuilds/status/2121318066231587185",
+      "verified": true
+    },
+    {
+      "index": 6,
+      "parent_post_url": "https://x.com/LifanBuilds/status/2121318066231587185",
+      "post_url": "https://x.com/LifanBuilds/status/2121318077283569708",
+      "verified": true
+    },
+    {
+      "index": 7,
+      "parent_post_url": "https://x.com/LifanBuilds/status/2121318077283569708",
+      "post_url": "https://x.com/LifanBuilds/status/2121318097940598974",
+      "verified": true
+    },
+    {
+      "index": 8,
+      "parent_post_url": "https://x.com/LifanBuilds/status/2121318097940598974",
+      "post_url": "https://x.com/LifanBuilds/status/2121318108547936766",
+      "verified": true
+    },
+    {
+      "index": 9,
+      "parent_post_url": "https://x.com/LifanBuilds/status/2121318108547936766",
+      "post_url": "https://x.com/LifanBuilds/status/2121318129972531699",
+      "verified": true
+    },
+    {
+      "index": 10,
+      "parent_post_url": "https://x.com/LifanBuilds/status/2121318129972531699",
+      "post_url": "https://x.com/LifanBuilds/status/2121318141867548933",
+      "verified": true
+    }
+  ],
+  "profile_count_before": 436,
+  "profile_count_after": 447,
+  "checked_at_utc": "2026-11-13T19:04:58.976324+00:00",
+  "publication_method": "Explicit replies per repository contract. Every composer matched saved text and passed X length validation. Immediate parent permalink/prose and each live child verified before advancing; full profile count increased by 11.",
+  "journal": {
+    "status": "published",
+    "commit": "1fa5665c2a4277e10c604eff85ef68c592b36e50",
+    "entry_url": "https://clifan.com/journal/ai-builder-brief/2026-11-13.html",
+    "archive_url": "https://clifan.com/journal/ai-builder-brief/",
+    "entry_http_status": 200,
+    "archive_http_status": 200,
+    "live_bytes_match": true,
+    "story_count": 10,
+    "pages_run_id": 43488919982,
+    "checked_at_utc": "2026-11-13T19:08:01.548306+00:00"
+  }
+}

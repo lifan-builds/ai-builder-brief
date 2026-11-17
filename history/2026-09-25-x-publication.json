@@ -1,0 +1,9 @@
+{
+  "briefing_date": "2026-09-25",
+  "account": "@LifanBuilds",
+  "status": "blocked",
+  "published_at_utc": null,
+  "opening_post_url": null,
+  "verified_post_count": 0,
+  "error": "Chrome X session was signed out. Google sign-in returned to X onboarding; direct @LifanBuilds login required a password not available in the signed-in session. No composer opened and no posts sent."
+}

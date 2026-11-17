@@ -1,0 +1,77 @@
+{
+  "briefing_date": "2026-10-27",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-10-27T13:09:03.069609+00:00",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2115067439667167489",
+  "verified_post_count": 7,
+  "error": null,
+  "post_urls": [
+    "https://x.com/LifanBuilds/status/2115067439667167489",
+    "https://x.com/LifanBuilds/status/2115067597821772183",
+    "https://x.com/LifanBuilds/status/2115067775186309239",
+    "https://x.com/LifanBuilds/status/2115067885320298643",
+    "https://x.com/LifanBuilds/status/2115067894354923813",
+    "https://x.com/LifanBuilds/status/2115067902420468221",
+    "https://x.com/LifanBuilds/status/2115067909789921549"
+  ],
+  "verification": {
+    "exact_bodies": true,
+    "immediate_reply_parents": true,
+    "account": "@LifanBuilds",
+    "order": true,
+    "profile_posts_before": 298,
+    "profile_posts_after": 305,
+    "source_links": [
+      {
+        "index": 1,
+        "short_url": "https://t.co/hwYmrbCMb2",
+        "destination": "https://openai.com/index/building-scientific-understanding-with-academic-communities/",
+        "expected": "https://openai.com/index/building-scientific-understanding-with-academic-communities/",
+        "exact": true,
+        "http": 301
+      },
+      {
+        "index": 2,
+        "short_url": "https://t.co/b31tZm6R94",
+        "destination": "https://blog.cloudflare.com/kv-cache-exposure-remediation/",
+        "expected": "https://blog.cloudflare.com/kv-cache-exposure-remediation/",
+        "exact": true,
+        "http": 301
+      },
+      {
+        "index": 3,
+        "short_url": "https://t.co/SkRC3vf0FD",
+        "destination": "https://cohere.com/blog/concerning-behaviour-popular-open-weight-ai-model",
+        "expected": "https://cohere.com/blog/concerning-behaviour-popular-open-weight-ai-model",
+        "exact": true,
+        "http": 301
+      },
+      {
+        "index": 4,
+        "short_url": "https://t.co/4lQpFqmatU",
+        "destination": "https://www.digitaliko.com/blog/llm-as-a-judge-reviewer-that-refutes",
+        "expected": "https://www.digitaliko.com/blog/llm-as-a-judge-reviewer-that-refutes",
+        "exact": true,
+        "http": 301
+      },
+      {
+        "index": 5,
+        "short_url": "https://t.co/BIx96EiNtx",
+        "destination": "https://github.com/Helldez/BigMoeOnEdge/releases/tag/v0.36.0",
+        "expected": "https://github.com/Helldez/BigMoeOnEdge/releases/tag/v0.36.0",
+        "exact": true,
+        "http": 301
+      },
+      {
+        "index": 6,
+        "short_url": "https://t.co/PO65pctlkw",
+        "destination": "https://newsroom.ibm.com/2026-10-27-ibm-introduces-identity-and-control-for-ai-agents%2C-securing-frontier-intelligence-for-the-enterprise",
+        "expected": "https://newsroom.ibm.com/2026-10-27-ibm-introduces-identity-and-control-for-ai-agents%2C-securing-frontier-intelligence-for-the-enterprise",
+        "exact": true,
+        "http": 301
+      }
+    ],
+    "saved_thread_sha256": "f69d3ccbae90bc2f339b4f1a130f0cb189b385c46d71898ddad013a09d006353"
+  }
+}
