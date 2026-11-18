@@ -1,0 +1,102 @@
+{
+  "briefing_date": "2026-11-18",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-11-18T21:14:30.658Z",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2123162079435882612",
+  "verified_post_count": 11,
+  "error": null,
+  "method": "explicit inline reply chain",
+  "profile_posts_before": 476,
+  "profile_posts_after": 487,
+  "posts": [
+    {
+      "index": 0,
+      "url": "https://x.com/LifanBuilds/status/2123162079435882612",
+      "parent_url": null,
+      "exact_text": "AI Builder Brief — Nov 18, 2026. Ten stories on coding agent review bottlenecks, Windows 11 ETW telemetry, harness costs, ONNX outage, AI search traffic drops, Quad9 DNS, Energy Reasoners, Datasette streaming, agent secrets, and protein pretraining. https://clifan.com/journal/ai-builder-brief/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 1,
+      "url": "https://x.com/LifanBuilds/status/2123162192786886767",
+      "parent_url": "https://x.com/LifanBuilds/status/2123162079435882612",
+      "exact_text": "1/ Harvard study finds AI coding assistants raised raw code output by 30%, but failed to speed up completed feature delivery while inflating code review latency by 49%. Reviewers spent more time vetting unfamiliar diffs. Track end-to-end cycle time. https://complexdiscovery.com/harvard-researchers-find-ai-coding-agents-shifted-the-bottleneck-to-code-review/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 2,
+      "url": "https://x.com/LifanBuilds/status/2123162254493589974",
+      "parent_url": "https://x.com/LifanBuilds/status/2123162192786886767",
+      "exact_text": "2/ Windows 11's MissionControlAggregator logs local coding-agent and developer-tool execution into diagnostic ETW streams. Enterprise builders running sensitive codebases on Windows should audit ETW logging policies and isolate agents in VMs. https://xusheng.dev/posts/windows-coding-agent-telemetry/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 3,
+      "url": "https://x.com/LifanBuilds/status/2123162315516510535",
+      "parent_url": "https://x.com/LifanBuilds/status/2123162254493589974",
+      "exact_text": "3/ FrontierHarness Eval v1.1 ran 22 agent harnesses across 5 models on 62 tasks (27,280 runs). Harness choice shifted task completion costs by 1.8x to 5.0x with the model held constant. Benchmark your own tasks before pinning a wrapper. https://runta.com/blog/introducing-frontierharness-eval-v1-1/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 4,
+      "url": "https://x.com/LifanBuilds/status/2123162385771004221",
+      "parent_url": "https://x.com/LifanBuilds/status/2123162315516510535",
+      "exact_text": "4/ A temporary GitHub outage briefly made Microsoft's onnxruntime repository unavailable, breaking downstream CI and edge inference builds. Teams using local ONNX inference should pin immutable PyPI wheels and avoid raw git clones in deployment images. https://github.com/microsoft/onnxruntime",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 5,
+      "url": "https://x.com/LifanBuilds/status/2123162520991203366",
+      "parent_url": "https://x.com/LifanBuilds/status/2123162385771004221",
+      "exact_text": "5/ A randomized trial on desktop users shows Google AI Overviews cut referral clicks to publisher websites by ~40%. Generative engine optimization (GEO) has not made up the loss, with AI assistants sending just 0.3% of traffic. Prioritize direct APIs. https://revscope.co/blog/search-seo-geo-2026/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 6,
+      "url": "https://x.com/LifanBuilds/status/2123162595347910832",
+      "parent_url": "https://x.com/LifanBuilds/status/2123162520991203366",
+      "exact_text": "6/ Quad9 withdrew recursive DNS operations in France after court-ordered site-blocking injunctions without cost reimbursement. Imposing blocking on resolvers threatens encrypted DNS (DoH/DoT) and adds latency risks for European AI workloads. https://blog.cloudflare.com/quad9-withdrawal-from-france/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 7,
+      "url": "https://x.com/LifanBuilds/status/2123162652767862858",
+      "parent_url": "https://x.com/LifanBuilds/status/2123162595347910832",
+      "exact_text": "7/ Energy-Based Reasoners (EBR) achieve >99% Sudoku-Extreme accuracy with 1.8M parameters, cutting inference FLOPs by up to 345x versus recurrent baselines via iterative energy refinement. An intriguing direction for constrained edge reasoning. https://arxiv.org/abs/2611.08977",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 8,
+      "url": "https://x.com/LifanBuilds/status/2123162715741200734",
+      "parent_url": "https://x.com/LifanBuilds/status/2123162652767862858",
+      "exact_text": "8/ Datasette 1.0a43 adds Response.stream() for streaming large TSV/CSV table exports without buffering in memory, while Datasette Lite rewrites its service-worker runtime to run full client-side SQLite in the browser via Pyodide and WebAssembly. https://simonwillison.net/2026/Nov/15/datasette/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 9,
+      "url": "https://x.com/LifanBuilds/status/2123162777137397910",
+      "parent_url": "https://x.com/LifanBuilds/status/2123162715741200734",
+      "exact_text": "9/ Lend is an open-source credential broker for coding agents. It intercepts tool calls to replace static, long-lived cloud keys with scoped, temporary capability grants, preventing autonomous agents or prompt injections from exfiltrating secrets. https://blog.antonio.cx/running-agents-with-lend",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 10,
+      "url": "https://x.com/LifanBuilds/status/2123162845286453561",
+      "parent_url": "https://x.com/LifanBuilds/status/2123162777137397910",
+      "exact_text": "10/ Pretraining vocabulary and representation analysis suggests Claude Opus 5.5 ingested large-scale amino acid sequences from UniProt and PDB, enabling zero-shot secondary structure prediction from raw FASTA strings competitive with ESM-2. http://xinmingtu.cn/blog/2026/claude-opus-5-5-protein-sequences/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    }
+  ]
+}
