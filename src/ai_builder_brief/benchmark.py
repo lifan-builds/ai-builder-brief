@@ -381,11 +381,20 @@ def fetch_algolia_hn_ground_truth(
             kwargs: dict[str, Any] = {"timeout": 20}
             if opener is urlopen:
                 kwargs["context"] = SSL_CONTEXT
-            with opener(req, **kwargs) as resp:
-                raw_bytes = resp.read()
-                if raw_bytes[:2] == b"\x1f\x8b":
-                    raw_bytes = gzip.decompress(raw_bytes)
-                payload = json.loads(raw_bytes.decode("utf-8"))
+            raw_bytes = None
+            for attempt in range(3):
+                try:
+                    with opener(req, **kwargs) as resp:
+                        raw_bytes = resp.read()
+                        break
+                except Exception:
+                    if attempt == 2:
+                        raise
+            if raw_bytes is None:
+                continue
+            if raw_bytes[:2] == b"\x1f\x8b":
+                raw_bytes = gzip.decompress(raw_bytes)
+            payload = json.loads(raw_bytes.decode("utf-8"))
             for hit in payload.get("hits", []):
                 title = str(hit.get("title") or "").strip()
                 url = str(hit.get("url") or "").strip()

@@ -243,11 +243,13 @@ def _historical_story_keys(root: Path, *, episode_date: date, lookback_days: int
             key = str(record.get("theme_key") or record.get("cluster_id") or "").strip().casefold()
             if key:
                 slugs.add(key)
-            for ev in record.get("evidence", []):
-                if isinstance(ev, dict) and ev.get("url"):
-                    cu = canonicalize_url(str(ev["url"]))
-                    if cu:
-                        urls.add(cu)
+            evidence = record.get("evidence")
+            if isinstance(evidence, list):
+                for ev in evidence:
+                    if isinstance(ev, dict) and ev.get("url"):
+                        cu = canonicalize_url(str(ev["url"]))
+                        if cu:
+                            urls.add(cu)
 
     for path in (root / "history").glob("*.md"):
         if "-x-" in path.name or not re.match(r"^\d{4}-\d{2}-\d{2}\.md$", path.name):
