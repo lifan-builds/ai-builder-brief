@@ -1,0 +1,102 @@
+{
+  "briefing_date": "2026-11-20",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-11-20T14:20:08.864Z",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2123782667506442430",
+  "verified_post_count": 11,
+  "error": null,
+  "method": "explicit inline reply chain",
+  "profile_posts_before": 500,
+  "profile_posts_after": 511,
+  "posts": [
+    {
+      "index": 0,
+      "url": "https://x.com/LifanBuilds/status/2123782667506442430",
+      "parent_url": null,
+      "exact_text": "AI Builder Brief — Nov 20, 2026. Ten stories on Gemini Tool Retrieval, GPT-Live-1.1 Standby, Genie 4 API, LiteLLM KEV RCE, OpenAI Performance Factory, Frostbite CPU, LangSmith Tool Gateway, OVHcloud Olala 7A1B, PostgreSQL 19, and safeguard refusals. https://clifan.com/journal/ai-builder-brief/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 1,
+      "url": "https://x.com/LifanBuilds/status/2123782901678604407",
+      "parent_url": "https://x.com/LifanBuilds/status/2123782667506442430",
+      "exact_text": "1/ Google launched Tool Retrieval (preview) in the Gemini Interactions API for Gemini 3.6 & 4 models. Add tool_search + defer_loading: true to hold back 50+ or remote MCP schemas until needed, preserving prefix cache with $0 surcharge. https://blog.google/innovation-and-ai/technology/developers-tools/gemini-api-tool-retrieval/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 2,
+      "url": "https://x.com/LifanBuilds/status/2123783000345469198",
+      "parent_url": "https://x.com/LifanBuilds/status/2123782901678604407",
+      "exact_text": "2/ OpenAI released gpt-live-1.1 on v1/live/sessions with better multilingual accents & transcription, plus opt-in WebRTC Standby mode: pause inference after 5–60s silence to cut billing from $0.05/min to $0.02/min while keeping calls open. https://developers.openai.com/api/docs/models/gpt-live-1.1",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 3,
+      "url": "https://x.com/LifanBuilds/status/2123783092066468087",
+      "parent_url": "https://x.com/LifanBuilds/status/2123783000345469198",
+      "exact_text": "3/ Google opened Genie 4 (models/genie-4) in the Gemini Interactions API & AI Studio. Stream interactive 720p/24fps video + 48 kHz stereo audio via WebRTC/WebSocket with live WASD + text steering; paid-tier billing runs ~$0.10/sec (240 tok/frame). https://blog.google/innovation-and-ai/technology/developers-tools/genie-4-in-gemini-api/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 4,
+      "url": "https://x.com/LifanBuilds/status/2123783195040841765",
+      "parent_url": "https://x.com/LifanBuilds/status/2123783092066468087",
+      "exact_text": "4/ CISA added LiteLLM CVE-2026-40217 (GHSA-wxxx-gvqv-xp7p) to KEV with a Dec 2 federal deadline. Bytecode rewriting escapes the custom sandbox at POST /guardrails/test_custom_code for root RCE in default Docker images. Upgrade past 1.83.11 now. https://github.com/BerriAI/litellm/security/advisories/GHSA-wxxx-gvqv-xp7p",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 5,
+      "url": "https://x.com/LifanBuilds/status/2123783260916580606",
+      "parent_url": "https://x.com/LifanBuilds/status/2123783195040841765",
+      "exact_text": "5/ OpenAI detailed its Performance Factory: cloud Codex SRE loops ran 1,700+ ChatGPT latency investigations over ~3 months, diagnosing 600+ root causes and drafting ~400 fixes (~15 merged verbatim, ~50 guided human patches). https://openai.com/index/how-openai-performance-factory-keeps-chatgpt-fast",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 6,
+      "url": "https://x.com/LifanBuilds/status/2123783269435207913",
+      "parent_url": "https://x.com/LifanBuilds/status/2123783260916580606",
+      "exact_text": "6/ Architect Labs unveiled Frostbite, an interaction-net CPU (ISA, compiler, RTL, GDS) designed end-to-end by AI swarms. Reports 4.59x perf/W (3.83x held-out) vs an undisclosed dual-issue in-order core, though RTL is unreleased & untaped. https://architectlabs.com/blog/frostbite",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 7,
+      "url": "https://x.com/LifanBuilds/status/2123783277446402214",
+      "parent_url": "https://x.com/LifanBuilds/status/2123783269435207913",
+      "exact_text": "7/ LangChain launched LangSmith Tool Gateway (beta) for centralized MCP governance: bundle external MCP servers + 6 OAuth & 7 API-key tools into one toolkit URL for Claude Code, Cursor, or LangGraph with FORBID/REQUIRE_APPROVAL controls. https://blog.langchain.com/langsmith-tool-gateway/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 8,
+      "url": "https://x.com/LifanBuilds/status/2123783357159149909",
+      "parent_url": "https://x.com/LifanBuilds/status/2123783277446402214",
+      "exact_text": "8/ OVHcloud open-sourced Apache-2.0 Olala-v1.0-mini-7A1B: 6.8B total / ~1B active hybrid Mamba-3/attention MoE (only 7/36 layers use KV cache), trained on 12.8T tokens on EU supercomputers. Fits 8GB VRAM or CPU with tool calling (32K context). https://huggingface.co/OVHaiLLM/Olala-v1.0-mini-7A1B",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 9,
+      "url": "https://x.com/LifanBuilds/status/2123783366306893918",
+      "parent_url": "https://x.com/LifanBuilds/status/2123783357159149909",
+      "exact_text": "9/ PostgreSQL 19 shipped ~2 months late after a surge of AI-assisted security reports overwhelmed maintainer triage. Highlights: online REPACK (CONCURRENTLY) without blocking locks, WAIT FOR LSN standby read-your-writes, and pg_plan_advice. https://www.postgresql.org/about/news/postgresql-19-released-3449/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 10,
+      "url": "https://x.com/LifanBuilds/status/2123783374682955842",
+      "parent_url": "https://x.com/LifanBuilds/status/2123783366306893918",
+      "exact_text": "10/ An HN postmortem (571 pts) details Claude Code's safeguards blocking a one-line defensive security fix—demanding ID upload & waiving data-retention exemptions—pushing the engineer to EU-hosted open-weight GLM 5.3 to verify and patch. https://ounapuu.ee/posts/2026/11/19/unsafeguards/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    }
+  ]
+}
