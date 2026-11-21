@@ -1,0 +1,102 @@
+{
+  "briefing_date": "2026-11-21",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-11-21T14:19:31.152Z",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2124144804506554416",
+  "verified_post_count": 11,
+  "error": null,
+  "method": "explicit inline reply chain",
+  "profile_posts_before": 511,
+  "profile_posts_after": 522,
+  "posts": [
+    {
+      "index": 0,
+      "url": "https://x.com/LifanBuilds/status/2124144804506554416",
+      "parent_url": null,
+      "exact_text": "AI Builder Brief — Nov 21, 2026. Ten stories on Inkling 2 Mini, Dragos's 2M-canary audit, GRH & Navier–Stokes Lean 4 proofs, self-rewriting weights, Signal blocking OS agents, OpenAI distillation, HF harness adapters, FPGA vibecoding, and OpenComputer. https://clifan.com/journal/ai-builder-brief/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 1,
+      "url": "https://x.com/LifanBuilds/status/2124144933221421443",
+      "parent_url": "https://x.com/LifanBuilds/status/2124144804506554416",
+      "exact_text": "1/ Thinking Machines Lab open-sourced Inkling 2 Mini (Apache-2.0): 26.4B / 3.4B active (5.4B eff.) looped multimodal MoE, 1M context, ~20GB NVFP4/MXFP8. Loops layers 6–17 3x; hits 48.2% DeepSWE v1.1 with Day-0 vLLM/Ollama/MLX support. https://thinkingmachines.ai/news/inkling-2-mini/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 2,
+      "url": "https://x.com/LifanBuilds/status/2124144987856310760",
+      "parent_url": "https://x.com/LifanBuilds/status/2124144933221421443",
+      "exact_text": "2/ Dragos CRO HD Moore seeded ~2M canary prompts across AI routers & marketplaces: found >=3 breached providers (stealing rejected & ZDR-flagged AWS keys), resellers logging prompts, and U.S. prompts surfacing months later in Chinese chats. https://www.dragos.com/blog/ai-supply-chain-security-canary-tokens",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 3,
+      "url": "https://x.com/LifanBuilds/status/2124145073017463039",
+      "parent_url": "https://x.com/LifanBuilds/status/2124144987856310760",
+      "exact_text": "3/ Anthropic's Levent Alpöge & Claude released a ~17M-line Lean 4 archive claiming a Generalized Riemann Hypothesis proof (MIT's Andrew Sutherland reports clean kernel compile); hours later Stanford posted a 940-page all-human draft facing gaps. https://alpo.ge/remark.pdf",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 4,
+      "url": "https://x.com/LifanBuilds/status/2124145133348384904",
+      "parent_url": "https://x.com/LifanBuilds/status/2124145073017463039",
+      "exact_text": "4/ \"Language Models Can Rewrite Their Own Weights\" (438 HN pts): with zero gradients or retraining, Qwen3.5-27B edits its own weights via hidden states—gaining +6.6 pts on 490 unseen math tasks, rising over 8 sessions, and repairing a broken copy. https://arxiv.org/abs/2611.21885",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 5,
+      "url": "https://x.com/LifanBuilds/status/2124145198431441370",
+      "parent_url": "https://x.com/LifanBuilds/status/2124145133348384904",
+      "exact_text": "5/ Signal enabled default screenshot blocking on iOS 27 (Siri Onscreen Awareness) and Android (Gemini Intelligence) to stop OS AI agents from scanning encrypted chats (557 HN pts). Leaves macOS & filesystem access exposed; urges OS opt-out APIs. https://signal.org/blog/protecting-your-privacy/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 6,
+      "url": "https://x.com/LifanBuilds/status/2124145257147494733",
+      "parent_url": "https://x.com/LifanBuilds/status/2124145198431441370",
+      "exact_text": "6/ Tristan Buckmaster (NYU) & Levent Alpöge posted an unforced 3D Navier–Stokes blow-up paper (79p) + 600K-line Lean 4 library built with LLM help (300 HN pts). Clean comparator manifest pattern, though numerical certificate & rebuild stay pending. https://github.com/tristanbuckmaster/navier-stokes",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 7,
+      "url": "https://x.com/LifanBuilds/status/2124145321362194879",
+      "parent_url": "https://x.com/LifanBuilds/status/2124145257147494733",
+      "exact_text": "7/ OpenAI detailed layered anti-distillation defenses: adaptive black-box CoT extraction on GPT-6.2 Astra fell from 54.0% to 0.2% (prior turn) and 22.9% to 0.9% (current turn), plus weekly bans of thousands–tens of thousands of Hydra accounts. https://openai.com/index/combatting-adversarial-distillation/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 8,
+      "url": "https://x.com/LifanBuilds/status/2124145412932288787",
+      "parent_url": "https://x.com/LifanBuilds/status/2124145321362194879",
+      "exact_text": "8/ Hugging Face released its open RL harness-adapter stack (TRL AsyncGRPOTrainer + OpenEnv + Harbor) & merged Qwen3.8-27B super-adapter for pi, OpenCode & Hermes—lifting Terminal-Bench 2.1 under pi from 39% to 55% while halving tokens (2.9K->1.5K). https://huggingface.co/blog/harness-adapters-at-scale",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 9,
+      "url": "https://x.com/LifanBuilds/status/2124145476429889904",
+      "parent_url": "https://x.com/LifanBuilds/status/2124145412932288787",
+      "exact_text": "9/ Founder Ankit Gupta—with zero prior Verilog—used Codex & Claude in Conductor (~$10K tokens, ~3M lines C++/Verilog) to compile a ternary DeepGrove model onto an AWS F2 FPGA (16GB HBM), lifting bit-exact throughput 33.1x from 6.43 to 213.13 tok/s. https://ankitg.me/blog/vibecoding-inference-chip/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 10,
+      "url": "https://x.com/LifanBuilds/status/2124145566913589452",
+      "parent_url": "https://x.com/LifanBuilds/status/2124145476429889904",
+      "exact_text": "10/ DiggerHQ open-sourced OpenComputer (Apache-2.0), an interactive Slack coding agent + public speedbench harness. Across 5 timed 4-repo PR+CI runs, it hit 24s first push / 56s all 4 green vs Devin's 72s / 185s (5/6 vs 5/5 completion). https://github.com/diggerhq/opencomputer",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    }
+  ]
+}
