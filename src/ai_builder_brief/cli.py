@@ -67,7 +67,10 @@ def main(argv: list[str] | None = None) -> int:
             if args.backfill:
                 paths = sorted(root.glob("*.md"))
             elif args.brief_date is not None:
-                paths = [root / f"{args.brief_date.isoformat()}.md"]
+                target = root / f"{args.brief_date.isoformat()}.md"
+                if not target.is_file():
+                    raise FileNotFoundError(f"Journal source brief not found: {target}")
+                paths = [target]
             else:
                 raise ValueError("journal requires --date or --backfill")
             results = []
