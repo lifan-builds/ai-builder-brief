@@ -3,7 +3,7 @@ name = "ai-builder-brief"
 version = "0.1.0"
 description = "Source-transparent daily AI briefing powered by CastForge"
 readme = "README.md"
-license = "MIT"
+license = { file = "LICENSE" }
 requires-python = ">=3.10"
 dependencies = [
   "castforge[notebooklm,r2]==0.1.3",
