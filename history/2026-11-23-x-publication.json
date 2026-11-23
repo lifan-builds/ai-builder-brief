@@ -1,0 +1,102 @@
+{
+  "briefing_date": "2026-11-23",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-11-23T14:19:59.000Z",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2124870582982644163",
+  "verified_post_count": 11,
+  "error": null,
+  "method": "explicit inline reply chain",
+  "profile_posts_before": 541,
+  "profile_posts_after": 552,
+  "posts": [
+    {
+      "index": 0,
+      "url": "https://x.com/LifanBuilds/status/2124870582982644163",
+      "parent_url": null,
+      "exact_text": "AI Builder Brief — Nov 23, 2026. Ten stories: Z.ai GLM-5.4 Loop Transformer, OpenAI's perplexity ceiling, OpenCode v2.4.0, Upload2Shell RCE, SkillPrivus audit, cmHC, MemOnce, HF agentic evals, NoPeWorld & 938-repo Lean proof bloat. https://clifan.com/journal/ai-builder-brief/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 1,
+      "url": "https://x.com/LifanBuilds/status/2124871518178226251",
+      "parent_url": "https://x.com/LifanBuilds/status/2124870582982644163",
+      "exact_text": "1/ Z.ai launched GLM-5.4 (405 HN pts): a 750B Loop Transformer looping 28 layers twice with Damp Gates & a 128-tok Pass-2 KV window. Hits 200 tok/s off-peak; 30B ablations lift AIME25 +11.3 & GPQA +8.7 while cutting tokens 12%. https://z.ai/blog/glm-5.4",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 2,
+      "url": "https://x.com/LifanBuilds/status/2124871659475910695",
+      "parent_url": "https://x.com/LifanBuilds/status/2124871518178226251",
+      "exact_text": "2/ OpenAI Chief Scientist Jakub Pachocki shared OpenAI's codebase log-perplexity curve (GPT-3.5 ~0.99, GPT-4 ~0.91, <0.8 cyber/math, ~0.76 open math) and proposed cross-lab perplexity ceilings gated on CoT-monitor successors (633 HN pts). https://openai.com/index/perplexity-and-intelligence/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 3,
+      "url": "https://x.com/LifanBuilds/status/2124871792225587601",
+      "parent_url": "https://x.com/LifanBuilds/status/2124871659475910695",
+      "exact_text": "3/ OpenCode v2.4.0 shipped a persistent desktop browser importing Chrome/Edge/Firefox/Safari logins, scheduled /automation (cron, timer & MCP events) & generate_video. Breaking: Copilot needs COPILOT_GITHUB_TOKEN & semver plugins auto-update 24h. https://github.com/anomalyco/opencode/releases/tag/v2.4.0",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 4,
+      "url": "https://x.com/LifanBuilds/status/2124871801004286333",
+      "parent_url": "https://x.com/LifanBuilds/status/2124871792225587601",
+      "exact_text": "4/ Upload2Shell (CVE-2026-125396, 153 HN pts) escapes Ghostscript -dSAFER via Type 1 font UAF—even via .png/.jpg uploads. Confirmed RCE in Google, Debian CUPS, WordPress & Roundcube; live Gradio handoff & ComfyUI/InvokeAI/A1111 sinks. Patch 10.08.0. https://pwn.ai/upload2shell",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 5,
+      "url": "https://x.com/LifanBuilds/status/2124871933183537335",
+      "parent_url": "https://x.com/LifanBuilds/status/2124871801004286333",
+      "exact_text": "5/ IBM Research & Notre Dame's SkillPrivus statically audited 726 public agent skills (563 personal-data) and flagged privacy-of-use harms in 54.5% (307/563)—incl. 24/37 security-scanned NVIDIA Verified Skills—mostly undisclosed data & sinks. https://arxiv.org/abs/2611.26747",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 6,
+      "url": "https://x.com/LifanBuilds/status/2124871941031096566",
+      "parent_url": "https://x.com/LifanBuilds/status/2124871933183537335",
+      "exact_text": "6/ cmHC (#1 HF Daily Paper, 80 upvotes, code live) stabilizes multi-stream hyper-connections by contracting the Birkhoff polytope with zero extra params—beating mHC on 6B & 300B MoEs—and cuts Ascend 910C hyper-connection latency up to 44.8%. https://github.com/Newiz430/cmHC",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 7,
+      "url": "https://x.com/LifanBuilds/status/2124871948836757799",
+      "parent_url": "https://x.com/LifanBuilds/status/2124871941031096566",
+      "exact_text": "7/ MemOnce (arXiv:2611.27973) caches a compact subset of final-layer hidden states and decodes KV caches on demand with single-pass cross-layer sparse indices—cutting 1M-context Qwen3.5-4B memory 1,313x & prefill latency 6.9x (code pending). https://arxiv.org/abs/2611.27973",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 8,
+      "url": "https://x.com/LifanBuilds/status/2124872052507341030",
+      "parent_url": "https://x.com/LifanBuilds/status/2124871948836757799",
+      "exact_text": "8/ Hugging Face published an open agentic-eval playbook (3,500 leaderboards, 17K datasets; 98.2% scores single-party) with Harbor/Sandbox raman-lab traces, router provider pinning & an anti-shortcut grader check catching fake peak-height fits. https://huggingface.co/blog/agentic-evals",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 9,
+      "url": "https://x.com/LifanBuilds/status/2124872060271046675",
+      "parent_url": "https://x.com/LifanBuilds/status/2124872052507341030",
+      "exact_text": "9/ NoPeWorld (#2 HF Daily Paper, 50 upvotes, code + NoPeBench + weights) probes frozen DiT hidden states to detect wall collisions before pixels render, cutting video world-model physical penetration across 6 open models from 74% to 16% zero-shot. https://github.com/yuhangdai427/NoPeWorld",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 10,
+      "url": "https://x.com/LifanBuilds/status/2124872068324008040",
+      "parent_url": "https://x.com/LifanBuilds/status/2124872060271046675",
+      "exact_text": "10/ Scraping all 259 Mathlib theorems & 938 Lean Reservoir packages (167 HN pts), micjm shows AI proofs dominate the upper tail: Qiuzhen-CFSG (88M lines), Anthropic's FLT (27M, ~450x human FLT) & Alpöge's RH (17M)—flagging CI cache & replay load. https://micjm.com/blog/yes-17m-lines-of-lean-is-a-lot/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    }
+  ]
+}
