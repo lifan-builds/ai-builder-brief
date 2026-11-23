@@ -1,4 +1,8 @@
+import subprocess
+import sys
 from pathlib import Path
+
+import pytest
 
 from ai_builder_brief.journal import _top_ten_body, publish_journal
 
@@ -17,6 +21,25 @@ def test_publish_journal_writes_entry_archive_and_parent_link(tmp_path: Path) ->
     assert (site / "docs" / "journal" / "ai-builder-brief" / "2026-10-13.html").is_file()
     assert (site / "docs" / "journal" / "ai-builder-brief" / "index.html").is_file()
     assert "AI-BUILDER-BRIEF:START" in (site / "docs" / "journal" / "index.html").read_text()
+
+
+def test_publish_journal_runs_sibling_sync_clifan(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    history = tmp_path / "history"
+    history.mkdir()
+    brief = history / "2026-10-13.md"
+    brief.write_text("# Brief — 2026-10-13\n\nRead on the day.\n", encoding="utf-8")
+    site = tmp_path / "lifan-builds"
+    (site / "docs" / "journal").mkdir(parents=True)
+    (site / "docs" / "journal" / "index.html").write_text("<main></main>", encoding="utf-8")
+    sync_script = tmp_path / "scripts" / "sync_clifan.py"
+    sync_script.parent.mkdir()
+    sync_script.touch()
+    calls: list[list[str]] = []
+    monkeypatch.setattr(subprocess, "run", lambda cmd, check: calls.append(cmd))
+
+    publish_journal(brief, site)
+
+    assert calls == [[sys.executable, str(sync_script), "--life-root", str(site)]]
 
 
 def test_public_entry_keeps_only_compact_top_ten_cards() -> None:

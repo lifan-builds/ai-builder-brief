@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import html
 import re
+import subprocess
+import sys
 from datetime import date
 from pathlib import Path
 from urllib.parse import urlparse
@@ -260,4 +262,7 @@ def publish_journal(brief_path: Path, site_root: Path) -> str:
         entries.append((entry_day, headline.replace("—", " · "), short_intro, e_count))
     (target / "index.html").write_text(_archive_html(entries), encoding="utf-8")
     _update_parent_journal(site_root, entries)
+    sync_script = site_root.parent / "scripts" / "sync_clifan.py"
+    if sync_script.is_file():
+        subprocess.run([sys.executable, str(sync_script), "--life-root", str(site_root)], check=True)
     return "published" if changed else "already-published"

@@ -66,7 +66,9 @@ vapourware.
    .venv/bin/ai-builder-brief benchmark --brief history/YYYY-MM-DD.md
    ```
 5. Save the briefing and exact X draft before any public action, publish the
-   journal entry via `ai-builder-brief journal`, and record publication status.
+   journal entry via `ai-builder-brief journal` (auto-runs sibling
+   `scripts/sync_clifan.py` to refresh clifan.com counts, feeds, and sitemap),
+   and record publication status.
 
 ## Source-panel maintenance
 
