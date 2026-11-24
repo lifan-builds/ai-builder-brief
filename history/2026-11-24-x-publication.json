@@ -1,0 +1,102 @@
+{
+  "briefing_date": "2026-11-24",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-11-24T15:20:08.000Z",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2125248106572939294",
+  "verified_post_count": 11,
+  "error": null,
+  "method": "explicit inline reply chain",
+  "profile_posts_before": 552,
+  "profile_posts_after": 563,
+  "posts": [
+    {
+      "index": 0,
+      "url": "https://x.com/LifanBuilds/status/2125248106572939294",
+      "parent_url": null,
+      "exact_text": "AI Builder Brief — Nov 24, 2026. Ten stories: Cairn MONAI Label zero-day, OpenAI+Cisco Shirudo, Claude Ship, DeepMind Lean quantum, Anthropic VP≠VNP, NariQ 3-bit Qwen3.8, qwen-audio-3.1-live, Ai2 RoboTrack, Embo-Harness & Unsloth/Ollama Inkling. https://clifan.com/journal/ai-builder-brief/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 1,
+      "url": "https://x.com/LifanBuilds/status/2125248440032759993",
+      "parent_url": "https://x.com/LifanBuilds/status/2125248106572939294",
+      "exact_text": "1/ Autonomous Cairn AI agents found & exploited a zero-day path traversal (CVE-2026-133968, CVSS 9.8) in MONAI Label <=0.8.5 in ~11 min, writing a root shell to sitecustomize.py. CISA KEV due Nov 26; patch to 0.8.6 & enable auth. https://aws.amazon.com/blogs/security/chinese-nexus-actors-cairn-ai-agents-found-a-zero-day-on-their-own/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 2,
+      "url": "https://x.com/LifanBuilds/status/2125248641439076612",
+      "parent_url": "https://x.com/LifanBuilds/status/2125248440032759993",
+      "exact_text": "2/ OpenAI & Cisco open-sourced Shirudo, an eBPF + TPM 2.0 Linux runtime for signed, zero-restart live patches (\"upatches\"). Codex shield blocked Java4Shell on live Elasticsearch; shirudo attest verifies state offline. Needs patched kernel. https://github.com/shirudo-dev/shirudo",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 3,
+      "url": "https://x.com/LifanBuilds/status/2125248656647631195",
+      "parent_url": "https://x.com/LifanBuilds/status/2125248641439076612",
+      "exact_text": "3/ Anthropic launched Claude Ship beta for Team/Enterprise GitHub repos (/ship in Claude Code): GA Code Review + PR Steward (fixes failing CI & comments; never merges) + Claude Approvals (repo policy file; start in observe mode). https://claude.com/resources/articles/introducing-claude-ship",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 4,
+      "url": "https://x.com/LifanBuilds/status/2125248669742252032",
+      "parent_url": "https://x.com/LifanBuilds/status/2125248656647631195",
+      "exact_text": "4/ Google DeepMind open-sourced formal-quantum-computation in Lean 4 after Gemini 4 agent teams cut verified quantum circuit costs 11.8x (fusion), 8x (photochemistry), 2.5x (P450), 2.57x (Grover) & 290x (arcsin). Classical cost modeling pending. https://github.com/google-deepmind/formal-quantum-computation",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 5,
+      "url": "https://x.com/LifanBuilds/status/2125248686116749574",
+      "parent_url": "https://x.com/LifanBuilds/status/2125248669742252032",
+      "exact_text": "5/ Anthropic released an AI-authored VP ≠ VNP over Every Field paper & Lean 4 formalization (343 HN pts), checked on the independent nanoda kernel with standard axioms. Caveat: no human mathematician has audited it; doesn't settle P vs NP. https://github.com/anthropics/formal-math/tree/main/vp-vnp",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 6,
+      "url": "https://x.com/LifanBuilds/status/2125248722309378082",
+      "parent_url": "https://x.com/LifanBuilds/status/2125248686116749574",
+      "exact_text": "6/ Nari Labs shipped Apache-2.0 NariQ 3.0 & 2.5 bpw GGUFs shrinking Qwen3.8-27B (53.8 GB -> 10.1/8.4 GB) while matching BF16 on DeepSWE (41.0%/41.9% vs 39.8%) & Terminal-Bench (63.8% vs 62.6%) via agent-trace calibration. Needs nari-llama.cpp. https://huggingface.co/nari-labs/Qwen3.8-27B-NariQ-GGUF",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 7,
+      "url": "https://x.com/LifanBuilds/status/2125248773417013586",
+      "parent_url": "https://x.com/LifanBuilds/status/2125248722309378082",
+      "exact_text": "7/ QwenCloud launched qwen-audio-3.1-live, a full-duplex speech-to-speech API that keeps talking while Client or backend Responses models run tools. 65K instruction+tool limit at $0.000710/s ($0.0426/min); silence billed at full rate. https://docs.qwencloud.com/models/qwen-audio-3-1-live",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 8,
+      "url": "https://x.com/LifanBuilds/status/2125248790366228777",
+      "parent_url": "https://x.com/LifanBuilds/status/2125248773417013586",
+      "exact_text": "8/ Ai2 released RoboTrack-Bench (307 clips, 2,522 tracks), RoboTrack-15M & RoboTracker checkpoints. Real manipulation drops baseline trackers 3.0–6.6 AJ (CoWTracker 70.5->63.9); RoboTracker-Warp hits 66.0 AJ SOTA (noncommercial weights). https://huggingface.co/blog/allenai/robotrack",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 9,
+      "url": "https://x.com/LifanBuilds/status/2125248812218482884",
+      "parent_url": "https://x.com/LifanBuilds/status/2125248790366228777",
+      "exact_text": "9/ Embo-Harness (#1 HF Daily Paper, 88 upvotes, code live) shows frontier models as closed-loop robot policies jump from 43.3% to 96.7% (83.3% on RoboLab-120, +26.2 pts; 15/20 real zero-shot) using spatial targets instead of joint deltas. https://github.com/DravenALG/Embo-Harness",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 10,
+      "url": "https://x.com/LifanBuilds/status/2125248831424242140",
+      "parent_url": "https://x.com/LifanBuilds/status/2125248812218482884",
+      "exact_text": "10/ Unsloth v0.1.924-beta & Ollama v0.40.18 accelerated looped-MoE Inkling 2 Mini: 1.8–3.1x faster LoRA/QLoRA at 50% less VRAM (fits Kaggle 2x T4, ~26 s/step; GGUF export needs ~150 GB disk) plus fused Metal residual mixing on Apple Silicon. https://github.com/unslothai/unsloth/releases/tag/v0.1.924-beta",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    }
+  ]
+}
