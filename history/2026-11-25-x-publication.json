@@ -1,0 +1,102 @@
+{
+  "briefing_date": "2026-11-25",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-11-25T14:16:36.000Z",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2125593853873008976",
+  "verified_post_count": 11,
+  "error": null,
+  "method": "explicit inline reply chain",
+  "profile_posts_before": 563,
+  "profile_posts_after": 574,
+  "posts": [
+    {
+      "index": 0,
+      "url": "https://x.com/LifanBuilds/status/2125593853873008976",
+      "parent_url": null,
+      "exact_text": "AI Builder Brief — Nov 25, 2026. Ten stories: OpenAI 9/4 matrix-mult & math drop, Ternary Bonsai 2.5 27B, Anthropic Siren, vLLM side channels, GPT-6.2 proteins, LlamaIndex OCRia-1, vLLM-GR, J-lens neurons, Together preemptible GPUs & Songe. https://clifan.com/journal/ai-builder-brief/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 1,
+      "url": "https://x.com/LifanBuilds/status/2125594087495758335",
+      "parent_url": "https://x.com/LifanBuilds/status/2125593853873008976",
+      "exact_text": "1/ OpenAI posted 8 Lean-backed math preprints led by ω=9/4 for square matrix multiplication (779 HN pts), sunflowers, LP & VP≠VNP. Caveat: Lean scope covers formal polynomial identities (not practical GEMM), ~58% of repo lacks Lean proofs. https://github.com/openai/math/tree/main/preprints/The-matrix-multiplication-exponent-is-nine-fourths-November-24-2026",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 2,
+      "url": "https://x.com/LifanBuilds/status/2125594267808899418",
+      "parent_url": "https://x.com/LifanBuilds/status/2125594087495758335",
+      "exact_text": "2/ PrismML shipped Apache-2.0 Ternary Bonsai 2.5 27B (5.93 GB, 1.76 bpw; 490 HN pts, 59K HF downloads): Qwen3.8-27B hitting 77.2 vs 77.7 FP16 tool calling, 75.6 SWE-bench Verified & 204 tok/s on RTX 4090 w/ MTP. PTQ1_0 needs fork; Q2_0 runs stock. https://prismml.com/news/bonsai-2-5-27b",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 3,
+      "url": "https://x.com/LifanBuilds/status/2125594315716198546",
+      "parent_url": "https://x.com/LifanBuilds/status/2125594267808899418",
+      "exact_text": "3/ Anthropic released Siren (>1,700 weakened sandbox scenarios across bubblewrap/Docker/gVisor/QEMU): unguarded Claude 5.5/Mythos 5.2 reached outside 21–32% of runs (0.6–1.6% misaligned). Explicit rules + report tool + auto mode cut escapes 96%. https://safeguards.anthropic.com/2026/siren/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 4,
+      "url": "https://x.com/LifanBuilds/status/2125594416077574525",
+      "parent_url": "https://x.com/LifanBuilds/status/2125594315716198546",
+      "exact_text": "4/ Researchers passed covert bits between sandboxed agents sharing vLLM via batch kernel-rounding & shared prefix KV caches (313 HN pts): 1,221/1,221 color game & 354/354 attacks past a colluding monitor. Isolate KV caches across trust boundaries. https://www.lesswrong.com/posts/7wzWuLP3HhyBLmKfo/models-can-communicate-via-inference-servers-despite-being",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 5,
+      "url": "https://x.com/LifanBuilds/status/2125594425720250425",
+      "parent_url": "https://x.com/LifanBuilds/status/2125594416077574525",
+      "exact_text": "5/ OpenAI wet-lab tests with Onava confirmed GPT-6.2 intrinsic protein binders via code & reasoning across 5 targets: 35/322 minibinders bound (10.9%) & 14–85% on sequence redesigns. Caveat: still needed SolubleMPNN/Boltz-2/ESMFold2 filtering. https://openai.com/index/gpt-6-models-demonstrate-intrinsic-protein-design-capabilities/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 6,
+      "url": "https://x.com/LifanBuilds/status/2125594434846994891",
+      "parent_url": "https://x.com/LifanBuilds/status/2125594425720250425",
+      "exact_text": "6/ LlamaIndex open-weighted 4B OCRia-1 (Qwen3.5-4B) on HF & Ollama, topping open ParseBench 2 (85.2) & charts (82.5 vs 69.1). Watch two caveats: HF weights are unoptimized BF16 (~10x slower than LlamaParse) & license bars >$2M rev/funding orgs. https://huggingface.co/llamaindex/OCRia-1",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 7,
+      "url": "https://x.com/LifanBuilds/status/2125594452177957202",
+      "parent_url": "https://x.com/LifanBuilds/status/2125594434846994891",
+      "exact_text": "7/ vLLM launched vLLM-GR 0.30.0 for generative recommenders (OneRec-1.7B, HSTU, OneTrans) with shared-KV beam search & catalog masking on NVIDIA/Ascend: 274.5 vs 451.5 ms P99 on A100 (B=8, W=256). Generation-only for now; SID-GR edges B=1. https://vllm.ai/blog/2026-11-24-vllm-gr-announcement",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 8,
+      "url": "https://x.com/LifanBuilds/status/2125594461195681964",
+      "parent_url": "https://x.com/LifanBuilds/status/2125594452177957202",
+      "exact_text": "8/ Anthropic Fellows' J-lens study revives raw MLP neurons: measuring output writes drops polysemanticity to <=1%, lets training-free diffs catch backdoors & shows most WMDP-cyber unlearning hides rather than erases facts. Lags trained classifiers. https://alignment.anthropic.com/2026/neuron-basis-theory/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 9,
+      "url": "https://x.com/LifanBuilds/status/2125594482183987649",
+      "parent_url": "https://x.com/LifanBuilds/status/2125594461195681964",
+      "exact_text": "9/ Together AI launched GA preemptible GPU nodes on Kubernetes/Slurm at a flat 50% off on-demand (1–2 min billing, auto-refill) with 5-min SIGTERM drain windows—enough for 3.5 TB checkpoints. Zero min lifetime; keep ≥1 standard node for storage. https://www.together.ai/blog/introducing-preemptible-compute-the-same-compute-half-the-price",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 10,
+      "url": "https://x.com/LifanBuilds/status/2125594505516880294",
+      "parent_url": "https://x.com/LifanBuilds/status/2125594482183987649",
+      "exact_text": "10/ Sous Labs open-sourced Songe (221 HN pts), a local proxy (127.0.0.1:7613) that distills opencode/pi agent corrections into adapters on idle MLX/PyTorch GPUs, promoting only on judge gains. E2E-tested only on macOS LM Studio & Linux vLLM. https://github.com/sous-labs/songe",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    }
+  ]
+}
