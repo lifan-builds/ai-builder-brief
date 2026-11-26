@@ -1246,6 +1246,31 @@ def _extract_description_artifact_urls(description: str) -> list[str]:
     return urls
 
 
+def _fetch_youtube_transcript_fast(
+    video_id: str,
+    *,
+    timeout_seconds: int = 15,
+    max_transcript_chars: int = 40_000,
+) -> str:
+    """Fetch clean, deduplicated English/Chinese transcript via youtube_transcript_api (~1.5s, avoids yt-dlp 429)."""
+    executable = shutil.which("youtube_transcript_api")
+    if not executable or not video_id:
+        return ""
+    try:
+        proc = subprocess.run(
+            [executable, "--languages", "en", "en-US", "en-GB", "zh-Hans", "zh", "--format", "text", "--", video_id],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+        )
+        cleaned = re.sub(r"\s+", " ", proc.stdout).strip()
+        return cleaned[:max_transcript_chars]
+    except Exception as error:
+        log.warning("youtube_transcript_api failed for %s: %s", video_id, error)
+        return ""
+
+
 def fetch_youtube_transcript_and_meta(
     video_url: str,
     *,
@@ -1253,34 +1278,41 @@ def fetch_youtube_transcript_and_meta(
     timeout_seconds: int = 25,
     max_transcript_chars: int = 40_000,
 ) -> dict[str, Any]:
-    """Fetch YouTube video metadata, linked artifacts, and English captions via yt-dlp without downloading audio."""
-    executable = shutil.which("yt-dlp")
-    if not executable:
-        return {}
+    """Fetch YouTube metadata/links (yt-dlp --skip-download) and clean transcript (youtube_transcript_api first)."""
     canonical = canonical_source_url(video_url) or video_url
-    try:
-        meta_proc = subprocess.run(
-            [executable, "--dump-single-json", "--skip-download", "--no-warnings", canonical],
-            check=True,
-            capture_output=True,
-            text=True,
-            timeout=timeout_seconds,
-        )
-        info = json.loads(meta_proc.stdout)
-    except Exception as error:
-        log.warning("yt-dlp metadata fetch failed for %s: %s", canonical, error)
-        return {}
+    vid = extract_youtube_video_id(canonical)
+    executable = shutil.which("yt-dlp")
+    info: dict[str, Any] = {}
+    if executable:
+        try:
+            meta_proc = subprocess.run(
+                [executable, "--dump-single-json", "--skip-download", "--no-warnings", canonical],
+                check=True,
+                capture_output=True,
+                text=True,
+                timeout=timeout_seconds,
+            )
+            info = json.loads(meta_proc.stdout)
+        except Exception as error:
+            log.warning("yt-dlp metadata fetch failed for %s: %s", canonical, error)
 
+    vid = str(info.get("id") or vid)
     description = str(info.get("description") or "").strip()
     linked_urls = _extract_description_artifact_urls(description)
     transcript_text = ""
+    if include_transcript and vid:
+        transcript_text = _fetch_youtube_transcript_fast(
+            vid,
+            timeout_seconds=min(15, timeout_seconds),
+            max_transcript_chars=max_transcript_chars,
+        )
     has_en_subs = bool(
         (info.get("subtitles") or {}).get("en")
         or (info.get("automatic_captions") or {}).get("en")
         or any(k.startswith("en-") for k in (info.get("subtitles") or {}))
         or any(k.startswith("en-") for k in (info.get("automatic_captions") or {}))
     )
-    if include_transcript and has_en_subs:
+    if include_transcript and not transcript_text and executable and has_en_subs:
         try:
             with tempfile.TemporaryDirectory(prefix="abb-yt-") as tmpdir:
                 out_tpl = str(Path(tmpdir) / "video.%(ext)s")
@@ -1311,7 +1343,10 @@ def fetch_youtube_transcript_and_meta(
                         max_chars=max_transcript_chars,
                     )
         except Exception as error:
-            log.warning("yt-dlp caption fetch failed for %s: %s", canonical, error)
+            log.warning("yt-dlp caption fallback failed for %s: %s", canonical, error)
+
+    if not info and not transcript_text:
+        return {}
 
     upload_raw = str(info.get("upload_date") or "").strip()
     published_at = ""
@@ -1319,7 +1354,7 @@ def fetch_youtube_transcript_and_meta(
         published_at = f"{upload_raw[:4]}-{upload_raw[4:6]}-{upload_raw[6:8]}T12:00:00Z"
 
     return {
-        "video_id": str(info.get("id") or extract_youtube_video_id(canonical)),
+        "video_id": vid,
         "title": str(info.get("title") or "").strip(),
         "channel": str(info.get("channel") or info.get("uploader") or "").strip(),
         "published_at": published_at,
