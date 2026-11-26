@@ -1,0 +1,102 @@
+{
+  "briefing_date": "2026-11-26",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-11-26T18:25:36.000Z",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2126019557236363447",
+  "verified_post_count": 11,
+  "error": null,
+  "method": "explicit inline reply chain",
+  "profile_posts_before": 578,
+  "profile_posts_after": 589,
+  "posts": [
+    {
+      "index": 0,
+      "url": "https://x.com/LifanBuilds/status/2126019557236363447",
+      "parent_url": null,
+      "exact_text": "AI Builder Brief — Nov 26, 2026. Ten stories: Google Cogentic factoring, Anthropic Rust API, 76K-line Lean GRH, Workspace MCP mandate, 3 vLLM CVEs, Cloudflare Search for Agents, GPT-6.2 quota cut, llama.cpp v1.1, Kolibri 1.1 & NVIDIA NOOA. https://clifan.com/journal/ai-builder-brief/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 1,
+      "url": "https://x.com/LifanBuilds/status/2126019712475951183",
+      "parent_url": "https://x.com/LifanBuilds/status/2126019557236363447",
+      "exact_text": "1/ Google Research's Cogentic dropped 6 math/crypto preprints (500 HN pts), led by unconditional subexponential factoring in L_N[1/3, 105] & small-char discrete logs. Not 'Factoring in P'—unrefereed PDFs, no Lean/code & huge constants leave RSA intact. https://github.com/google-research/google-research/tree/master/cogentic_research_papers",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 2,
+      "url": "https://x.com/LifanBuilds/status/2126019922258248099",
+      "parent_url": "https://x.com/LifanBuilds/status/2126019712475951183",
+      "exact_text": "2/ Anthropic migrated its Messages API (1,800x traffic growth) from Python to Rust for ~70% less CPU & ~20% faster median TTFT. Audits found >100 weakened ported tests & 25% live parity; privacy-safe shadow diff fingerprints drove agent fixes. https://www.anthropic.com/research/migrating-api-to-rust",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 3,
+      "url": "https://x.com/LifanBuilds/status/2126019932257484959",
+      "parent_url": "https://x.com/LifanBuilds/status/2126019922258248099",
+      "exact_text": "3/ Anthropic's Luke Sernau & Claude compressed the 17M-line Lean 4 Generalized Riemann Hypothesis proof 225x to 76K compact / 300K readable lines (522 HN pts), building in 1–2h on 12 cores/24 GB RAM. Machine-checked only; unmaintained, no human audit. https://github.com/lsernau/grh-lean",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 4,
+      "url": "https://x.com/LifanBuilds/status/2126019943200415781",
+      "parent_url": "https://x.com/LifanBuilds/status/2126019932257484959",
+      "exact_text": "4/ Google made 8 Workspace MCP servers GA (5K free req/day) & mandated AI agents migrate by Feb 1, 2027, capping derived memory/embeddings at 30d. Catch: GA Gmail MCP lacks send/reply/forward/draft edit (partner-only); Drive lacks share/move. https://workspace.google.com/terms/ai-tools",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 5,
+      "url": "https://x.com/LifanBuilds/status/2126019966671708379",
+      "parent_url": "https://x.com/LifanBuilds/status/2126019943200415781",
+      "exact_text": "5/ vLLM published 3 CVEs today: CVE-2026-137477 (<0.21.0 cross-user KV token leak under async+PP), CVE-2026-137475 (<0.28.0 thinking_token_budget aliasing), & CVE-2026-137476 (<0.30.0 HTTP 400 validation DoS). Upgrade pinned clusters to >=0.30.0. https://github.com/vllm-project/vllm/security/advisories/GHSA-v97p-wpxp-px84",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 6,
+      "url": "https://x.com/LifanBuilds/status/2126019979053318607",
+      "parent_url": "https://x.com/LifanBuilds/status/2126019966671708379",
+      "exact_text": "6/ Cloudflare launched one-toggle Search for Agents (all plans incl. Free): auto-indexes zones behind GET /.well-known/search?q=... returning Markdown chunks & injects agent:endpoint meta/YAML tags under existing WAF/Bot rules. Reranking is opt-in. https://blog.cloudflare.com/search-for-agents/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 7,
+      "url": "https://x.com/LifanBuilds/status/2126019991191625851",
+      "parent_url": "https://x.com/LifanBuilds/status/2126019979053318607",
+      "exact_text": "7/ OpenAI fixed a GPT-6.2 launch billing bug, making Astra hit limits 40% faster & Sol 25% faster (428 HN pts; 1 banked reset, no back-charges) while merging Chat+Work meters for Pro & opening Private Inference alpha. Exact tier caps remain unpublished. https://x.com/OpenAIDevs/status/2125784147889393806",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 8,
+      "url": "https://x.com/LifanBuilds/status/2126020222431998349",
+      "parent_url": "https://x.com/LifanBuilds/status/2126019991191625851",
+      "exact_text": "8/ llama.cpp v1.1.0 ships Inkling 2 / RAON-1-mini / Hy4 flash support, target_bpw/target_size auto-quant, 9 audio/TTS stacks, llama_batch_ext (deprecating llama_batch) & a public AMD Radeon weekly llama-bench dashboard on HF (2 RDNA GPUs so far). https://github.com/ggml-org/llama.cpp/releases/tag/v1.1.0",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 9,
+      "url": "https://x.com/LifanBuilds/status/2126020235836981323",
+      "parent_url": "https://x.com/LifanBuilds/status/2126020222431998349",
+      "exact_text": "9/ Aleph Alpha released Apache-2.0 Kolibri 1.1 (75B/3.44B active DE/EN sparse-attention MoE, 262K/1M ctx): 73.2% vs 66.6% overall & 3.4x lower vLLM cost (0.21 vs 0.72 GPU-h/1K tasks on 8xB200). FP8 needs ~77.6 GB; cap complex tasks <=262K. https://aleph-alpha.com/en/blog/kolibri-1-1/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 10,
+      "url": "https://x.com/LifanBuilds/status/2126020296545300780",
+      "parent_url": "https://x.com/LifanBuilds/status/2126020235836981323",
+      "exact_text": "10/ NVIDIA's NOOA study (arXiv:2611.34147) exposes a context-compaction API directly to models: GPT 6.1 jumps 21%->56% at 32K on OfficeQA Pro v2, Kimi cuts input tokens 41%, & suffix KV reuse trims prefill 15%. Prompt-sensitive; needs custom serving. https://arxiv.org/abs/2611.34147",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    }
+  ]
+}
