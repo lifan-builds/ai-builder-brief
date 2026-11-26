@@ -61,9 +61,12 @@ vapourware.
    - Give each item an 8–14 word concrete headline naming actor/artifact, action, and consequence.
    - Include specific model IDs, package versions, CLI flags, HTTP headers, pricing, or benchmark numbers.
    - Write direct, varied prose: never use `"The strongest/most useful developments concern X, while Y"` mad-lib openers or repeat `"author-run"` / `"vendor-reported"` boilerplate across multiple items.
-4. Score the draft with the deterministic benchmark before publishing:
+4. Score the draft with the deterministic benchmark and run the mechanical
+   Source-vs-Claim citation verifier (via loopback Quotaswitch `gpt-5.4-pro`)
+   before publishing:
    ```bash
    .venv/bin/ai-builder-brief benchmark --brief history/YYYY-MM-DD.md
+   .venv/bin/ai-builder-brief factcheck --brief history/YYYY-MM-DD.md
    ```
 5. Save the briefing and exact X draft before any public action, publish the
    journal entry via `ai-builder-brief journal` (auto-runs sibling

@@ -20,6 +20,12 @@ from ai_builder_brief.benchmark import (
     load_hn_ground_truth,
     render_benchmark_markdown,
 )
+from ai_builder_brief.factcheck import (
+    DEFAULT_FACTCHECK_MODEL,
+    factcheck_brief,
+    render_factcheck_markdown,
+    should_fail_gate,
+)
 from ai_builder_brief.journal import publish_journal
 from ai_builder_brief.pipeline import run_daily
 
@@ -55,6 +61,21 @@ def build_parser() -> argparse.ArgumentParser:
     bench.add_argument("--live-hn", action="store_true", help="Fetch fresh Algolia HN ground truth instead of fixture.")
     bench.add_argument("--json", action="store_true", dest="as_json")
     bench.add_argument("-o", "--output", type=Path, default=None)
+
+    factcheck = subparsers.add_parser("factcheck")
+    factcheck.add_argument("--brief", type=Path, default=None, help="Path to a brief Markdown file or review JSON artifact.")
+    factcheck.add_argument("--date", dest="brief_date", type=date.fromisoformat, default=None, help="Resolve history/YYYY-MM-DD.md.")
+    factcheck.add_argument("--include-watchlist", action="store_true", help="Also verify Watchlist entries.")
+    factcheck.add_argument("--model", default=None, help=f"Responses API model (default: {DEFAULT_FACTCHECK_MODEL}).")
+    factcheck.add_argument("--max-workers", type=int, default=10, help="Concurrent verification workers.")
+    factcheck.add_argument(
+        "--fail-on",
+        choices=("unsupported", "nuance_drift", "none"),
+        default="unsupported",
+        help="Exit non-zero when claims match or exceed this severity (default: unsupported).",
+    )
+    factcheck.add_argument("--json", action="store_true", dest="as_json")
+    factcheck.add_argument("-o", "--output", type=Path, default=None)
     return parser
 
 
@@ -128,6 +149,32 @@ def main(argv: list[str] | None = None) -> int:
             else:
                 print(rendered, end="")
             return 0
+        if args.command == "factcheck":
+            if args.brief is not None:
+                target = args.brief
+            elif args.brief_date is not None:
+                target = Path("history") / f"{args.brief_date.isoformat()}.md"
+            else:
+                raise ValueError("factcheck requires --brief or --date")
+            if not target.is_file():
+                raise FileNotFoundError(f"Fact-check target not found: {target}")
+            report = factcheck_brief(
+                target,
+                include_watchlist=args.include_watchlist,
+                model=args.model,
+                max_workers=max(1, args.max_workers),
+            )
+            rendered = (
+                json.dumps(report.to_dict(), ensure_ascii=False, indent=2) + "\n"
+                if args.as_json
+                else render_factcheck_markdown(report)
+            )
+            if args.output:
+                args.output.parent.mkdir(parents=True, exist_ok=True)
+                args.output.write_text(rendered, encoding="utf-8")
+            else:
+                print(rendered, end="")
+            return 1 if should_fail_gate(report, fail_on=args.fail_on) else 0
         config = load_config(args.config)
         errors = validate_project(config, episode_date=args.episode_date, check_public=args.check_public)
         if errors:

@@ -15,6 +15,9 @@ The daily written briefing uses [`brief_sources.yaml`](brief_sources.yaml) and a
 # Validate the daily brief source catalog
 .venv/bin/python scripts/validate_brief_sources.py
 
+# Run strict Source-vs-Claim citation verification against linked primary sources (Quotaswitch gpt-5.4-pro)
+.venv/bin/ai-builder-brief factcheck --brief history/YYYY-MM-DD.md
+
 # Publish archived briefs into the clifan.com journal HTML tree
 .venv/bin/python -m ai_builder_brief journal --date YYYY-MM-DD --site-root /path/to/lifan-builds
 
