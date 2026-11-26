@@ -61,11 +61,21 @@ customer case studies, and waitlist vapourware.
 2. Verify top candidates against their canonical primary artifacts (`arxiv.org`,
    `github.com/<owner>/<repo>`, release notes, API changelogs, technical posts)
    and check the prior 14 days of `history/*.md` to block drip-feed repeats.
-3. Render `history/YYYY-MM-DD.md` with canonical headings (`# AI Builder Brief — Month D, YYYY`,
-   `Coverage window:`, `Read on the day:`, `## Top 10`, `## Watchlist`,
-   `## Source panel activity`, `## What changed from yesterday`).
-   - Give each item an 8–14 word concrete headline naming actor/artifact, action, and consequence.
-   - Include specific model IDs, package versions, CLI flags, HTTP headers, pricing, or benchmark numbers.
+3. Render `history/YYYY-MM-DD.md` in the **scannable 3-layer format** using
+   canonical headings (`# AI Builder Brief — Month D, YYYY`,
+   `Coverage window:`, `Read on the day:`, `## 30-Second Scan`, `## Top 10`,
+   `## Watchlist`, `## Source panel activity`, `## What changed from yesterday`):
+   - Keep `Read on the day:` to **1–2 crisp sentences (<= 35 words)** stating the single overarching theme—never a 150-word run-on listing all 10 stories.
+   - Follow with a 10-row `## 30-Second Scan` table (`| # | Lane | Story | Key Signal |`) so readers can scan the entire edition in 15 seconds.
+   - Format each Top 10 entry as a **4-line structured card (~90–120 words, never a 200-word brick)**:
+     ```markdown
+     1. **8–14 word concrete headline naming actor/artifact, action, and consequence**
+        `Lane` · Month D · Signal (HN pts / YouTube views / X likes) · [Primary source](https://...)
+        - **What happened:** 1–2 dense sentences with exact model IDs, versions, flags, pricing, or benchmark numbers.
+        - **Builder move:** 1 concrete action a builder should take today.
+        - **Caveat:** 1 specific scope, licensing, or hardware boundary (no boilerplate filler).
+     ```
+   - Keep `## Watchlist` to **crisp 1-line bullets (<= 30 words each)** and wrap verbose collector telemetry under `## Source panel activity` in a `<details><summary>...</summary>` block so the main reading flow ends cleanly.
    - Write direct, varied prose: never use `"The strongest/most useful developments concern X, while Y"` mad-lib openers or repeat `"author-run"` / `"vendor-reported"` boilerplate across multiple items.
 4. Score the draft with the multi-surface deterministic benchmark (Algolia HN +
    curated YouTube builder talks) and run the mechanical Source-vs-Claim

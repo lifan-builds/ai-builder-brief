@@ -13,6 +13,25 @@ _START = "<!-- AI-BUILDER-BRIEF:START -->"
 _END = "<!-- AI-BUILDER-BRIEF:END -->"
 
 
+def _strip_inline_md(value: str) -> str:
+    value = re.sub(r"\*\*([^*]+)\*\*", r"\1", value)
+    value = re.sub(r"`([^`]+)`", r"\1", value)
+    return re.sub(r"\s{2,}", " ", value).strip()
+
+
+def _render_inline_html(value: str) -> str:
+    """Escape text for HTML while converting inline Markdown code spans into <code>."""
+    clean = re.sub(r"\*\*([^*]+)\*\*", r"\1", value)
+    parts = re.split(r"(`[^`]+`)", clean)
+    rendered: list[str] = []
+    for part in parts:
+        if len(part) >= 2 and part.startswith("`") and part.endswith("`"):
+            rendered.append(f"<code>{html.escape(part[1:-1])}</code>")
+        else:
+            rendered.append(html.escape(part))
+    return "".join(rendered)
+
+
 def _compact_summary(value: str, limit: int = 76) -> str:
     value = re.sub(r"\s+\*\*Confidence:.*$", "", value, flags=re.S)
     value = re.sub(r"\s+Confidence:\s+(?:high|medium|low).*$", "", value, flags=re.I | re.S)
@@ -54,7 +73,10 @@ def _extract_links(text: str) -> list[tuple[str, str]]:
     return results
 
 
-def _parse_ranked_items(markdown: str) -> list[tuple[str, str, str, list[tuple[str, str]]]]:
+def _parse_structured_ranked_items(
+    markdown: str,
+) -> list[tuple[str, str, str, str, str, list[tuple[str, str]]]]:
+    """Return `(title, meta, happened, move, caveat, links)` supporting both scannable cards and legacy bricks."""
     lines = markdown.splitlines()
     raw_items: list[tuple[str, list[str]]] = []
     cur_first: str | None = None
@@ -83,16 +105,54 @@ def _parse_ranked_items(markdown: str) -> list[tuple[str, str, str, list[tuple[s
     if cur_first is not None:
         raw_items.append((cur_first, cur_rest))
 
-    parsed_items: list[tuple[str, str, str, list[tuple[str, str]]]] = []
+    parsed_items: list[tuple[str, str, str, str, str, list[tuple[str, str]]]] = []
     for first_line, rest_lines in raw_items[:10]:
         combined = " ".join([first_line, *rest_lines]).strip()
         links = _extract_links(combined)
 
-        # Pattern 1: **Title** — **Date**. Body
+        # Structured scannable card format:
+        # 1. **Headline**
+        #    `Lane` · Date · Signal · [Links]
+        #    - **What happened:** ...
+        #    - **Builder move:** ...
+        #    - **Caveat:** ...
+        m_card_title = re.match(r"^\*\*(.+?)\*\*$", first_line)
+        has_structured_bullets = any(
+            re.match(r"^-\s+\*\*(?:What happened|Builder move|Caveat):\*\*", ln, re.I)
+            for ln in rest_lines
+        )
+        if m_card_title and has_structured_bullets:
+            story_title = _strip_inline_md(m_card_title.group(1))
+            meta_parts: list[str] = []
+            happened = ""
+            move = ""
+            caveat = ""
+            for ln in rest_lines:
+                m_h = re.match(r"^-\s+\*\*What happened:\*\*\s*(.+)$", ln, re.I)
+                m_m = re.match(r"^-\s+\*\*Builder move:\*\*\s*(.+)$", ln, re.I)
+                m_c = re.match(r"^-\s+\*\*Caveat:\*\*\s*(.+)$", ln, re.I)
+                if m_h:
+                    happened = m_h.group(1).strip()
+                elif m_m:
+                    move = m_m.group(1).strip()
+                elif m_c:
+                    caveat = m_c.group(1).strip()
+                elif not ln.startswith("- "):
+                    cleaned_meta = re.sub(r"\[[^\]]+\]\(https?://[^)\s]+\)", "", ln)
+                    cleaned_meta = re.sub(r"https?://[^\s)]+", "", cleaned_meta)
+                    cleaned_meta = _strip_inline_md(cleaned_meta)
+                    cleaned_meta = re.sub(r"(?:\s*·\s*)+$", "", cleaned_meta).strip(" ·")
+                    if cleaned_meta:
+                        meta_parts.append(cleaned_meta)
+            story_meta = " · ".join(meta_parts) or "Field note"
+            parsed_items.append((story_title, story_meta, happened, move, caveat, links))
+            continue
+
+        # Legacy Pattern 1: **Title** — **Date**. Body
         m1 = re.match(r"^\*\*(.+?)\*\*\s+[—–-]\s+\*\*(.+?)\*\*\.\s*(.*)$", combined)
-        # Pattern 2: **Title** (Date). Body
+        # Legacy Pattern 2: **Title** (Date). Body
         m2 = re.match(r"^\*\*(.+?)\*\*\s*\(([^)]+)\)\.\s*(.*)$", combined)
-        # Pattern 3: **Title**. Body
+        # Legacy Pattern 3: **Title**. Body
         m3 = re.match(r"^\*\*(.+?)\*\*\.\s*(.*)$", combined)
 
         if m1:
@@ -103,7 +163,6 @@ def _parse_ranked_items(markdown: str) -> list[tuple[str, str, str, list[tuple[s
             story_title, story_body = m3.groups()
             story_date = "Brief item"
         elif rest_lines and not first_line.startswith("**"):
-            # Pattern 4: Plain title on line 1, followed by indented paragraphs
             story_title = first_line.strip("* ")
             rest_text = " ".join(rest_lines)
             m_date = re.match(
@@ -116,11 +175,25 @@ def _parse_ranked_items(markdown: str) -> list[tuple[str, str, str, list[tuple[s
             else:
                 story_date, story_body = "Field note", rest_text
         else:
-            story_title, story_date, story_body = re.sub(r"\*\*([^*]+)\*\*", r"\1", first_line), "Field note", " ".join(rest_lines)
+            story_title, story_date, story_body = _strip_inline_md(first_line), "Field note", " ".join(rest_lines)
 
-        parsed_items.append((story_title.strip(), story_date.strip(), _compact_summary(story_body), links))
+        parsed_items.append((
+            _strip_inline_md(story_title),
+            _strip_inline_md(story_date),
+            _compact_summary(story_body),
+            "",
+            "",
+            links,
+        ))
 
     return parsed_items
+
+
+def _parse_ranked_items(markdown: str) -> list[tuple[str, str, str, list[tuple[str, str]]]]:
+    return [
+        (title, meta, happened, links)
+        for title, meta, happened, _, _, links in _parse_structured_ranked_items(markdown)
+    ]
 
 
 def _top_ten_body(markdown: str) -> tuple[str, str, str, int]:
@@ -130,20 +203,32 @@ def _top_ten_body(markdown: str) -> tuple[str, str, str, int]:
     intro = ""
     for line in lines:
         if line.strip().startswith("Read on the day:"):
-            intro = _compact_summary(line.split(":", 1)[1].strip(), 42)
+            intro = _strip_inline_md(_compact_summary(line.split(":", 1)[1].strip(), 42))
             break
 
-    items = _parse_ranked_items(markdown)
+    items = _parse_structured_ranked_items(markdown)
     cards: list[str] = []
-    for rank, (story_title, story_date, summary, links) in enumerate(items[:10], start=1):
+    for rank, (story_title, story_date, happened, move, caveat, links) in enumerate(items[:10], start=1):
         source_html = "".join(
-            f'<a class="source-chip" href="{html.escape(url, quote=True)}" rel="noopener">{html.escape(label)} ↗</a>'
+            f'<a class="source-chip" href="{html.escape(url, quote=True)}" rel="noopener">{html.escape(_strip_inline_md(label))} ↗</a>'
             for label, url in links
+        )
+        move_html = (
+            f'<p class="story-move"><strong>Builder move:</strong> {_render_inline_html(move)}</p>'
+            if move
+            else ""
+        )
+        caveat_html = (
+            f'<p class="story-caveat"><strong>Caveat:</strong> {_render_inline_html(caveat)}</p>'
+            if caveat
+            else ""
         )
         cards.append(
             f'<article class="story-card"><div class="story-rank">{rank:02d}</div>'
-            f'<div class="story-content"><p class="story-meta">TOP 10 · {html.escape(story_date)}</p>'
-            f'<h2>{html.escape(story_title)}</h2><p class="story-summary">{html.escape(summary)}</p>'
+            f'<div class="story-content"><p class="story-meta">TOP 10 · {html.escape(_strip_inline_md(story_date))}</p>'
+            f'<h2>{_render_inline_html(story_title)}</h2>'
+            f'<p class="story-summary">{_render_inline_html(happened)}</p>'
+            f'{move_html}{caveat_html}'
             f'<div class="story-links">{source_html}</div></div></article>'
         )
     body = '<section class="story-grid" aria-label="Top 10 stories">' + "".join(cards) + "</section>"

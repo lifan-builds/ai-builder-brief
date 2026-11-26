@@ -101,3 +101,44 @@ def test_top_ten_body_parses_parenthetical_and_multiline_legacy_formats() -> Non
     assert "Ray Serve latency routing" in body_multi
     assert "docs.ray.io" in body_multi
 
+
+def test_top_ten_body_renders_scannable_structured_cards_and_inline_code() -> None:
+    title, intro, body, count = _top_ten_body(
+        """# AI Builder Brief — November 26, 2026
+
+Coverage window: November 23, 18:00 UTC–November 26, 18:00 UTC, 2026.
+
+Read on the day: Verification discipline defines today's `agent` cycle.
+
+## 30-Second Scan
+
+| # | Lane | Story | Key Signal |
+| :-: | --- | --- | --- |
+| 1 | `Infra` | Anthropic Rust rewrite | `~70%` less CPU |
+
+## Top 10
+
+1. **Anthropic migrates its Messages API from Python to Rust**
+   `Infra & Agents` · Nov 25 · `@ClaudeDevs` `5.7K` likes · [Engineering post](https://www.anthropic.com/research/migrating-api-to-rust)
+   - **What happened:** Claude drafted the Rust request path and shadow diffs cut CPU `~70%` and median TTFT `~20%`.
+   - **Builder move:** Build production shadow comparators before agent rewrites.
+   - **Caveat:** CPU tracks one region only.
+
+## Watchlist
+
+- **Later item:** stays private.
+"""
+    )
+    assert title == "AI Builder Brief — November 26, 2026"
+    assert intro == "Verification discipline defines today's agent cycle."
+    assert "`" not in intro
+    assert count == 1
+    assert "TOP 10 · Infra &amp; Agents · Nov 25 · @ClaudeDevs 5.7K likes" in body
+    assert "<code>~70%</code>" in body
+    assert "`~70%`" not in body
+    assert 'class="story-move"' in body
+    assert "Build production shadow comparators before agent rewrites." in body
+    assert 'class="story-caveat"' in body
+    assert "CPU tracks one region only." in body
+    assert "Watchlist" not in body
+
