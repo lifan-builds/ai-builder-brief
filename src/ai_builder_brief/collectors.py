@@ -1252,13 +1252,18 @@ def _fetch_youtube_transcript_fast(
     timeout_seconds: int = 15,
     max_transcript_chars: int = 40_000,
 ) -> str:
-    """Fetch clean, deduplicated English/Chinese transcript via youtube_transcript_api (~1.5s, avoids yt-dlp 429)."""
+    """Fetch clean, deduplicated English/Chinese transcript via youtube_transcript_api (~1.3s, avoids yt-dlp 429)."""
     executable = shutil.which("youtube_transcript_api")
     if not executable or not video_id:
         return ""
     try:
         proc = subprocess.run(
-            [executable, "--languages", "en", "en-US", "en-GB", "zh-Hans", "zh", "--format", "text", "--", video_id],
+            [
+                executable,
+                "--languages", "en", "en-US", "en-GB", "zh-Hans", "zh-Hant", "zh",
+                "--format", "text",
+                "--", video_id,
+            ],
             check=True,
             capture_output=True,
             text=True,
@@ -1271,6 +1276,21 @@ def _fetch_youtube_transcript_fast(
         return ""
 
 
+def _fetch_youtube_oembed(canonical_url: str, *, timeout: int = 8) -> dict[str, str]:
+    """Fast zero-key oEmbed fallback for YouTube title and channel when yt-dlp metadata fails."""
+    try:
+        params = urlencode({"url": canonical_url, "format": "json"})
+        payload = json.loads(_request(f"https://www.youtube.com/oembed?{params}", timeout=timeout))
+        if isinstance(payload, dict):
+            return {
+                "title": str(payload.get("title") or "").strip(),
+                "channel": str(payload.get("author_name") or "").strip(),
+            }
+    except Exception:
+        pass
+    return {}
+
+
 def fetch_youtube_transcript_and_meta(
     video_url: str,
     *,
@@ -1278,12 +1298,14 @@ def fetch_youtube_transcript_and_meta(
     timeout_seconds: int = 25,
     max_transcript_chars: int = 40_000,
 ) -> dict[str, Any]:
-    """Fetch YouTube metadata/links (yt-dlp --skip-download) and clean transcript (youtube_transcript_api first)."""
+    """Fetch YouTube metadata/links and clean transcript concurrently (with oEmbed + yt-dlp fallbacks)."""
     canonical = canonical_source_url(video_url) or video_url
     vid = extract_youtube_video_id(canonical)
     executable = shutil.which("yt-dlp")
-    info: dict[str, Any] = {}
-    if executable:
+
+    def _run_ytdlp_meta() -> dict[str, Any]:
+        if not executable:
+            return {}
         try:
             meta_proc = subprocess.run(
                 [executable, "--dump-single-json", "--skip-download", "--no-warnings", canonical],
@@ -1292,20 +1314,35 @@ def fetch_youtube_transcript_and_meta(
                 text=True,
                 timeout=timeout_seconds,
             )
-            info = json.loads(meta_proc.stdout)
+            return json.loads(meta_proc.stdout)
         except Exception as error:
             log.warning("yt-dlp metadata fetch failed for %s: %s", canonical, error)
+            return {}
 
-    vid = str(info.get("id") or vid)
-    description = str(info.get("description") or "").strip()
-    linked_urls = _extract_description_artifact_urls(description)
+    info: dict[str, Any] = {}
     transcript_text = ""
     if include_transcript and vid:
-        transcript_text = _fetch_youtube_transcript_fast(
-            vid,
-            timeout_seconds=min(15, timeout_seconds),
-            max_transcript_chars=max_transcript_chars,
-        )
+        with ThreadPoolExecutor(max_workers=2, thread_name_prefix="yt-fetch") as pool:
+            meta_fut = pool.submit(_run_ytdlp_meta)
+            tr_fut = pool.submit(
+                _fetch_youtube_transcript_fast,
+                vid,
+                timeout_seconds=min(15, timeout_seconds),
+                max_transcript_chars=max_transcript_chars,
+            )
+            info = meta_fut.result()
+            transcript_text = tr_fut.result()
+    else:
+        info = _run_ytdlp_meta()
+
+    vid = str(info.get("id") or vid)
+    if not info.get("title"):
+        oembed = _fetch_youtube_oembed(canonical)
+        if oembed:
+            info = {**oembed, **info}
+
+    description = str(info.get("description") or "").strip()
+    linked_urls = _extract_description_artifact_urls(description)
     has_en_subs = bool(
         (info.get("subtitles") or {}).get("en")
         or (info.get("automatic_captions") or {}).get("en")
