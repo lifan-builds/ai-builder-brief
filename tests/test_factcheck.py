@@ -571,3 +571,21 @@ def test_select_source_excerpt_preserves_opening_and_claim_anchored_paragraphs()
     assert "Title: OCRia-1 release overview." in excerpt
     assert "85.2" in excerpt
     assert "$2M" in excerpt
+
+
+def test_fetch_source_text_reads_youtube_transcript_and_metadata() -> None:
+    fetched = fetch_source_text(
+        "https://youtu.be/O_zcc6Xl12g",
+        youtube_fetcher=lambda url: {
+            "title": "All Code Is Slop (Except Mine) — Lauren Tan",
+            "channel": "AI Engineer",
+            "published_at": "2026-11-14T12:00:00Z",
+            "view_count": 1823706,
+            "description": "Deterministic agent verification loops and pstack skills.",
+            "transcript_text": "Turn repeated PR comments into permanent checks so agents self-verify before merge.",
+        },
+    )
+    assert fetched.status == "fetched"
+    assert fetched.fetched_url == "https://www.youtube.com/watch?v=O_zcc6Xl12g"
+    assert "permanent checks" in fetched.text
+    assert "1823706" in fetched.text

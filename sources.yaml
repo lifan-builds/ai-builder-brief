@@ -77,57 +77,57 @@ github:
     - {repository: vercel/ai, product_family: vercel-ai-sdk}
     - {repository: BerriAI/litellm, product_family: litellm}
 
+youtube_channels:
+  # Tier A: Elite practitioner stages, agentic-coding workflow leaders, and technical engineering channels
+  - {name: AI Engineer, channel_id: UCLKPca3kwwd-B59HNr-_lvA, authority: independent, organization: AI Engineer, category: developer tools, min_views: 15000, breakout_views: 45000, score: 86}
+  - {name: Matt Pocock, channel_id: UCswG6FSbgZjbWtdf_hMLaow, authority: independent, organization: Matt Pocock, category: developer tools, min_views: 25000, breakout_views: 75000, score: 86}
+  - {name: Andrej Karpathy, channel_id: UCXUPKJO5MZQN11PqgIvyuvQ, authority: independent, organization: Andrej Karpathy, category: research, min_views: 10000, breakout_views: 50000, always_include_in_window: true, score: 92}
+  - {name: Cursor, channel_id: UC6YYHJzM6PhZ2Yey9BQiUaw, authority: primary, organization: Cursor, category: developer tools, min_views: 5000, breakout_views: 25000, score: 86}
+  - {name: Latent Space Podcast, channel_id: UCxBcwypKK-W3GHd_RZ9FZrQ, authority: independent, organization: Latent Space, category: developer tools, min_views: 10000, breakout_views: 35000, score: 84}
+  - {name: IndyDevDan, channel_id: UC_x36zCEGilGpB1m-V4gmjg, authority: independent, organization: IndyDevDan, category: developer tools, min_views: 15000, breakout_views: 45000, score: 82}
+  - {name: Cloudflare Developers, channel_id: UC3QIolTSR29ba4_u15vtEUQ, authority: primary, organization: Cloudflare, category: infrastructure, topic_filter: ai, min_views: 4000, breakout_views: 20000, score: 84}
+  - {name: Hugging Face, channel_id: UCHlNU7kIZhRgSbhHvFoy72w, authority: primary, organization: Hugging Face, category: open source, min_views: 5000, breakout_views: 25000, score: 84}
+  # Tier B: High-reach founder/lab stages (strict title AI topic + higher velocity floor to drop commercials/non-AI videos)
+  - {name: Y Combinator, channel_id: UCcefcZRL2oaA_uBNeo5UOWg, authority: independent, organization: Y Combinator, category: developer tools, topic_filter: ai, title_topic_filter: true, min_views: 40000, breakout_views: 100000, score: 80}
+  - {name: Anthropic, channel_id: UCrDwWp7EBBv4NwvScIpBDOA, authority: primary, organization: Anthropic, category: developer tools, topic_filter: ai, title_topic_filter: true, min_views: 40000, breakout_views: 120000, score: 82}
+  - {name: Dwarkesh Patel, channel_id: UCXl4i9dYBrFOabk0xGmbkRA, authority: independent, organization: Dwarkesh Patel, category: research, topic_filter: ai, title_topic_filter: true, min_views: 50000, breakout_views: 150000, score: 82}
+  - {name: No Priors, channel_id: UCSI7h9hydQ40K5MJHnCrQvw, authority: independent, organization: No Priors, category: developer tools, topic_filter: ai, title_topic_filter: true, min_views: 20000, breakout_views: 60000, score: 78}
+
 x_panel:
   enabled: true
   topic_filter: ai
+  # Keep strictly <=30 high-signal X-first accounts (within X's single-burst rate limit).
+  # Corporate blogs already covered via RSS/Atom/GitHub (OpenAI, DeepMind, Meta, Mistral, NVIDIA, vLLM, Ollama, Cursor, Cloudflare, HF)
+  # are omitted here so elite hands-on builders and X-first dev accounts never hit rate-limit starvation.
   accounts:
-    # First-party lab and developer-product channels.
-    - {account: OpenAI, organization: OpenAI}
-    - {account: OpenAIDevs, organization: OpenAI}
-    - {account: claudeai, organization: Anthropic}
-    - {account: anthropicai, organization: Anthropic}
-    - {account: GoogleDeepMind, organization: Google DeepMind}
-    - {account: GoogleAIStudio, organization: Google}
-    - {account: AIatMeta, organization: Meta}
-    - {account: mistralai, organization: Mistral AI}
-    - {account: cohere, organization: Cohere}
-    - {account: SpaceXAI, organization: xAI, required: false}
-    - {account: deepseek_ai, organization: DeepSeek}
-    - {account: Alibaba_Qwen, organization: Qwen}
-    - {account: Kimi_Moonshot, organization: Moonshot AI}
-    - {account: MiniMax_AI, organization: MiniMax}
-    - {account: huggingface, organization: Hugging Face}
-    - {account: NVIDIAAI, organization: NVIDIA}
-    - {account: vllm_project, organization: vLLM}
-    - {account: ollama, organization: Ollama}
-    - {account: cursor_ai, organization: Cursor}
-    - {account: CloudflareDev, organization: Cloudflare, required: false}
+    # 1. High-signal hands-on AI builders & workflow leaders (suggestions + YouTube talk amplifiers).
+    - {account: poteto, organization: SpaceXAI, required: false, tier: hands_on_builder}
+    - {account: dexhorthy, organization: Factory, required: false, tier: hands_on_builder}
+    - {account: mattpocockuk, required: false, tier: hands_on_builder}
+    - {account: mitsuhiko, organization: Earendil, required: false, tier: hands_on_builder}
+    - {account: steipete, required: false, tier: hands_on_builder}
+    - {account: Lethain, required: false, tier: hands_on_builder}
+    - {account: jarredsumner, organization: Anthropic, required: false, tier: hands_on_builder}
+    - {account: mitchellh, required: false, tier: hands_on_builder}
+    - {account: GeoffreyHuntley, required: false, tier: hands_on_builder}
+    - {account: karpathy, required: false, tier: hands_on_builder}
+    - {account: simonw, required: false, tier: hands_on_builder}
+    - {account: swyx, required: false, tier: hands_on_builder}
+    - {account: HamelHusain, required: false, tier: hands_on_builder}
 
-    # Hands-on product leads and maintainers.
-    - {account: sama, organization: OpenAI}
-    - {account: pvncher, organization: OpenAI}
-    - {account: alexalbert__, organization: Anthropic, required: false}
-    - {account: trq212, organization: Anthropic}
-    - {account: bcherny, organization: Anthropic}
-    - {account: felixrieseberg, organization: Anthropic, required: false}
-    - {account: nateparrott, organization: Anthropic}
-    - {account: demishassabis, organization: Google DeepMind}
-    - {account: OfficialLoganK, organization: Google}
-    - {account: Thom_Wolf, organization: Hugging Face}
-    - {account: ClementDelangue, organization: Hugging Face}
-    - {account: ggerganov, organization: ggml.org, required: false}
-    - {account: hwchase17, organization: LangChain}
-    - {account: jerryjliu0, organization: LlamaIndex}
-
-    # Independent interpreters and primary researchers.
-    - {account: karpathy, required: false}
-    - {account: NoamShazeer, organization: OpenAI, required: false}
-    - {account: simonw, required: false}
-    - {account: swyx, required: false}
-    - {account: emollick, required: false}
-    - {account: ylecun, organization: Meta, required: false}
-    - {account: percyliang, organization: Stanford, required: false}
-    - {account: DrJimFan, organization: NVIDIA, required: false}
-    - {account: lilianweng, required: false}
-    - {account: HamelHusain, required: false}
-    - {account: sh_reya, required: false}
+    # 2. Fastest first-party developer product & engineering lead accounts (break features on X before blogs).
+    - {account: OpenAIDevs, organization: OpenAI, tier: lab_official}
+    - {account: ClaudeDevs, organization: Anthropic, tier: lab_official}
+    - {account: claudeai, organization: Anthropic, tier: lab_official}
+    - {account: anthropicai, organization: Anthropic, tier: lab_official}
+    - {account: GoogleAIStudio, organization: Google, tier: lab_official}
+    - {account: Alibaba_Qwen, organization: Qwen, tier: lab_official}
+    - {account: deepseek_ai, organization: DeepSeek, tier: lab_official}
+    - {account: Kimi_Moonshot, organization: Moonshot AI, tier: lab_official}
+    - {account: unslothai, organization: Unsloth, required: false, tier: lab_official}
+    - {account: bcherny, organization: Anthropic, tier: product_lead}
+    - {account: trq212, organization: OpenAI, tier: product_lead}
+    - {account: pvncher, organization: OpenAI, tier: product_lead}
+    - {account: sama, organization: OpenAI, tier: product_lead}
+    - {account: OfficialLoganK, organization: Google, tier: product_lead}
+    - {account: jerryjliu0, organization: LlamaIndex, tier: product_lead}

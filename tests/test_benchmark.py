@@ -13,6 +13,8 @@ from ai_builder_brief.benchmark import (
     evaluate_history_corpus,
     evaluate_pipeline_candidates,
     extract_artifact_keys,
+    fetch_algolia_hn_ground_truth,
+    fetch_youtube_builder_ground_truth,
     load_hn_ground_truth,
     parse_coverage_window,
     render_benchmark_markdown,
@@ -196,3 +198,95 @@ def test_committed_ground_truth_fixture_loads_and_renders_corpus_report() -> Non
     assert "# AI Builder Brief Benchmark Report" in md
     assert "2026-11-17" in md
     assert json.loads(json.dumps(report))["averages"]["composite_score"] > 0
+
+
+def test_benchmark_filters_non_ai_github_repos_canonicalizes_youtube_and_skips_retired_top10(tmp_path: Path) -> None:
+    class _Resp:
+        def __init__(self, body: bytes) -> None:
+            self._body = body
+        def read(self) -> bytes:
+            return self._body
+        def __enter__(self):
+            return self
+        def __exit__(self, *args):
+            return False
+
+    hn_payload = json.dumps({
+        "nbPages": 1,
+        "hits": [
+            {
+                "objectID": "1",
+                "title": "jQuery 4.1.0",
+                "url": "https://github.com/jquery/jquery/releases/tag/4.1.0",
+                "points": 381,
+                "num_comments": 120,
+                "created_at": "2026-11-24T12:00:00Z",
+                "created_at_i": int(datetime(2026, 11, 24, 12, tzinfo=UTC).timestamp()),
+            },
+            {
+                "objectID": "2",
+                "title": "GLM-5.4 open-weights coding model",
+                "url": "https://github.com/zai-org/GLM-5.4",
+                "points": 1100,
+                "num_comments": 400,
+                "created_at": "2026-11-24T13:00:00Z",
+                "created_at_i": int(datetime(2026, 11, 24, 13, tzinfo=UTC).timestamp()),
+            },
+        ],
+    }).encode("utf-8")
+    gt = fetch_algolia_hn_ground_truth(
+        start=datetime(2026, 11, 23, tzinfo=UTC),
+        end=datetime(2026, 11, 25, tzinfo=UTC),
+        opener=lambda req, timeout=20: _Resp(hn_payload),
+    )
+    assert [s.title for s in gt] == ["GLM-5.4 open-weights coding model"]
+    assert canonicalize_url("https://youtu.be/O_zcc6Xl12g?t=10") == "youtube.com/watch?v=o_zcc6xl12g"
+    assert "yt:o_zcc6xl12g" in extract_artifact_keys(["https://www.youtube.com/watch?v=O_zcc6Xl12g"])
+
+    sources_yaml = tmp_path / "sources.yaml"
+    sources_yaml.write_text(
+        "youtube_channels:\n  - {name: AI Engineer, channel_id: UC123, min_views: 15000}\n",
+        encoding="utf-8",
+    )
+    yt_xml = b"""<feed xmlns="http://www.w3.org/2005/Atom" xmlns:yt="http://www.youtube.com/xml/schemas/2015" xmlns:media="http://search.yahoo.com/mrss/">
+      <entry>
+        <yt:videoId>O_zcc6Xl12g</yt:videoId>
+        <title>All Code Is Slop (Except Mine) - Lauren Tan</title>
+        <published>2026-11-24T14:00:00+00:00</published>
+        <media:group><media:community><media:statistics views="250000"/></media:community></media:group>
+      </entry>
+    </feed>"""
+    yt_gt = fetch_youtube_builder_ground_truth(
+        sources_yaml,
+        start=datetime(2026, 11, 23, tzinfo=UTC),
+        end=datetime(2026, 11, 25, tzinfo=UTC),
+        opener=lambda req, timeout=15: _Resp(yt_xml),
+    )
+    assert len(yt_gt) == 1
+    assert yt_gt[0].hn_id == "yt-O_zcc6Xl12g"
+
+    day1 = tmp_path / "2026-11-24.md"
+    day1.write_text(
+        "# AI Builder Brief — November 24, 2026\n\n"
+        "Coverage window: November 22, 18:00 UTC–November 24, 18:00 UTC, 2026.\n\n"
+        "Read on the day: Open-weight coding loops advance.\n\n"
+        "## Top 10\n\n"
+        "1. **GLM-5.4 open-weights coding model launches with 100K context** — **November 24, 2026**. "
+        "Benchmarks show 82.1% pass rate across coding tasks; test locally, however 8-GPU serving is needed. [Repo](https://github.com/zai-org/GLM-5.4).\n\n"
+        "## Watchlist\n\n- None.\n",
+        encoding="utf-8",
+    )
+    day2 = tmp_path / "2026-11-25.md"
+    day2.write_text(
+        "# AI Builder Brief — November 25, 2026\n\n"
+        "Coverage window: November 23, 18:00 UTC–November 25, 18:00 UTC, 2026.\n\n"
+        "Read on the day: Deterministic agent guardrails move mainstream.\n\n"
+        "## Top 10\n\n"
+        "1. **Lauren Tan details deterministic coding-agent verification loops in AI Engineer talk** — **November 24, 2026**. "
+        "Over 250K views on converting review comments into repeatable harness checks; audit PR loops today, though setup cost is nontrivial. [Talk](https://youtu.be/O_zcc6Xl12g).\n\n"
+        "## Watchlist\n\n- None.\n",
+        encoding="utf-8",
+    )
+    eval_day2 = evaluate_brief_markdown(day2, [*gt, *yt_gt], prior_briefs=[day1])
+    assert eval_day2.must_catch_recall == 100.0
+    assert eval_day2.missed_ground_truth == ()

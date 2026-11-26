@@ -11,16 +11,18 @@ import math
 import re
 import shutil
 import ssl
+import statistics
 import subprocess
+import tempfile
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
 from pathlib import Path
 from typing import Any, Callable, Iterable
-from urllib.parse import urlencode, urljoin, urlparse
+from urllib.parse import parse_qs, urlencode, urljoin, urlparse
 from urllib.request import Request, urlopen
 
 import certifi
@@ -165,11 +167,36 @@ def _request(url: str, *, opener: Callable[..., Any] = urlopen, timeout: int = 3
     raise RuntimeError(f"empty response from {url}")
 
 
-def canonical_source_url(url: str) -> str:
-    """Canonicalize URLs across tracking params and arXiv/HF paper mirrors."""
+_YOUTUBE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
+
+
+def extract_youtube_video_id(url: str) -> str:
+    """Extract canonical 11-character YouTube video ID from watch/short/live/youtu.be URLs."""
     raw = (url or "").strip()
     if not raw:
         return ""
+    parsed = urlparse(raw)
+    host = parsed.netloc.lower().removeprefix("www.").removeprefix("m.")
+    parts = [p for p in parsed.path.split("/") if p]
+    candidate = ""
+    if host == "youtu.be" and parts:
+        candidate = parts[0]
+    elif host in {"youtube.com", "youtube-nocookie.com"}:
+        if parts and parts[0] == "watch":
+            candidate = (parse_qs(parsed.query).get("v") or [""])[0]
+        elif len(parts) >= 2 and parts[0] in {"shorts", "live", "embed", "v"}:
+            candidate = parts[1]
+    return candidate if _YOUTUBE_ID_RE.match(candidate) else ""
+
+
+def canonical_source_url(url: str) -> str:
+    """Canonicalize URLs across tracking params, YouTube video variants, and arXiv/HF paper mirrors."""
+    raw = (url or "").strip()
+    if not raw:
+        return ""
+    yt_id = extract_youtube_video_id(raw)
+    if yt_id:
+        return f"https://www.youtube.com/watch?v={yt_id}"
     parsed = urlparse(raw)
     scheme = "https" if parsed.scheme in {"http", "https"} else parsed.scheme
     host = parsed.netloc.lower().removeprefix("www.")
@@ -1050,6 +1077,19 @@ def collect_sources(
                 opener=opener,
             )
         )
+    youtube_channels = raw.get("youtube_channels") or []
+    if youtube_channels:
+        try:
+            collected.extend(
+                collect_youtube_channels(
+                    list(youtube_channels),
+                    start=start,
+                    end=end,
+                    opener=opener,
+                )
+            )
+        except Exception as error:
+            log.warning("source failed: YouTube channels: %s", error)
     x_panel = raw.get("x_panel") or {}
     x_health = XPanelHealth(0, 0, 0, 0)
     if x_panel.get("enabled") and x_panel.get("accounts"):
@@ -1065,7 +1105,7 @@ def collect_sources(
         raise RuntimeError("all configured sources failed or returned no items in the rolling window")
     configured_organizations = {
         str(definition.get("organization") or definition.get("name") or "")
-        for section in ("feeds", "page_indexes")
+        for section in ("feeds", "page_indexes", "youtube_channels")
         for definition in raw.get(section, [])
         if isinstance(definition, dict)
     }
@@ -1147,6 +1187,366 @@ def collect_github_momentum(
     return items
 
 
+_SKIP_DESCRIPTION_HOSTS = {
+    "youtube.com", "youtu.be", "x.com", "twitter.com", "linkedin.com", "instagram.com",
+    "tiktok.com", "facebook.com", "discord.gg", "discord.com", "t.co", "bit.ly",
+    "open.spotify.com", "podcasts.apple.com", "lu.ma",
+}
+_SKIP_RESOLVED_X_HOSTS = {
+    "x.com", "twitter.com", "pic.x.com", "pbs.twimg.com", "video.twimg.com",
+    "t.co", "instagram.com", "tiktok.com", "facebook.com",
+}
+
+
+def _clean_vtt_transcript(raw_vtt: str, *, max_chars: int = 40_000) -> str:
+    """Strip WebVTT headers, timestamps, tags, and rolling caption duplicates into clean prose."""
+    lines: list[str] = []
+    last = ""
+    for raw_line in raw_vtt.splitlines():
+        line = raw_line.strip()
+        if (
+            not line
+            or line.startswith("WEBVTT")
+            or line.startswith("Kind:")
+            or line.startswith("Language:")
+            or line.startswith("NOTE")
+            or "-->" in line
+            or line.isdigit()
+        ):
+            continue
+        cleaned = re.sub(r"<[^>]+>", "", line)
+        cleaned = html.unescape(re.sub(r"\s+", " ", cleaned)).strip()
+        if not cleaned or cleaned == last:
+            continue
+        if last and cleaned.startswith(last):
+            lines[-1] = cleaned
+        else:
+            lines.append(cleaned)
+        last = cleaned
+        if sum(len(part) + 1 for part in lines) >= max_chars:
+            break
+    return " ".join(lines)[:max_chars].strip()
+
+
+def _extract_description_artifact_urls(description: str) -> list[str]:
+    urls: list[str] = []
+    seen: set[str] = set()
+    for match in re.finditer(r"https?://[^\s\)\]>\"']+", description or ""):
+        raw_url = match.group(0).rstrip(".,;:!)")
+        parsed = urlparse(raw_url)
+        host = parsed.netloc.lower().removeprefix("www.")
+        if not host or any(host == skip or host.endswith(f".{skip}") for skip in _SKIP_DESCRIPTION_HOSTS):
+            continue
+        canon = canonical_source_url(raw_url)
+        if canon and canon not in seen:
+            seen.add(canon)
+            urls.append(raw_url)
+        if len(urls) >= 6:
+            break
+    return urls
+
+
+def fetch_youtube_transcript_and_meta(
+    video_url: str,
+    *,
+    include_transcript: bool = True,
+    timeout_seconds: int = 25,
+    max_transcript_chars: int = 40_000,
+) -> dict[str, Any]:
+    """Fetch YouTube video metadata, linked artifacts, and English captions via yt-dlp without downloading audio."""
+    executable = shutil.which("yt-dlp")
+    if not executable:
+        return {}
+    canonical = canonical_source_url(video_url) or video_url
+    try:
+        meta_proc = subprocess.run(
+            [executable, "--dump-single-json", "--skip-download", "--no-warnings", canonical],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+        )
+        info = json.loads(meta_proc.stdout)
+    except Exception as error:
+        log.warning("yt-dlp metadata fetch failed for %s: %s", canonical, error)
+        return {}
+
+    description = str(info.get("description") or "").strip()
+    linked_urls = _extract_description_artifact_urls(description)
+    transcript_text = ""
+    has_en_subs = bool(
+        (info.get("subtitles") or {}).get("en")
+        or (info.get("automatic_captions") or {}).get("en")
+        or any(k.startswith("en-") for k in (info.get("subtitles") or {}))
+        or any(k.startswith("en-") for k in (info.get("automatic_captions") or {}))
+    )
+    if include_transcript and has_en_subs:
+        try:
+            with tempfile.TemporaryDirectory(prefix="abb-yt-") as tmpdir:
+                out_tpl = str(Path(tmpdir) / "video.%(ext)s")
+                subprocess.run(
+                    [
+                        executable,
+                        "--skip-download",
+                        "--no-warnings",
+                        "--write-sub",
+                        "--write-auto-sub",
+                        "--sub-lang",
+                        "en.*",
+                        "--sub-format",
+                        "vtt",
+                        "-o",
+                        out_tpl,
+                        canonical,
+                    ],
+                    check=False,
+                    capture_output=True,
+                    text=True,
+                    timeout=timeout_seconds,
+                )
+                vtt_files = sorted(Path(tmpdir).glob("*.vtt"))
+                if vtt_files:
+                    transcript_text = _clean_vtt_transcript(
+                        vtt_files[0].read_text(encoding="utf-8", errors="replace"),
+                        max_chars=max_transcript_chars,
+                    )
+        except Exception as error:
+            log.warning("yt-dlp caption fetch failed for %s: %s", canonical, error)
+
+    upload_raw = str(info.get("upload_date") or "").strip()
+    published_at = ""
+    if len(upload_raw) == 8 and upload_raw.isdigit():
+        published_at = f"{upload_raw[:4]}-{upload_raw[4:6]}-{upload_raw[6:8]}T12:00:00Z"
+
+    return {
+        "video_id": str(info.get("id") or extract_youtube_video_id(canonical)),
+        "title": str(info.get("title") or "").strip(),
+        "channel": str(info.get("channel") or info.get("uploader") or "").strip(),
+        "published_at": published_at,
+        "view_count": int(info.get("view_count") or 0),
+        "like_count": int(info.get("like_count") or 0),
+        "comment_count": int(info.get("comment_count") or 0),
+        "duration": int(info.get("duration") or 0),
+        "description": description,
+        "linked_urls": linked_urls,
+        "transcript_text": transcript_text,
+    }
+
+
+def collect_youtube_channels(
+    channels: list[Any],
+    *,
+    start: datetime,
+    end: datetime,
+    opener: Callable[..., Any] = urlopen,
+    enrich_videos: bool | None = None,
+    video_enricher: Callable[[str], dict[str, Any]] | None = None,
+) -> list[SourceItem]:
+    """Collect high-signal AI builder YouTube talks via zero-API-key Atom RSS + velocity filter."""
+    if enrich_videos is None:
+        enrich_videos = opener is urlopen
+    if video_enricher is None:
+        video_enricher = fetch_youtube_transcript_and_meta
+
+    ns = {
+        "a": "http://www.w3.org/2005/Atom",
+        "yt": "http://www.youtube.com/xml/schemas/2015",
+        "media": "http://search.yahoo.com/mrss/",
+    }
+    candidates: list[dict[str, Any]] = []
+    for cfg in channels:
+        if not isinstance(cfg, dict) or not cfg.get("channel_id"):
+            continue
+        channel_id = str(cfg["channel_id"]).strip()
+        channel_name = str(cfg.get("name") or channel_id).strip()
+        feed_url = f"https://www.youtube.com/feeds/videos.xml?channel_id={channel_id}"
+        try:
+            root = ET.fromstring(_request(feed_url, opener=opener, timeout=15))
+        except Exception as error:
+            log.warning("source failed: YouTube %s: %s", channel_name, error)
+            continue
+
+        entries = root.findall("a:entry", ns)
+        all_views: list[int] = []
+        parsed_entries: list[dict[str, Any]] = []
+        for entry in entries:
+            vid = (entry.findtext("yt:videoId", "", ns) or "").strip()
+            title = _plain_text(entry.findtext("a:title", "", ns) or "", limit=300)
+            published = _parse_datetime(entry.findtext("a:published", "", ns) or "")
+            desc = _plain_text(entry.findtext("media:group/media:description", "", ns) or "", limit=900)
+            stat_el = entry.find("media:group/media:community/media:statistics", ns)
+            views = int(stat_el.get("views", "0") or 0) if stat_el is not None else 0
+            if not vid or not title or published is None:
+                continue
+            if views > 0:
+                all_views.append(views)
+            parsed_entries.append({
+                "video_id": vid,
+                "title": title,
+                "published": published,
+                "description": desc,
+                "views": views,
+            })
+
+        median_views = int(statistics.median(all_views)) if all_views else 0
+        min_views = int(cfg.get("min_views", 10_000))
+        breakout_views = int(cfg.get("breakout_views", max(50_000, min_views * 3)))
+        breakout_days = int(cfg.get("breakout_days", 7))
+        breakout_start = end - timedelta(days=breakout_days)
+        topic_filter = str(cfg.get("topic_filter") or "")
+        title_only_topic = bool(cfg.get("title_topic_filter"))
+
+        for entry in parsed_entries:
+            published = entry["published"]
+            views = entry["views"]
+            in_primary_window = start <= published <= end
+            in_breakout_window = (
+                breakout_start <= published < start
+                and views >= breakout_views
+            )
+            if not (in_primary_window or in_breakout_window):
+                continue
+            if re.search(r"\b(?:the\s+making\s+of|company\s+documentary|official\s+commercial)\b", entry["title"], re.I):
+                continue
+            if not _matches_topic_filter(
+                entry["title"],
+                "" if title_only_topic else entry["description"],
+                topic_filter,
+            ):
+                continue
+            if _builder_adjustment(entry["title"], entry["description"]) <= -35:
+                continue
+            age_hours = max(6.0, (end - published).total_seconds() / 3600.0)
+            views_per_hour = views / age_hours
+            relative_lift = views / max(1_000.0, float(median_views)) if median_views else 1.0
+            floor_views = max(3_000, min_views // 3)
+            if not (
+                views >= min_views
+                or (relative_lift >= 2.0 and views >= floor_views)
+                or (bool(cfg.get("always_include_in_window")) and in_primary_window)
+            ):
+                continue
+            candidates.append({
+                **entry,
+                "cfg": cfg,
+                "channel_name": channel_name,
+                "views_per_hour": views_per_hour,
+                "relative_lift": relative_lift,
+                "breakout": in_breakout_window,
+            })
+
+    candidates.sort(key=lambda c: (-c["views_per_hour"], -c["views"], c["video_id"]))
+    enriched_by_id: dict[str, dict[str, Any]] = {}
+    if enrich_videos and candidates:
+        to_enrich = candidates[:6]
+        if video_enricher is fetch_youtube_transcript_and_meta and len(to_enrich) > 1:
+            with ThreadPoolExecutor(max_workers=4, thread_name_prefix="yt-meta") as pool:
+                fetched = list(
+                    pool.map(
+                        lambda c: (c["video_id"], video_enricher(f"https://www.youtube.com/watch?v={c['video_id']}")),
+                        to_enrich,
+                    )
+                )
+            enriched_by_id = dict(fetched)
+        else:
+            enriched_by_id = {
+                c["video_id"]: video_enricher(f"https://www.youtube.com/watch?v={c['video_id']}")
+                for c in to_enrich
+            }
+
+    items: list[SourceItem] = []
+    for cand in candidates:
+        cfg = cand["cfg"]
+        vid = cand["video_id"]
+        meta = enriched_by_id.get(vid) or {}
+        duration = int(meta.get("duration") or 0)
+        min_duration = int(cfg.get("min_duration_seconds", 180))
+        if duration > 0 and duration < min_duration and not re.search(r"\b(?:introducing|launch|release|v\d+\.\d+|api|sdk|mcp)\b", cand["title"], re.I):
+            continue
+        views = max(cand["views"], int(meta.get("view_count") or 0))
+        likes = int(meta.get("like_count") or 0)
+        linked_urls = list(meta.get("linked_urls") or _extract_description_artifact_urls(cand["description"]))
+        transcript = str(meta.get("transcript_text") or "").strip()
+        url = f"https://www.youtube.com/watch?v={vid}"
+        dur_label = f"{duration // 60}m" if duration >= 60 else ""
+        summary_parts = [cand["description"][:420]] if cand["description"] else []
+        if transcript:
+            summary_parts.append(f"Transcript excerpt: {transcript[:520]}")
+        if linked_urls:
+            summary_parts.append(f"Linked artifacts: {', '.join(linked_urls[:3])}")
+        stats_tail = f"YouTube ({cand['channel_name']}): {views:,} views"
+        if likes:
+            stats_tail += f", {likes:,} likes"
+        if dur_label:
+            stats_tail += f", {dur_label}"
+        summary_parts.append(stats_tail + ".")
+        summary = " ".join(p for p in summary_parts if p)[:1200]
+
+        momentum = min(
+            4,
+            int(views >= 10_000)
+            + int(views >= 40_000 or cand["views_per_hour"] >= 800)
+            + int(views >= 100_000 or cand["views_per_hour"] >= 2_500)
+            + int(views >= 250_000),
+        )
+        base_score = float(cfg.get("score", 82))
+        score = min(96.0, base_score + math.log1p(max(1, views)) * 1.1 + (4.0 if linked_urls else 0.0))
+        items.append(
+            SourceItem(
+                id=f"yt-{vid}",
+                title=cand["title"],
+                url=url,
+                source=f"YouTube ({cand['channel_name']})",
+                published_at=cand["published"].isoformat().replace("+00:00", "Z"),
+                summary=summary,
+                authority=str(cfg.get("authority", "independent")),
+                organization=str(cfg.get("organization") or cand["channel_name"]),
+                category=str(cfg.get("category", "developer tools")),
+                metadata={
+                    "canonical_url": url,
+                    "source_kind": "builder_video",
+                    "community_signal": True,
+                    "community_signal_type": "youtube",
+                    "youtube_video_id": vid,
+                    "youtube_channel": cand["channel_name"],
+                    "youtube_views": views,
+                    "youtube_likes": likes,
+                    "youtube_duration_s": duration,
+                    "youtube_views_per_hour": round(cand["views_per_hour"], 1),
+                    "linked_urls": linked_urls,
+                    "transcript_excerpt": transcript[:1200] if transcript else "",
+                    "momentum_score": momentum,
+                    "score": round(score, 2),
+                    "selection_reason": (
+                        "Breakout high-velocity builder talk on YouTube"
+                        if cand["breakout"]
+                        else "High-signal builder talk or demo on YouTube"
+                    ),
+                },
+            )
+        )
+    return items
+
+
+def _resolve_redirect_url(raw_url: str, *, timeout: int = 6) -> str:
+    """Resolve t.co or short redirect URLs to their canonical destination without reading body."""
+    request = Request(
+        raw_url,
+        method="HEAD",
+        headers={"User-Agent": USER_AGENT},
+    )
+    try:
+        with urlopen(request, timeout=timeout, context=SSL_CONTEXT) as resp:
+            return str(resp.geturl() or raw_url)
+    except Exception:
+        try:
+            get_req = Request(raw_url, headers={"User-Agent": USER_AGENT})
+            with urlopen(get_req, timeout=timeout, context=SSL_CONTEXT) as resp:
+                return str(resp.geturl() or raw_url)
+        except Exception:
+            return ""
+
+
 def collect_x_panel(
     accounts: list[Any],
     *,
@@ -1154,36 +1554,50 @@ def collect_x_panel(
     end: datetime,
     topic_filter: str = "",
     fetcher: Callable[[str], list[dict[str, Any]]] | None = None,
+    resolve_links: bool | None = None,
+    url_resolver: Callable[[str], str] | None = None,
+    video_enricher: Callable[[str], dict[str, Any]] | None = None,
+    meta_fetcher: Callable[[str], str] | None = None,
 ) -> XPanelResult:
-    """Collect approved-account observations with one bounded retry."""
+    """Collect approved-account observations with bounded retries and builder recommendation expansion."""
     if fetcher is None:
         fetcher = _twitter_cli_fetcher
+    if resolve_links is None:
+        resolve_links = fetcher is _twitter_cli_fetcher
+    if url_resolver is None:
+        url_resolver = _resolve_redirect_url
+    if video_enricher is None:
+        video_enricher = fetch_youtube_transcript_and_meta
+    if meta_fetcher is None:
+        meta_fetcher = _fetch_linked_meta_summary
+
     items: list[SourceItem] = []
     successful_accounts = 0
     failed_accounts: list[str] = []
-    normalized_accounts: list[tuple[str, str, bool]] = []
+    normalized_accounts: list[tuple[str, str, bool, str]] = []
     for configured in accounts:
         if isinstance(configured, dict):
             account = str(configured.get("account") or "").lstrip("@").strip()
             organization = str(configured.get("organization") or account).strip()
             required = bool(configured.get("required", True))
+            tier = str(configured.get("tier") or "").strip()
         else:
             account = str(configured).lstrip("@").strip()
             organization = account
             required = True
+            tier = ""
         if account:
-            normalized_accounts.append((account, organization, required))
-    required_configured = sum(required for _, _, required in normalized_accounts)
+            normalized_accounts.append((account, organization, required, tier))
+    required_configured = sum(required for _, _, required, _ in normalized_accounts)
     required_successful = 0
 
-    def fetch_account(entry: tuple[str, str, bool]) -> tuple[str, str, bool, list[dict[str, Any]] | None]:
-        account, organization, required = entry
+    def fetch_account(entry: tuple[str, str, bool, str]) -> tuple[str, str, bool, str, list[dict[str, Any]] | None]:
+        account, organization, required, tier = entry
         posts: list[dict[str, Any]] | None = None
-        attempts = 2 if required else 1
-        for attempt in range(attempts):
+        for attempt in range(2):
             try:
                 if fetcher is _twitter_cli_fetcher:
-                    payload = _twitter_cli_fetcher(account, timeout_seconds=30 if required else 10)
+                    payload = _twitter_cli_fetcher(account, timeout_seconds=30)
                 else:
                     payload = fetcher(account)
                 if not isinstance(payload, list):
@@ -1193,15 +1607,16 @@ def collect_x_panel(
             except Exception:
                 if attempt == 1:
                     log.warning("X panel account failed after retry: %s", account)
-        return account, organization, required, posts
+        return account, organization, required, tier, posts
 
     if fetcher is _twitter_cli_fetcher:
-        with ThreadPoolExecutor(max_workers=8, thread_name_prefix="x-panel") as pool:
+        with ThreadPoolExecutor(max_workers=4, thread_name_prefix="x-panel") as pool:
             fetched = list(pool.map(fetch_account, normalized_accounts))
     else:
         fetched = [fetch_account(entry) for entry in normalized_accounts]
 
-    for account, organization, required, posts in fetched:
+    outbound_candidates: list[dict[str, Any]] = []
+    for account, organization, required, tier, posts in fetched:
         if posts is None:
             failed_accounts.append(account)
             continue
@@ -1222,11 +1637,29 @@ def collect_x_panel(
             text = _plain_text(str(post.get("text") or ""), limit=1200)
             if not url or not text:
                 continue
-            if not _matches_topic_filter(text, "", topic_filter):
-                continue
             likes = max(0, int(post.get("likes", 0) or 0))
             retweets = max(0, int(post.get("retweets", post.get("rts", 0)) or 0))
             engagement = likes + 2 * retweets
+            raw_links = re.findall(r"https?://[^\s\)\]>\"']+", text)
+            if resolve_links and raw_links and (
+                likes >= 250
+                or retweets >= 40
+                or (tier == "hands_on_builder" and likes >= 100)
+            ):
+                for raw_link in raw_links[:2]:
+                    outbound_candidates.append({
+                        "raw_url": raw_link.rstrip(".,;:!)"),
+                        "account": account,
+                        "tier": tier,
+                        "post_url": url,
+                        "text": text,
+                        "published": published,
+                        "likes": likes,
+                        "retweets": retweets,
+                        "engagement": engagement,
+                    })
+            if not _matches_topic_filter(text, "", topic_filter):
+                continue
             momentum_score = min(
                 4,
                 int(engagement >= 10)
@@ -1253,14 +1686,158 @@ def collect_x_panel(
                         "community_signal": True,
                         "community_signal_type": "x",
                         "x_account": account,
+                        **({"x_tier": tier} if tier else {}),
                         "x_likes": likes,
                         "x_retweets": retweets,
                         "x_engagement": engagement,
                         "momentum_score": momentum_score,
-                        "score": 35 + momentum_score * 8,
+                        "score": 35 + momentum_score * 8 + (4 if tier == "hands_on_builder" else 0),
                     },
                 )
             )
+
+    if resolve_links and outbound_candidates:
+        outbound_candidates.sort(key=lambda c: (-c["engagement"], c["raw_url"]))
+        unique_raw = list(dict.fromkeys(c["raw_url"] for c in outbound_candidates))[:20]
+        if url_resolver is _resolve_redirect_url and len(unique_raw) > 1:
+            with ThreadPoolExecutor(max_workers=6, thread_name_prefix="x-link") as pool:
+                resolved_map = dict(pool.map(lambda u: (u, url_resolver(u)), unique_raw))
+        else:
+            resolved_map = {u: url_resolver(u) for u in unique_raw}
+
+        grouped_targets: dict[str, dict[str, Any]] = {}
+        for cand in outbound_candidates:
+            dest = resolved_map.get(cand["raw_url"], "")
+            if not dest:
+                continue
+            dest_host = urlparse(dest).netloc.lower().removeprefix("www.")
+            if not dest_host or any(dest_host == s or dest_host.endswith(f".{s}") for s in _SKIP_RESOLVED_X_HOSTS):
+                continue
+            if re.search(r"\.(?:png|jpe?g|gif|webp|mp4)(?:\?|$)", dest, re.I):
+                continue
+            canon = canonical_source_url(dest)
+            if not canon:
+                continue
+            bucket = grouped_targets.setdefault(canon, {
+                "url": canon,
+                "recommenders": [],
+                "likes": 0,
+                "retweets": 0,
+                "engagement": 0,
+                "published": cand["published"],
+                "contexts": [],
+            })
+            handle = f"@{cand['account']}"
+            if handle not in bucket["recommenders"]:
+                bucket["recommenders"].append(handle)
+            bucket["likes"] += cand["likes"]
+            bucket["retweets"] += cand["retweets"]
+            bucket["engagement"] += cand["engagement"]
+            if cand["published"] > bucket["published"]:
+                bucket["published"] = cand["published"]
+            bucket["contexts"].append(f"{handle}: {cand['text'][:180]}")
+
+        for canon, info in sorted(grouped_targets.items(), key=lambda kv: (-kv[1]["engagement"], kv[0]))[:10]:
+            yt_id = extract_youtube_video_id(canon)
+            rec_label = ", ".join(info["recommenders"][:4])
+            if yt_id:
+                meta = video_enricher(canon) or {}
+                title = str(meta.get("title") or f"Builder-recommended YouTube video ({yt_id})").strip()
+                channel = str(meta.get("channel") or "YouTube").strip()
+                views = int(meta.get("view_count") or 0)
+                duration = int(meta.get("duration") or 0)
+                linked_urls = list(meta.get("linked_urls") or [])
+                transcript = str(meta.get("transcript_text") or "").strip()
+                desc = _plain_text(str(meta.get("description") or ""), limit=420)
+                if not _matches_topic_filter(f"{title} {desc} {' '.join(info['contexts'])}", "", topic_filter):
+                    continue
+                summary_bits = [f"Recommended by {rec_label} ({info['likes']:,} X likes)."]
+                if desc:
+                    summary_bits.append(desc)
+                if transcript:
+                    summary_bits.append(f"Transcript excerpt: {transcript[:480]}")
+                if linked_urls:
+                    summary_bits.append(f"Linked artifacts: {', '.join(linked_urls[:3])}")
+                if views:
+                    summary_bits.append(f"YouTube ({channel}): {views:,} views.")
+                momentum = min(4, 2 + int(info["engagement"] >= 1_000 or views >= 50_000) + int(len(info["recommenders"]) >= 2 or views >= 150_000))
+                score = min(96.0, 82.0 + math.log1p(max(1, info["engagement"])) * 1.4 + len(info["recommenders"]) * 3.0)
+                items.append(
+                    SourceItem(
+                        id=f"yt-{yt_id}",
+                        title=title,
+                        url=canon,
+                        source=f"Builder-recommended YouTube ({channel})",
+                        published_at=info["published"].isoformat().replace("+00:00", "Z"),
+                        summary=" ".join(summary_bits)[:1200],
+                        authority="independent",
+                        organization=channel,
+                        category="developer tools",
+                        metadata={
+                            "canonical_url": canon,
+                            "source_kind": "builder_video",
+                            "community_signal": True,
+                            "community_signal_type": "youtube",
+                            "youtube_video_id": yt_id,
+                            "youtube_channel": channel,
+                            "youtube_views": views,
+                            "youtube_duration_s": duration,
+                            "linked_urls": linked_urls,
+                            "transcript_excerpt": transcript[:1200] if transcript else "",
+                            "recommended_by": info["recommenders"],
+                            "x_likes": info["likes"],
+                            "x_retweets": info["retweets"],
+                            "x_engagement": info["engagement"],
+                            "momentum_score": momentum,
+                            "score": round(score, 2),
+                            "selection_reason": f"YouTube talk recommended by {rec_label}",
+                        },
+                    )
+                )
+            else:
+                extracted = meta_fetcher(canon) or ""
+                authority, category = _classify_hn_target_authority(canon, extracted)
+                if authority == "signal":
+                    continue
+                context_blob = " ".join(info["contexts"])
+                if not _matches_topic_filter(f"{extracted} {context_blob}", urlparse(canon).netloc, topic_filter):
+                    continue
+                if _builder_adjustment(extracted or context_blob, context_blob) <= -35:
+                    continue
+                title_seed = extracted.split(".", 1)[0].strip()[:110] if extracted else info["contexts"][0][:110]
+                summary = (
+                    f"Recommended by {rec_label} ({info['likes']:,} X likes). "
+                    f"{extracted or context_blob}"
+                )[:1200]
+                momentum = min(4, 1 + int(info["engagement"] >= 500) + int(info["engagement"] >= 2_000) + int(len(info["recommenders"]) >= 2))
+                score = min(94.0, 74.0 + math.log1p(max(1, info["engagement"])) * 1.5 + len(info["recommenders"]) * 4.0)
+                items.append(
+                    SourceItem(
+                        id=f"xrec-{_identifier(canon)}",
+                        title=title_seed,
+                        url=canon,
+                        source="Builder-recommended artifact",
+                        published_at=info["published"].isoformat().replace("+00:00", "Z"),
+                        summary=summary,
+                        authority=authority,
+                        organization=urlparse(canon).netloc.removeprefix("www."),
+                        category=_infer_category(category, title_seed, summary),
+                        metadata={
+                            "canonical_url": canon,
+                            "source_kind": "builder_recommendation",
+                            "community_signal": True,
+                            "community_signal_type": "x",
+                            "recommended_by": info["recommenders"],
+                            "x_likes": info["likes"],
+                            "x_retweets": info["retweets"],
+                            "x_engagement": info["engagement"],
+                            "momentum_score": momentum,
+                            "score": round(score, 2),
+                            "selection_reason": f"Technical artifact recommended by {rec_label}",
+                        },
+                    )
+                )
+
     return XPanelResult(
         items=tuple(items),
         health=XPanelHealth(

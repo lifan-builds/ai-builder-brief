@@ -20,11 +20,13 @@
 - **Organization diversity:** Cap any single organization at two Top 10 items per edition unless three distinct, independently runnable releases ship in the same window.
 - **Strict event deduplication:** Canonicalize URLs across `arxiv.org/{abs,html,pdf}` and `huggingface.co/papers/`. Do not re-rank an already-covered event from the prior 14 days unless a material artifact transition occurred (e.g., closed preview to downloadable weights or general API availability with new pricing/evals).
 
-## X discovery panel
+## X discovery panel & YouTube builder signals
 
-- Maintain three complementary groups: first-party lab and developer-product channels, hands-on product leads and maintainers, and independent interpreters or primary researchers.
-- Prefer durable first-party coverage across organizations. Add individuals when they repeatedly publish previews or implementation details before corporate channels; exclude generic engagement-bait digest accounts.
-- X posts remain discovery and momentum evidence. Follow their links to an eligible primary source or obtain independent corroboration before a story can qualify.
+- Maintain four complementary X groups: first-party lab and developer-product channels (including `@OpenAIDevs`, `@ClaudeDevs`), hands-on product leads and maintainers, high-signal hands-on builders and workflow leaders (e.g., `@poteto`, `@dexhorthy`, `@mattpocockuk`, `@mitsuhiko`, `@steipete`, `@Lethain`, `@jarredsumner`, `@mitchellh`, `@GeoffreyHuntley`, `@antirez`), and independent interpreters or primary researchers.
+- Expand high-engagement outbound links (`t.co` → YouTube talks, GitHub repos, technical essays) shared by panel builders so concrete practitioner recommendations enter the candidate pool with attribution (`recommended_by`).
+- Curated YouTube builder channels (AI Engineer, Matt Pocock, Andrej Karpathy, Cursor, Latent Space Podcast, IndyDevDan, Cloudflare Developers, Hugging Face, and topic-filtered Y Combinator / Anthropic / Dwarkesh / No Priors) are polled via Atom RSS with view-velocity and minimum-duration filters (never global YouTube trending search).
+- **Transcript & artifact gate for videos:** Never summarize a YouTube video from its title or thumbnail. Ground claims in the fetched English transcript (`yt-dlp` captions) and linked repositories/specs, and admit a video or builder recommendation to Top 10 only when it teaches a concrete workflow invariant, architecture, benchmark, failure mode, or runnable tool.
+- X posts remain discovery and momentum evidence. Follow their links to an eligible primary source, verified video transcript, or independent corroboration before a story can qualify.
 
 ## Editorial & anti-slop rules
 

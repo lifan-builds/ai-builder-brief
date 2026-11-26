@@ -5,7 +5,15 @@ from email.message import Message
 
 from castforge.models import SourceItem
 
-from ai_builder_brief.collectors import assign_story_clusters, collect_feed, collect_hacker_news, collect_x_panel
+from ai_builder_brief.collectors import (
+    assign_story_clusters,
+    canonical_source_url,
+    collect_feed,
+    collect_hacker_news,
+    collect_x_panel,
+    collect_youtube_channels,
+    extract_youtube_video_id,
+)
 
 
 class Response:
@@ -433,3 +441,129 @@ def test_algolia_hn_collector_enriches_linked_summary_and_filters_non_ai_agents(
     assert items[0].authority == "independent"
     assert "ETW trace analysis" in items[0].summary
     assert items[0].metadata["hn_points"] == 704
+
+
+def test_youtube_channel_collector_applies_velocity_breakout_and_duration_gates() -> None:
+    atom_xml = b"""<?xml version="1.0" encoding="UTF-8"?>
+    <feed xmlns="http://www.w3.org/2005/Atom"
+          xmlns:yt="http://www.youtube.com/xml/schemas/2015"
+          xmlns:media="http://search.yahoo.com/mrss/">
+      <entry>
+        <yt:videoId>AbCdEf12345</yt:videoId>
+        <title>12 Rules for a Software Factory That Does Not Ship Slop</title>
+        <published>2026-11-24T15:00:00+00:00</published>
+        <media:group>
+          <media:description>Concrete coding agent verification workflow and harness guide at https://github.com/factory/slop-rules</media:description>
+          <media:community><media:statistics views="240000"/></media:community>
+        </media:group>
+      </entry>
+      <entry>
+        <yt:videoId>ShortAd1234</yt:videoId>
+        <title>Quick event hype trailer</title>
+        <published>2026-11-25T15:00:00+00:00</published>
+        <media:group>
+          <media:description>Register for our conference next month.</media:description>
+          <media:community><media:statistics views="50000"/></media:community>
+        </media:group>
+      </entry>
+      <entry>
+        <yt:videoId>LowView1234</yt:videoId>
+        <title>Paper club chat</title>
+        <published>2026-11-25T12:00:00+00:00</published>
+        <media:group>
+          <media:description>Informal paper reading session.</media:description>
+          <media:community><media:statistics views="220"/></media:community>
+        </media:group>
+      </entry>
+      <entry>
+        <yt:videoId>Breakout123</yt:videoId>
+        <title>All Code Is Slop (Except Mine) - Lauren Tan</title>
+        <published>2026-11-20T18:00:00+00:00</published>
+        <media:group>
+          <media:description>How Grok Bot ships PRs with deterministic verification loops and pstack skills.</media:description>
+          <media:community><media:statistics views="1800000"/></media:community>
+        </media:group>
+      </entry>
+    </feed>"""
+
+    def fake_enricher(url: str) -> dict:
+        if "ShortAd1234" in url:
+            return {"duration": 45, "view_count": 50000, "like_count": 100}
+        if "Breakout123" in url:
+            return {
+                "duration": 1051,
+                "view_count": 1800000,
+                "like_count": 27000,
+                "linked_urls": ["https://github.com/poteto/pstack"],
+                "transcript_text": "Turn every repeated review correction into a deterministic harness check.",
+            }
+        return {
+            "duration": 1224,
+            "view_count": 240000,
+            "like_count": 2767,
+            "linked_urls": ["https://github.com/factory/slop-rules"],
+            "transcript_text": "Verify diffs with invariant checks instead of manual line-by-line review.",
+        }
+
+    items = collect_youtube_channels(
+        [{"name": "AI Engineer", "channel_id": "UCtest123", "min_views": 15000, "breakout_views": 45000, "score": 86}],
+        start=datetime(2026, 11, 23, 18, tzinfo=UTC),
+        end=datetime(2026, 11, 26, 18, tzinfo=UTC),
+        opener=lambda req, timeout: Response(atom_xml),
+        enrich_videos=True,
+        video_enricher=fake_enricher,
+    )
+    ids = [item.id for item in items]
+    assert "yt-AbCdEf12345" in ids
+    assert "yt-Breakout123" in ids
+    assert "yt-ShortAd1234" not in ids
+    assert "yt-LowView1234" not in ids
+    assert extract_youtube_video_id("https://youtu.be/AbCdEf12345?si=abc") == "AbCdEf12345"
+    assert canonical_source_url("https://youtu.be/AbCdEf12345?t=42") == "https://www.youtube.com/watch?v=AbCdEf12345"
+
+
+def test_x_panel_expands_builder_recommended_youtube_and_github_links() -> None:
+    def fetcher(account: str):
+        return [
+            {
+                "published_at": "2026-11-25T18:00:00Z",
+                "url": f"https://x.com/{account}/status/1",
+                "text": "My AIE coding agent talk is up https://t.co/talk1 and new pstack skill https://t.co/repo1",
+                "likes": 5100,
+                "rts": 300,
+            }
+        ]
+
+    def resolver(url: str) -> str:
+        if "talk1" in url:
+            return "https://youtu.be/O_zcc6Xl12g?feature=youtu.be"
+        if "repo1" in url:
+            return "https://github.com/poteto/pstack"
+        return ""
+
+    result = collect_x_panel(
+        [{"account": "poteto", "organization": "SpaceXAI", "required": False, "tier": "hands_on_builder"}],
+        start=datetime(2026, 11, 23, tzinfo=UTC),
+        end=datetime(2026, 11, 26, tzinfo=UTC),
+        topic_filter="ai",
+        fetcher=fetcher,
+        resolve_links=True,
+        url_resolver=resolver,
+        video_enricher=lambda u: {
+            "title": "All Code Is Slop (Except Mine) — Lauren Tan",
+            "channel": "AI Engineer",
+            "view_count": 1800000,
+            "duration": 1051,
+            "description": "How Grok Bot uses deterministic coding agent verification loops.",
+            "transcript_text": "Every review comment becomes a permanent agent guardrail.",
+            "linked_urls": ["https://github.com/poteto/pstack"],
+        },
+        meta_fetcher=lambda u: "pstack is an open-source skill pack for coding agents with runtime verification workflows.",
+    )
+    by_kind = {item.metadata.get("source_kind"): item for item in result.items}
+    assert "builder_video" in by_kind
+    assert "builder_recommendation" in by_kind
+    assert by_kind["builder_video"].id == "yt-O_zcc6Xl12g"
+    assert by_kind["builder_video"].metadata["recommended_by"] == ["@poteto"]
+    assert by_kind["builder_recommendation"].url == "https://github.com/poteto/pstack"
+    assert by_kind["builder_recommendation"].authority == "primary"

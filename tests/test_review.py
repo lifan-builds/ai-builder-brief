@@ -270,3 +270,35 @@ def test_review_artifact_adds_watchlist_without_maintenance_or_routine_research(
     assert "## Additional watchlist" in markdown
     assert "Candidate 10" not in markdown
     assert "Candidate 11" not in markdown
+
+
+def test_signal_only_community_stub_cannot_claim_shortlist_slot() -> None:
+    stub = SourceItem(
+        id="hn-drama",
+        title="Executive drama quote-tweet",
+        url="https://x.com/someone/status/1",
+        source="Hacker News",
+        published_at="2026-11-25T12:00:00Z",
+        summary="Hacker News signal: 2017 points and 1201 comments.",
+        authority="signal",
+        organization="x.com",
+        category="trend",
+        metadata={
+            "cluster_id": "drama",
+            "editorial_class": "community_theme",
+            "community_led": True,
+            "community_signal_types": ["hacker_news"],
+            "qualifying_evidence": False,
+        },
+    )
+    decision = EditorialDecision(
+        cluster_id="drama",
+        decision="reject",
+        impact=4,
+        actionability=2,
+        novelty=3,
+        evidence=2,
+        audience_breadth=4,
+        builder_actions=("monitor",),
+    )
+    assert review_priority(decision, stub)[0] is False

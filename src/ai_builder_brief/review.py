@@ -52,12 +52,32 @@ def review_priority(
             "exceptional practical research" if exceptional else "research did not clear the exceptional-news threshold",
         )
     if editorial_class == "community_theme":
-        eligible = decision.score >= 60 and decision.impact >= 3 and decision.audience_breadth >= 3
+        is_builder_video = (
+            representative.metadata.get("source_kind") == "builder_video"
+            or "youtube" in list(representative.metadata.get("community_signal_types") or [])
+        )
+        is_signal_stub = (
+            representative.authority == "signal"
+            and not bool(representative.metadata.get("qualifying_evidence"))
+            and not is_builder_video
+        )
+        eligible = (
+            decision.score >= 60
+            and decision.impact >= 3
+            and decision.audience_breadth >= 3
+            and not is_signal_stub
+        )
         return (
             eligible,
             decision.score,
             0,
-            "consequential community theme" if eligible else "community theme did not clear the consequence floor",
+            (
+                "signal-only community stub lacks primary or independent artifact"
+                if is_signal_stub
+                else "consequential community theme"
+                if eligible
+                else "community theme did not clear the consequence floor"
+            ),
         )
     eligible = decision.score >= 65 and decision.impact >= 3 and decision.audience_breadth >= 2
     return (
@@ -91,6 +111,10 @@ def _review_item(
         "theme_key": str(representative.metadata.get("theme_key") or decision.cluster_id),
         "community_led": bool(representative.metadata.get("community_led")),
         "community_signal_types": list(representative.metadata.get("community_signal_types", [])),
+        "youtube_views": int(representative.metadata.get("youtube_views", 0) or 0),
+        "youtube_channel": str(representative.metadata.get("youtube_channel", "")),
+        "recommended_by": list(representative.metadata.get("recommended_by", [])),
+        "linked_urls": list(representative.metadata.get("linked_urls", [])),
         "product_family": str(representative.metadata.get("product_family", "")),
         "published_at": representative.published_at,
         "decision": decision.decision,
@@ -118,7 +142,9 @@ def _review_item(
                         "hn_points", "hn_comments", "hf_upvotes", "hf_likes",
                         "hf_downloads", "hf_trending_score", "repository_stars",
                         "repository_forks", "repository_open_issues", "delta_24h",
-                        "delta_7d", "momentum_score",
+                        "delta_7d", "momentum_score", "youtube_views", "youtube_likes",
+                        "youtube_duration_s", "youtube_channel", "recommended_by",
+                        "linked_urls",
                     )
                     if key in source.metadata
                 },
@@ -350,6 +376,21 @@ def _render_review_record(item: dict[str, Any], heading: str) -> list[str]:
         f"**Organization / Category:** {item['organization'] or 'unresolved'} / {item['category']}",
         f"**Review class:** {'community-led' if item['community_led'] else 'major primary'}",
         f"**Community signals:** {', '.join(item['community_signal_types']) or 'none'}",
+        *(
+            [f"**YouTube signal:** {item.get('youtube_channel') or 'YouTube'} — {int(item.get('youtube_views') or 0):,} views"]
+            if int(item.get("youtube_views") or 0) > 0
+            else []
+        ),
+        *(
+            [f"**Recommended by:** {', '.join(item.get('recommended_by') or [])}"]
+            if item.get("recommended_by")
+            else []
+        ),
+        *(
+            [f"**Linked artifacts:** {', '.join(item.get('linked_urls') or [])}"]
+            if item.get("linked_urls")
+            else []
+        ),
         f"**Product family:** {item['product_family'] or 'not specified'}",
         f"**Published:** {item['published_at']}",
         f"**What happened:** {item['summary']}",

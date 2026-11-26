@@ -34,6 +34,9 @@ coverage_lanes:
     - huggingface_blog
     - simon_willison
     - latent_space
+    - youtube_ai_engineer
+    - youtube_matt_pocock
+    - youtube_cursor
     - github_activity
     - hacker_news
   infrastructure_and_economics:
@@ -64,6 +67,9 @@ coverage_lanes:
     - techcrunch
   builder_behavior:
     - hacker_news
+    - youtube_ai_engineer
+    - youtube_matt_pocock
+    - youtube_latent_space
     - github_activity
     - huggingface_models
     - openrouter_rankings
@@ -83,7 +89,7 @@ sources:
   - {id: google_research, name: Google Research Blog RSS, role: primary, language: en, weight: 88, url: https://research.google/blog/rss/}
   - {id: meta_ai, name: Meta AI Blog, role: primary, language: en, weight: 85, url: https://ai.meta.com/blog/}
   - {id: mistral_news, name: Mistral AI News, role: primary, language: en, weight: 90, url: https://mistral.ai/news/}
-  - {id: deepseek_news, name: DeepSeek API Release Notes, role: primary, language: en, weight: 92, url: https://api-docs.deepseek.com/news/}
+  - {id: deepseek_news, name: DeepSeek API Release Notes, role: primary, language: en, weight: 92, url: https://api-docs.deepseek.com/updates}
   - {id: qwen_docs, name: QwenCloud Model Changelog, role: primary, language: en, weight: 90, url: https://docs.qwencloud.com/changelog/models}
   - {id: cursor_blog, name: Cursor Engineering & Product Blog, role: primary, language: en, weight: 90, url: https://cursor.com/blog}
   - {id: cloudflare_ai, name: Cloudflare AI Engineering RSS, role: primary, language: en, weight: 90, url: https://blog.cloudflare.com/tag/ai/rss/}
@@ -101,6 +107,10 @@ sources:
   - {id: policy_primary, name: NIST AI Standards and Guidelines, role: primary, language: en, weight: 70, url: https://www.nist.gov/artificial-intelligence}
   - {id: simon_willison, name: Simon Willison Weblog Atom, role: independent, language: en, weight: 90, url: https://simonwillison.net/atom/everything/}
   - {id: latent_space, name: Latent Space Engineering Essays RSS, role: independent, language: en, weight: 86, url: https://www.latent.space/feed}
+  - {id: youtube_ai_engineer, name: AI Engineer YouTube Atom Feed, role: independent, language: en, weight: 88, url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCLKPca3kwwd-B59HNr-_lvA"}
+  - {id: youtube_matt_pocock, name: Matt Pocock YouTube Atom Feed, role: independent, language: en, weight: 86, url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCswG6FSbgZjbWtdf_hMLaow"}
+  - {id: youtube_cursor, name: Cursor YouTube Atom Feed, role: primary, language: en, weight: 86, url: "https://www.youtube.com/feeds/videos.xml?channel_id=UC6YYHJzM6PhZ2Yey9BQiUaw"}
+  - {id: youtube_latent_space, name: Latent Space Podcast YouTube Atom Feed, role: independent, language: en, weight: 84, url: "https://www.youtube.com/feeds/videos.xml?channel_id=UCxBcwypKK-W3GHd_RZ9FZrQ"}
   - {id: interconnects, name: Interconnects (Nathan Lambert) RSS, role: independent, language: en, weight: 84, url: https://www.interconnects.ai/feed}
   - {id: ahead_of_ai, name: Ahead of AI (Sebastian Raschka) RSS, role: independent, language: en, weight: 84, url: https://magazine.sebastianraschka.com/feed}
   - {id: semianalysis, name: SemiAnalysis Infrastructure Feed, role: independent, language: en, weight: 82, url: https://newsletter.semianalysis.com/feed}

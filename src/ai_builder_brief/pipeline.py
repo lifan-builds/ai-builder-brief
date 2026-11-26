@@ -200,8 +200,9 @@ def _apply_snapshot_deltas(items):
 
 
 def _eligible_editorial_items(items, *, start: datetime, end: datetime):
-    """Keep one current copy of each source inside the strict review window."""
+    """Keep one current copy of each source inside the strict review window (plus breakout YouTube talks up to 7d)."""
     eligible: dict[str, SourceItem] = {}
+    breakout_start = end - timedelta(days=7)
     for item in items:
         try:
             published = datetime.fromisoformat(item.published_at.replace("Z", "+00:00"))
@@ -209,7 +210,13 @@ def _eligible_editorial_items(items, *, start: datetime, end: datetime):
             continue
         if published.tzinfo is None:
             published = published.replace(tzinfo=UTC)
-        if not start <= published.astimezone(UTC) <= end:
+        pub_utc = published.astimezone(UTC)
+        is_breakout_video = (
+            item.metadata.get("source_kind") == "builder_video"
+            and breakout_start <= pub_utc <= end
+            and int(item.metadata.get("youtube_views", 0) or 0) >= 20_000
+        )
+        if not (start <= pub_utc <= end or is_breakout_video):
             continue
         existing = eligible.get(item.id)
         if existing is None or str(item.metadata.get("snapshot_date", "")) > str(existing.metadata.get("snapshot_date", "")):
@@ -330,7 +337,9 @@ def _ledger_evidence(deterministic, candidates):
                             "x_likes", "x_retweets", "x_engagement", "hn_points",
                             "hn_comments", "hf_upvotes", "hf_likes", "hf_downloads",
                             "hf_trending_score", "repository_stars", "repository_forks",
-                            "repository_open_issues",
+                            "repository_open_issues", "youtube_views", "youtube_likes",
+                            "youtube_duration_s", "youtube_channel", "recommended_by",
+                            "linked_urls",
                         )
                         if key in item.metadata
                     },
@@ -413,6 +422,23 @@ def _represent_candidates(candidates):
             "x_retweets": sum(int(item.metadata.get("x_retweets", 0) or 0) for item in group),
             "hn_points": sum(int(item.metadata.get("hn_points", 0) or 0) for item in group),
             "hn_comments": sum(int(item.metadata.get("hn_comments", 0) or 0) for item in group),
+            "youtube_views": max((int(item.metadata.get("youtube_views", 0) or 0) for item in group), default=0),
+            "youtube_likes": max((int(item.metadata.get("youtube_likes", 0) or 0) for item in group), default=0),
+            "youtube_duration_s": max((int(item.metadata.get("youtube_duration_s", 0) or 0) for item in group), default=0),
+            "youtube_channel": next((str(item.metadata.get("youtube_channel")) for item in group if item.metadata.get("youtube_channel")), ""),
+            "recommended_by": sorted({
+                str(handle)
+                for item in group
+                for handle in item.metadata.get("recommended_by", [])
+                if str(handle).strip()
+            }),
+            "linked_urls": list(dict.fromkeys(
+                str(u)
+                for item in group
+                for u in item.metadata.get("linked_urls", [])
+                if str(u).strip()
+            ))[:6],
+            "transcript_excerpt": next((str(item.metadata.get("transcript_excerpt")) for item in group if item.metadata.get("transcript_excerpt")), ""),
             "momentum_score": momentum,
             "recency_score": recency,
             "qualifying_evidence": any(bool(item.metadata.get("qualifying_evidence")) for item in group),
@@ -470,6 +496,10 @@ def _editorial_packet(representatives):
             "x_retweets": int(item.metadata.get("x_retweets", 0)),
             "hn_points": int(item.metadata.get("hn_points", 0)),
             "hn_comments": int(item.metadata.get("hn_comments", 0)),
+            "youtube_views": int(item.metadata.get("youtube_views", 0)),
+            "youtube_channel": str(item.metadata.get("youtube_channel", "")),
+            "recommended_by": list(item.metadata.get("recommended_by", [])),
+            "linked_urls": list(item.metadata.get("linked_urls", [])),
             "qualifying_evidence": bool(item.metadata.get("qualifying_evidence")),
             "qualifying_source_ids": list(item.metadata.get("qualifying_source_ids", [])),
             "community_context": list(item.metadata.get("community_context", [])),
@@ -596,7 +626,7 @@ def run_daily(
             root=root,
             episode_date=episode_date,
         )
-    candidates, deterministic = preprocess(normalized, as_of=end)
+    candidates, deterministic = preprocess(normalized, limit=30, as_of=end)
     deterministic = _ledger_evidence(deterministic, candidates)
     representatives, candidate_metadata = _represent_candidates(candidates)
     clusters = _cluster(candidates)

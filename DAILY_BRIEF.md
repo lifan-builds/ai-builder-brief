@@ -3,7 +3,9 @@
 The daily news brief shares source hygiene and evaluation gates with the
 collector pipeline. Its catalog is [`brief_sources.yaml`](brief_sources.yaml);
 [`sources.yaml`](sources.yaml) configures automated RSS, Atom, page-index,
-Algolia Hacker News, Hugging Face, GitHub release, and X discovery collection.
+Algolia Hacker News, Hugging Face, GitHub release, curated YouTube builder
+channels, and X practitioner panel (with outbound recommendation link
+expansion) collection.
 
 ## Coverage contract
 
@@ -18,7 +20,7 @@ PR, funding news, or routine maintenance.
 | Infrastructure and economics | inference engines, kernels, KV/state caching, routing, latency, memory footprint, and serving economics |
 | Research and evaluation | papers with code, benchmark audits, contamination/reward-hacking studies, replications, and negative results |
 | Security and policy | exploited vulnerabilities, advisories, supply-chain compromises, sandbox escapes, and binding compliance deadlines |
-| Builder behavior | time-bounded adoption deltas, high-engagement Algolia HN practitioner threads, postmortems, and cross-project migrations |
+| Builder behavior | time-bounded adoption deltas, high-engagement Algolia HN practitioner threads, high-signal YouTube builder talks/demos (e.g., AI Engineer, Matt Pocock, Cursor, Karpathy, Latent Space), concrete workflow/tool recommendations from hands-on builders (e.g., `@poteto`, `@dexhorthy`, `@mitsuhiko`, `@simonw`), postmortems, and cross-project migrations |
 
 ## Evidence bundle
 
@@ -40,9 +42,13 @@ source_roles: [primary, independent, adoption, discovery]
 
 One event may appear only once across Top 10 and Watchlist, and at most two
 Top 10 slots may belong to a single organization unless three distinct shipped
-artifacts warrant an exception. Exclude funding rounds, IPO/S-1 filings,
-executive musical chairs, government MOUs, customer case studies, and waitlist
-vapourware.
+artifacts warrant an exception. High-signal YouTube builder talks and concrete
+practitioner recommendations compete directly for `## Top 10` slots with no
+artificial cap — promote them whenever the transcript or linked artifact
+delivers reproducible engineering advice, workflow architecture, failure modes,
+or shipped tooling (never from clickbait titles or hype-only commentary). Exclude
+funding rounds, IPO/S-1 filings, executive musical chairs, government MOUs,
+customer case studies, and waitlist vapourware.
 
 ## Run sequence
 
@@ -61,17 +67,20 @@ vapourware.
    - Give each item an 8–14 word concrete headline naming actor/artifact, action, and consequence.
    - Include specific model IDs, package versions, CLI flags, HTTP headers, pricing, or benchmark numbers.
    - Write direct, varied prose: never use `"The strongest/most useful developments concern X, while Y"` mad-lib openers or repeat `"author-run"` / `"vendor-reported"` boilerplate across multiple items.
-4. Score the draft with the deterministic benchmark and run the mechanical
-   Source-vs-Claim citation verifier (via loopback Quotaswitch `gpt-5.4-pro`)
-   before publishing:
+4. Score the draft with the multi-surface deterministic benchmark (Algolia HN +
+   curated YouTube builder talks) and run the mechanical Source-vs-Claim
+   citation verifier (including YouTube transcripts, via loopback Quotaswitch
+   `gpt-5.4-pro`) before publishing:
    ```bash
-   .venv/bin/ai-builder-brief benchmark --brief history/YYYY-MM-DD.md
+   .venv/bin/ai-builder-brief benchmark --live-hn --live-youtube --brief history/YYYY-MM-DD.md
    .venv/bin/ai-builder-brief factcheck --brief history/YYYY-MM-DD.md
    ```
-5. Save the briefing and exact X draft before any public action, publish the
-   journal entry via `ai-builder-brief journal` (auto-runs sibling
-   `scripts/sync_clifan.py` to refresh clifan.com counts, feeds, and sitemap),
-   and record publication status.
+5. Save the briefing and exact X draft before any public action — open the X
+   thread with a sharp 1-sentence thesis highlighting the day's strongest 2–3
+   takeaways and crediting key builder/org handles (not a flat 10-item laundry
+   list), publish the journal entry via `ai-builder-brief journal` (auto-runs
+   sibling `scripts/sync_clifan.py` to refresh clifan.com counts, feeds, and
+   sitemap), and record publication status.
 
 ## Source-panel maintenance
 

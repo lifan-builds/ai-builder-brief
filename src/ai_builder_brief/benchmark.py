@@ -24,8 +24,11 @@ from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
 import certifi
+import xml.etree.ElementTree as ET
+import yaml
 from castforge.models import SourceItem
 
+from ai_builder_brief.collectors import extract_youtube_video_id
 from ai_builder_brief.journal import _parse_ranked_items
 
 SSL_CONTEXT = ssl.create_default_context(cafile=certifi.where())
@@ -51,11 +54,11 @@ NON_AI_FALSE_POSITIVE_RE = re.compile(
 PR_FLUFF_HEADLINE_RE = re.compile(
     r"(?:"
     r"\b(?:raises\s+\$?\d|series\s+[a-f]\b|seed\s+round|valuation\s+of|targets\s+\$\d[\w.]*\s+in\s+(?:annual\s+)?revenue)\b|"
-    r"\b(?:ipo\s+filing|files\s+s-1|amended\s+filing|initial\s+public\s+offering|s-1\b)\b|"
+    r"\b(?:ipo\s+filing|files\s+s-1|amended\s+filing|initial\s+public\s+offering|s-1\b|nasdaq\s+debut|ai\s+sell-off)\b|"
     r"\b(?:memorandum\s+of\s+understanding|\bmou\b|pitches\s+federal|equity\s+fund|public-benefit\s+fund|biosecurity\s+lab\s+pledge)\b|"
-    r"\b(?:replaces\s+.+\s+as\s+(?:interim\s+)?ceo|interim\s+ceo|steps\s+down\s+as\s+ceo|board\s+appoints)\b|"
-    r"\b(?:purchasing\s+channel|techcrunch\s+disrupt|\$\d+\s+deal\s+for\s+your|local\s+voters\s+back|ballot\s+returns)\b|"
-    r"\b(?:chatgpt\s+wallet|shopping\s+rollout|external\s+trainium\s+sales\s+as\s+ai\s+spending)\b"
+    r"\b(?:replaces\s+.+\s+as\s+(?:interim\s+)?ceo|interim\s+ceo|steps\s+down\s+as\s+ceo|board\s+appoints|reinstates\s+jensen\s+huang)\b|"
+    r"\b(?:purchasing\s+channel|techcrunch\s+disrupt|\$\d+\s+deal\s+for\s+your|local\s+voters\s+back|ballot\s+returns|warns\s+photographers|bans\s+ai-generated\s+music)\b|"
+    r"\b(?:chatgpt\s+wallet|shopping\s+rollout|external\s+trainium\s+sales\s+as\s+ai\s+spending|dario\s+is\s+hyping)\b"
     r")",
     re.IGNORECASE,
 )
@@ -114,24 +117,39 @@ REPETITIVE_BOILERPLATE_PHRASES = (
     "vendor-reported",
 )
 
-BUILDER_ARTIFACT_DOMAINS = (
-    "github.com/",
-    "arxiv.org/",
+AI_ONLY_ARTIFACT_DOMAINS = (
     "huggingface.co/",
-    "simonwillison.net/",
     "claude.dev/",
+    "claude.com/resources/",
     "anthropic.com/research",
     "anthropic.com/engineering",
+    "safeguards.anthropic.com/",
+    "alignment.anthropic.com/",
     "openai.com/index/",
     "deploymentsafety.openai.com",
     "alignment.openai.com",
     "deepmind.google/",
-    "research.google/",
-    "blog.cloudflare.com/",
     "together.ai/blog",
+    "cursor.com/blog",
+    "opencode.ai/",
+    "openrouter.ai/",
+    "unsloth.ai/",
+    "vllm.ai/",
+    "prismml.com/",
+    "llamaindex.ai/",
+    "artificialanalysis.ai/",
     "epoch.ai/",
     "metr.org/",
     "apolloresearch.ai/",
+)
+
+BUILDER_ARTIFACT_DOMAINS = (
+    "github.com/",
+    "arxiv.org/",
+    "simonwillison.net/",
+    "research.google/",
+    "blog.cloudflare.com/",
+    *AI_ONLY_ARTIFACT_DOMAINS,
 )
 
 MATCH_STOPWORDS = {
@@ -246,10 +264,13 @@ class BriefEvaluation:
 
 
 def canonicalize_url(raw_url: str) -> str:
-    """Normalize URLs across schemes, www, tracking params, and arXiv/HF paper mirrors."""
+    """Normalize URLs across schemes, www, tracking params, YouTube IDs, and arXiv/HF paper mirrors."""
     text = (raw_url or "").strip().strip("<>.,;)").lower()
     if not text:
         return ""
+    yt_id = extract_youtube_video_id((raw_url or "").strip().strip("<>.,;)"))
+    if yt_id:
+        return f"youtube.com/watch?v={yt_id.lower()}"
     text = re.sub(r"^https?://(?:www\.)?", "", text)
     text = text.split("#", 1)[0]
     if "qwen.ai/blog?id=" in text:
@@ -265,11 +286,14 @@ def canonicalize_url(raw_url: str) -> str:
 
 
 def extract_artifact_keys(urls: Iterable[str], text: str = "") -> set[str]:
-    """Return canonical artifact keys (`url:...`, `arxiv:...`, `gh:...`) for cross-source matching."""
+    """Return canonical artifact keys (`url:...`, `arxiv:...`, `gh:...`, `yt:...`) for cross-source matching."""
     keys: set[str] = set()
     all_urls = list(urls)
     all_urls.extend(re.findall(r"https?://[^\s\)\]>]+", text))
     for raw in all_urls:
+        yt_id = extract_youtube_video_id(raw.strip().strip("<>.,;)"))
+        if yt_id:
+            keys.add(f"yt:{yt_id.lower()}")
         canon = canonicalize_url(raw)
         if not canon or WEAK_DISCOVERY_URL_RE.match(canon):
             continue
@@ -405,7 +429,7 @@ def fetch_algolia_hn_ground_truth(
                 low_url = url.lower()
                 if not (
                     STRICT_AI_BUILDER_RE.search(title)
-                    or any(d in low_url for d in BUILDER_ARTIFACT_DOMAINS)
+                    or any(d in low_url for d in AI_ONLY_ARTIFACT_DOMAINS)
                 ):
                     continue
                 points = int(hit.get("points") or 0)
@@ -434,6 +458,83 @@ def fetch_algolia_hn_ground_truth(
                 break
         cur = nxt
     return sorted(deduped.values(), key=lambda s: (-s.created_at_i, -s.points))
+
+
+def fetch_youtube_builder_ground_truth(
+    sources_path: Path,
+    *,
+    start: datetime,
+    end: datetime,
+    min_views: int = 25_000,
+    opener: Callable[..., Any] = urlopen,
+) -> list[GroundTruthStory]:
+    """Fetch high-velocity AI builder YouTube talks from configured channels via zero-key Atom RSS."""
+    raw = yaml.safe_load(Path(sources_path).read_text(encoding="utf-8")) or {}
+    channels = [c for c in raw.get("youtube_channels", []) if isinstance(c, dict) and c.get("channel_id")]
+    ns = {
+        "a": "http://www.w3.org/2005/Atom",
+        "yt": "http://www.youtube.com/xml/schemas/2015",
+        "media": "http://search.yahoo.com/mrss/",
+    }
+    stories: list[GroundTruthStory] = []
+    start_utc = start.astimezone(UTC)
+    end_utc = end.astimezone(UTC)
+    for cfg in channels:
+        cid = str(cfg["channel_id"]).strip()
+        ch_name = str(cfg.get("name") or cid).strip()
+        ch_floor = max(min_views, int(cfg.get("min_views", min_views)))
+        req = Request(
+            f"https://www.youtube.com/feeds/videos.xml?channel_id={cid}",
+            headers={"User-Agent": USER_AGENT, "Accept": "application/atom+xml,text/xml,*/*"},
+        )
+        kwargs: dict[str, Any] = {"timeout": 15}
+        if opener is urlopen:
+            kwargs["context"] = SSL_CONTEXT
+        try:
+            with opener(req, **kwargs) as resp:
+                raw_bytes = resp.read()
+        except Exception:
+            continue
+        if raw_bytes[:2] == b"\x1f\x8b":
+            raw_bytes = gzip.decompress(raw_bytes)
+        try:
+            root = ET.fromstring(raw_bytes)
+        except ET.ParseError:
+            continue
+        for entry in root.findall("a:entry", ns):
+            vid = (entry.findtext("yt:videoId", "", ns) or "").strip()
+            title = (entry.findtext("a:title", "", ns) or "").strip()
+            pub_raw = (entry.findtext("a:published", "", ns) or "").strip()
+            stat_el = entry.find("media:group/media:community/media:statistics", ns)
+            views = int(stat_el.get("views", "0") or 0) if stat_el is not None else 0
+            if not vid or not title or not pub_raw or views < ch_floor:
+                continue
+            try:
+                pub_dt = datetime.fromisoformat(pub_raw.replace("Z", "+00:00")).astimezone(UTC)
+            except ValueError:
+                continue
+            if not (start_utc <= pub_dt <= end_utc):
+                continue
+            if cfg.get("topic_filter") and not STRICT_AI_BUILDER_RE.search(title):
+                continue
+            if NON_AI_FALSE_POSITIVE_RE.search(title) or PR_FLUFF_HEADLINE_RE.search(title):
+                continue
+            url = f"https://www.youtube.com/watch?v={vid}"
+            scaled_points = max(120, min(1500, views // 200))
+            stories.append(
+                GroundTruthStory(
+                    hn_id=f"yt-{vid}",
+                    title=f"[YT/{ch_name}] {title}",
+                    url=url,
+                    canonical_url=canonicalize_url(url),
+                    points=scaled_points,
+                    comments=0,
+                    published_at=pub_dt.isoformat().replace("+00:00", "Z"),
+                    created_at_i=int(pub_dt.timestamp()),
+                    tier="artifact",
+                )
+            )
+    return sorted(stories, key=lambda s: (-s.created_at_i, -s.points))
 
 
 _MONTH_MAP = {
@@ -521,10 +622,23 @@ def evaluate_brief_markdown(
     win_start, win_end = parse_coverage_window(markdown, brief_day)
     top_entries, watch_entries = _extract_raw_top_and_watchlist(markdown)
 
-    # 1. Must-catch builder recall
+    # Build prior-14d Top-10 coverage index first so properly retired stories are not double-penalized.
+    prior_keys: set[str] = set()
+    prior_top_indexed: list[tuple[str, str, set[str]]] = []
+    for prior_path in prior_briefs:
+        if not prior_path.is_file():
+            continue
+        p_top, _ = _extract_raw_top_and_watchlist(prior_path.read_text(encoding="utf-8"))
+        for p_head, p_body, p_urls in p_top:
+            p_keys = extract_artifact_keys(p_urls, p_body)
+            prior_keys.update(p_keys)
+            prior_top_indexed.append((p_head, p_body, p_keys))
+
+    # 1. Must-catch builder recall (excluding events already covered in prior 14d Top 10)
     in_window = [
         gt for gt in ground_truth
         if win_start <= gt.published_dt <= win_end
+        and not any(_story_matches_entry(gt, keys, h, b) for h, b, keys in prior_top_indexed)
     ]
     in_window.sort(key=lambda g: (-g.weight, -g.points, g.hn_id))
     must_catch = in_window[:top_k_ground_truth]
@@ -556,13 +670,6 @@ def evaluate_brief_markdown(
     timeliness_score = (100.0 * timely_hits / matched_count) if matched_count > 0 else (100.0 if not must_catch else 0.0)
 
     # 2. Signal-to-noise & deduplication
-    prior_keys: set[str] = set()
-    for prior_path in prior_briefs:
-        if not prior_path.is_file():
-            continue
-        p_top, _ = _extract_raw_top_and_watchlist(prior_path.read_text(encoding="utf-8"))
-        for _, p_body, p_urls in p_top:
-            prior_keys.update(extract_artifact_keys(p_urls, p_body))
 
     snr_score = 100.0
     fluff_items: list[str] = []

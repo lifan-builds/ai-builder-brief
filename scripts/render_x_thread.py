@@ -15,10 +15,16 @@ def render(path: Path) -> str:
     # production gate and must not hide useful review items from the thread.
     items = (candidates + watchlist)[:10]
     watch_start = len(candidates) + 1 if watchlist and len(candidates) < 10 else None
+    lead_titles = [str(item.get("title", "")).strip() for item in items[:2] if str(item.get("title", "")).strip()]
+    lead_hook = (
+        f"Top builder signal today: {' · '.join(lead_titles)}."
+        if lead_titles
+        else "The AI developments most useful for builders today:"
+    )
     lines = [
         f"AI Builder Brief — {data.get('review_date', '')}",
         "",
-        "The AI developments most useful for builders today:",
+        lead_hook,
     ]
     for index, item in enumerate(items, 1):
         if watch_start is not None and index == watch_start:
@@ -27,11 +33,13 @@ def render(path: Path) -> str:
         action = (editorial.get("builder_actions") or ["monitor"])[0]
         sources = item.get("sources") or []
         source_url = str(sources[0].get("url") or "").strip() if sources and isinstance(sources[0], dict) else ""
+        recommended_by = item.get("recommended_by") or []
+        rec_line = f"Via {', '.join(recommended_by[:3])}." if recommended_by else ""
         lines.extend([
             "",
             f"{index}/ {item.get('title', '')}",
             item.get("summary", "")[:240],
-            f"Builder move: {action}.",
+            f"Builder move: {action}." + (f" {rec_line}" if rec_line else ""),
         ])
         if source_url:
             lines.append(f"Source: {source_url}")

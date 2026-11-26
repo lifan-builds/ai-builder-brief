@@ -22,6 +22,7 @@ from urllib.request import Request, urlopen
 import certifi
 
 from ai_builder_brief.benchmark import _extract_raw_top_and_watchlist
+from ai_builder_brief.collectors import extract_youtube_video_id, fetch_youtube_transcript_and_meta
 
 DEFAULT_BASE_URL = "http://127.0.0.1:18455/v1"
 DEFAULT_API_KEY = "quotaswitch-local"
@@ -411,8 +412,33 @@ def fetch_source_text(
     opener: Callable[..., Any] = urlopen,
     timeout: int = 20,
     max_chars: int = 120_000,
+    youtube_fetcher: Callable[[str], dict[str, Any]] | None = None,
 ) -> FetchedSource:
     """Fetch primary source text ephemerally in memory for citation checking."""
+    yt_id = extract_youtube_video_id(url)
+    if yt_id and (youtube_fetcher is not None or opener is urlopen):
+        fetcher_fn = youtube_fetcher or fetch_youtube_transcript_and_meta
+        meta = fetcher_fn(url) or {}
+        parts = [
+            f"YouTube Video: {meta.get('title') or ''}",
+            f"Channel: {meta.get('channel') or ''}",
+            f"Published: {meta.get('published_at') or ''}",
+            f"Views: {meta.get('view_count') or 0}",
+            "",
+            str(meta.get("description") or ""),
+            "",
+            ("Transcript:\n" + str(meta.get("transcript_text") or "")) if meta.get("transcript_text") else "",
+        ]
+        yt_text = "\n".join(p for p in parts if p is not None).strip()
+        if len(yt_text) >= 80:
+            return FetchedSource(
+                url=url,
+                fetched_url=f"https://www.youtube.com/watch?v={yt_id}",
+                status="fetched",
+                text=yt_text[:max_chars],
+                truncated=len(yt_text) > max_chars,
+            )
+
     last_status = "fetch_error"
     last_error = "no fetch candidates"
     last_url = url

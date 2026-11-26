@@ -17,6 +17,7 @@ from ai_builder_brief.benchmark import (
     evaluate_brief_markdown,
     evaluate_history_corpus,
     fetch_algolia_hn_ground_truth,
+    fetch_youtube_builder_ground_truth,
     load_hn_ground_truth,
     render_benchmark_markdown,
 )
@@ -55,10 +56,12 @@ def build_parser() -> argparse.ArgumentParser:
     bench = subparsers.add_parser("benchmark")
     bench.add_argument("--history-dir", type=Path, default=Path("history"))
     bench.add_argument("--ground-truth", type=Path, default=Path("fixtures/benchmark_hn_ground_truth.json"))
+    bench.add_argument("--sources", type=Path, default=Path("sources.yaml"))
     bench.add_argument("--brief", type=Path, default=None, help="Evaluate a single brief Markdown file.")
     bench.add_argument("--start-date", type=date.fromisoformat, default=date(2026, 10, 29))
     bench.add_argument("--end-date", type=date.fromisoformat, default=None)
     bench.add_argument("--live-hn", action="store_true", help="Fetch fresh Algolia HN ground truth instead of fixture.")
+    bench.add_argument("--live-youtube", action="store_true", help="Include high-velocity YouTube builder talks from sources.yaml.")
     bench.add_argument("--json", action="store_true", dest="as_json")
     bench.add_argument("-o", "--output", type=Path, default=None)
 
@@ -114,16 +117,18 @@ def main(argv: list[str] | None = None) -> int:
             print(status)
             return 0
         if args.command == "benchmark":
+            end_dt = (
+                datetime(args.end_date.year, args.end_date.month, args.end_date.day, 23, 59, tzinfo=UTC)
+                if args.end_date
+                else datetime.now(UTC)
+            )
+            start_dt = datetime(args.start_date.year, args.start_date.month, args.start_date.day, 0, 0, tzinfo=UTC) - timedelta(days=3)
             if args.live_hn:
-                end_dt = (
-                    datetime(args.end_date.year, args.end_date.month, args.end_date.day, 23, 59, tzinfo=UTC)
-                    if args.end_date
-                    else datetime.now(UTC)
-                )
-                start_dt = datetime(args.start_date.year, args.start_date.month, args.start_date.day, 0, 0, tzinfo=UTC) - timedelta(days=3)
                 gt = fetch_algolia_hn_ground_truth(start=start_dt, end=end_dt)
             else:
                 gt = load_hn_ground_truth(args.ground_truth)
+            if args.live_youtube and args.sources.is_file():
+                gt = [*gt, *fetch_youtube_builder_ground_truth(args.sources, start=start_dt, end=end_dt)]
             if args.brief is not None:
                 prior = sorted(
                     p for p in args.brief.parent.glob("*.md")

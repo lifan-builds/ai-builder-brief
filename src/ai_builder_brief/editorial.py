@@ -38,8 +38,8 @@ LOW_VALUE_PATTERNS: dict[str, tuple[re.Pattern[str], ...]] = {
     ),
     "corporate fundraising, IPO, or promo fluff": (
         re.compile(r"\braises\s+\$\d|\bseed\s+round\b|\bseries\s+[a-f]\b|\btargets\s+\$\d[\w.]*\s+in\s+(?:annual\s+)?revenue\b", re.IGNORECASE),
-        re.compile(r"\bfiles\s+s-1\b|\binitial\s+public\s+offering\b|\bipo\s+filing\b", re.IGNORECASE),
-        re.compile(r"\btechcrunch\s+disrupt\b|\$\d+\s+deal\s+for\s+your\b", re.IGNORECASE),
+        re.compile(r"\bfiles\s+s-1\b|\binitial\s+public\s+offering\b|\bipo\s+filing\b|\bnasdaq\s+debut\b|\bai\s+sell-off\b", re.IGNORECASE),
+        re.compile(r"\btechcrunch\s+disrupt\b|\$\d+\s+deal\s+for\s+your\b|\bwarns\s+photographers\b|\bbans\s+ai-generated\s+music\b", re.IGNORECASE),
         re.compile(r"\bbefore\s+anyone\s+asks\b|\bleads\s+in\s+legal\s+intelligence\b", re.IGNORECASE),
     ),
     "generic index or landing page": (
@@ -414,39 +414,104 @@ def score_candidates_deterministically(packets: Iterable[dict[str, Any]]) -> dic
         qualifying = bool(packet.get("qualifying_evidence"))
         authority = str(packet.get("authority") or "signal")
         hn_points = int(packet.get("hn_points") or 0)
+        yt_views = int(packet.get("youtube_views") or 0)
+        x_likes = int(packet.get("x_likes") or 0)
+        recommended_by = list(packet.get("recommended_by") or [])
+        linked_urls = list(packet.get("linked_urls") or [])
+        is_builder_video = "youtube" in list(packet.get("community_signal_types") or []) or "youtube.com/watch" in url.lower()
         momentum = int(packet.get("momentum_score") or 0)
 
         artifact_hits = sum(
             1
-            for term in ("api", "sdk", "weights", "open source", "benchmark", "eval", "inference", "cli", "mcp", "security", "vulnerability", "release", "v1.", "v0.")
+            for term in (
+                "api", "sdk", "weights", "open source", "benchmark", "eval", "inference",
+                "cli", "mcp", "security", "vulnerability", "release", "v1.", "v0.",
+                "workflow", "harness", "skills", "verification", "software factory", "coding agent",
+            )
             if term in text
         )
-        has_quant = bool(re.search(r"\b\d+(?:\.\d+)?(?:\s*(?:%|×|x\b|ms|gb|gib|mtok)|\.\d+)\b|\$\d+", f"{title} {summary}", re.I))
+        has_quant = bool(re.search(r"\b\d+(?:\.\d+)?(?:\s*(?:%|×|x\b|ms|gb|gib|mtok|k\b)|\.\d+)\b|\$\d+", f"{title} {summary}", re.I))
         is_major_release = editorial_class == "major_development" or bool(re.search(r"\bv1\.0(?:\.0)?\b", title, re.I))
+        strong_video = (
+            is_builder_video
+            and (artifact_hits >= 1 or bool(linked_urls) or bool(recommended_by))
+            and (yt_views >= 20_000 or bool(recommended_by) or bool(linked_urls))
+        )
 
-        impact = min(4, max(2, 2 + int(artifact_hits >= 2 or hn_points >= 250) + int((artifact_hits >= 4 or hn_points >= 600 or has_quant) and (is_major_release or hn_points >= 400))))
-        actionability = min(4, max(2, 2 + int(any(t in text for t in ("api", "sdk", "cli", "weights", "release", "migration", "benchmark", "verification"))) + int("github.com/" in url.lower() or has_quant)))
-        novelty = min(4, max(2, 2 + int(hn_points >= 150 or momentum >= 3 or qualifying) + int((hn_points >= 500 or ("arxiv.org" in url.lower() and has_quant)) and editorial_class != "maintenance_release")))
-        evidence = 4 if (qualifying and has_quant) else (3 if qualifying else (3 if authority == "independent" and len(summary.split()) >= 20 else 2))
-        audience_breadth = min(4, max(2, 2 + int(hn_points >= 120 or momentum >= 2 or authority == "primary") + int(hn_points >= 400 or any(t in text for t in ("openai", "anthropic", "claude", "gemini", "qwen", "deepseek", "vllm", "llama.cpp", "openrouter", "coding agent")))))
+        impact = min(
+            4,
+            max(
+                2,
+                2
+                + int(artifact_hits >= 2 or hn_points >= 250 or strong_video or x_likes >= 1_000)
+                + int(
+                    (artifact_hits >= 4 or hn_points >= 600 or yt_views >= 100_000 or has_quant)
+                    and (is_major_release or hn_points >= 400 or strong_video)
+                ),
+            ),
+        )
+        actionability = min(
+            4,
+            max(
+                2,
+                2
+                + int(any(t in text for t in ("api", "sdk", "cli", "weights", "release", "migration", "benchmark", "verification", "workflow", "skills", "harness", "rules", "pstack")))
+                + int("github.com/" in url.lower() or bool(linked_urls) or has_quant or strong_video),
+            ),
+        )
+        novelty = min(
+            4,
+            max(
+                2,
+                2
+                + int(hn_points >= 150 or yt_views >= 25_000 or momentum >= 3 or qualifying or bool(recommended_by))
+                + int((hn_points >= 500 or yt_views >= 100_000 or ("arxiv.org" in url.lower() and has_quant)) and editorial_class != "maintenance_release"),
+            ),
+        )
+        evidence = (
+            4
+            if (qualifying and has_quant) or (strong_video and (bool(linked_urls) or "transcript excerpt:" in text))
+            else (3 if (qualifying or strong_video) else (3 if authority == "independent" and len(summary.split()) >= 20 else 2))
+        )
+        audience_breadth = min(
+            4,
+            max(
+                2,
+                2
+                + int(hn_points >= 120 or yt_views >= 15_000 or momentum >= 2 or authority == "primary" or bool(recommended_by))
+                + int(
+                    hn_points >= 400
+                    or yt_views >= 75_000
+                    or any(t in text for t in ("openai", "anthropic", "claude", "gemini", "qwen", "deepseek", "vllm", "llama.cpp", "openrouter", "coding agent", "cursor", "software factory"))
+                ),
+            ),
+        )
 
         actions: list[str] = []
-        if any(t in text for t in ("release", "sdk", "api", "cli", "weights")):
+        if any(t in text for t in ("release", "sdk", "api", "cli", "weights", "skills", "workflow", "harness")):
             actions.append("use")
-        if any(t in text for t in ("benchmark", "eval", "latency", "speed", "accuracy", "verification")):
+        if any(t in text for t in ("benchmark", "eval", "latency", "speed", "accuracy", "verification", "rules")):
             actions.append("test")
-        if any(t in text for t in ("breaking", "vulnerability", "telemetry", "backdoor", "leak", "regression", "removes")):
+        if any(t in text for t in ("breaking", "vulnerability", "telemetry", "backdoor", "leak", "regression", "removes", "slop")):
             actions.append("reconsider")
         if not actions:
             actions.append("monitor")
 
-        accept = qualifying and impact >= 3 and evidence >= 3 and editorial_class != "maintenance_release"
+        accept = (qualifying or strong_video) and impact >= 3 and evidence >= 3 and editorial_class != "maintenance_release"
         if editorial_class == "research" and not (impact == 4 and novelty >= 3 and has_quant):
             accept = False
         depth = "brief"
         if accept and not deep_assigned and impact == 4 and evidence == 4:
             depth = "deep"
             deep_assigned = True
+
+        why_bits = [f"Published in rolling window ({packet.get('published_at', '')}) with momentum={momentum}"]
+        if hn_points:
+            why_bits.append(f"hn_points={hn_points}")
+        if yt_views:
+            why_bits.append(f"youtube_views={yt_views}")
+        if recommended_by:
+            why_bits.append(f"recommended_by={','.join(recommended_by)}")
 
         decisions.append({
             "cluster_id": cluster_id,
@@ -457,7 +522,7 @@ def score_candidates_deterministically(packets: Iterable[dict[str, Any]]) -> dic
             "evidence": evidence,
             "audience_breadth": audience_breadth,
             "builder_actions": sorted(set(actions))[:3],
-            "why_now": f"Published in rolling window ({packet.get('published_at', '')}) with momentum={momentum} and hn_points={hn_points}.",
+            "why_now": "; ".join(why_bits) + ".",
             "rationale": f"Deterministic builder triage ({editorial_class}, authority={authority}, artifact_signals={artifact_hits}).",
             "caveats": "Verify benchmark scope, licensing, and workload fit against primary documentation before production rollout.",
             "depth_recommendation": depth,
