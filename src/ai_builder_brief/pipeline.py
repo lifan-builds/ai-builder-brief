@@ -35,23 +35,29 @@ from ai_builder_brief.transcription import load_fixture, transcribe, write_chapt
 
 
 def is_published(feed_path: Path, episode_id: str) -> bool:
-    if not feed_path.is_file():
-        return False
     try:
         root = ET.parse(feed_path).getroot()
-    except ET.ParseError:
+    except FileNotFoundError:
         return False
-    for item in root.findall("./channel/item"):
-        if item.findtext("guid") != episode_id:
-            continue
-        enclosure = item.find("enclosure")
-        if enclosure is None or not enclosure.get("url"):
-            return False
-        try:
-            return int(enclosure.get("length", "0")) > 0
-        except ValueError:
-            return False
-    return False
+    except (ET.ParseError, LookupError) as exc:
+        raise ValueError(f"Invalid feed XML in {feed_path}: {exc}") from exc
+    if root.tag != "rss" or len(root.findall("channel")) != 1:
+        raise ValueError(f"Expected an RSS feed with one channel in {feed_path}")
+    matches = [item for item in root.findall("./channel/item") if item.findtext("guid") == episode_id]
+    if not matches:
+        return False
+    if len(matches) > 1:
+        raise ValueError(f"Duplicate GUID {episode_id} in {feed_path}")
+    enclosure = matches[0].find("enclosure")
+    if enclosure is None or not enclosure.get("url", "").strip():
+        raise ValueError(f"Missing enclosure URL for {episode_id} in {feed_path}")
+    try:
+        length = int(enclosure.get("length", "0"))
+    except ValueError as exc:
+        raise ValueError(f"Invalid enclosure length for {episode_id} in {feed_path}") from exc
+    if length <= 0:
+        raise ValueError(f"Invalid enclosure length for {episode_id} in {feed_path}")
+    return True
 
 
 def _fixture_config(config, root: Path):
@@ -164,7 +170,8 @@ def _apply_snapshot_deltas(items):
         latest_date = date.fromisoformat(str(latest.metadata["snapshot_date"]))
         prior_24 = [item for item in ordered if date.fromisoformat(str(item.metadata["snapshot_date"])) <= latest_date - timedelta(days=1)]
         baseline_24 = prior_24[-1] if prior_24 else latest
-        baseline_7 = ordered[0]
+        week_ago = latest_date - timedelta(days=7)
+        baseline_7 = min(ordered, key=lambda item: abs(date.fromisoformat(item.metadata["snapshot_date"]) - week_ago))
 
         def deltas(baseline):
             return {
@@ -237,16 +244,23 @@ def _historical_story_keys(root: Path, *, episode_date: date, lookback_days: int
             payload = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, ValueError, json.JSONDecodeError):
             continue
+        rejected_clusters: set[str] = set()
         records: list[dict] = []
         if isinstance(payload, list):
             records = [r for r in payload if isinstance(r, dict)]
         elif isinstance(payload, dict):
+            rejected_clusters = {
+                r["cluster_id"] for r in payload.get("decisions", [])
+                if isinstance(r, dict) and r.get("decision") == "reject" and r.get("cluster_id")
+            }
             records.extend(r for r in payload.get("candidates", []) if isinstance(r, dict))
             records.extend(
                 r for r in payload.get("decisions", [])
                 if isinstance(r, dict) and r.get("decision") in {"accept", "candidate"}
             )
         for record in records:
+            if record.get("decision") == "reject" or record.get("cluster_id") in rejected_clusters:
+                continue
             key = str(record.get("theme_key") or record.get("cluster_id") or "").strip().casefold()
             if key:
                 slugs.add(key)

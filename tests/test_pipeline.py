@@ -6,6 +6,7 @@ import xml.etree.ElementTree as ET
 from datetime import UTC, date, datetime
 from pathlib import Path
 
+import pytest
 from castforge.config import load_config
 from castforge.models import EpisodeManifest
 
@@ -14,6 +15,7 @@ from ai_builder_brief.editorial_client import EditorialReviewError
 from ai_builder_brief.pipeline import (
     _apply_snapshot_deltas,
     _eligible_editorial_items,
+    _historical_story_keys,
     _represent_candidates,
     is_published,
     run_daily,
@@ -110,19 +112,28 @@ def test_review_only_writes_review_and_stops_before_episode(show_project, monkey
     assert not (show_project / "docs").exists()
 
 
-def test_zero_length_placeholder_is_not_considered_published(tmp_path) -> None:
+def test_corrupt_feed_reports_path(tmp_path) -> None:
+    feed = tmp_path / "episode-feed.xml"
+    feed.write_text("<rss><channel>", encoding="utf-8")
+    with pytest.raises(ValueError) as error:
+        is_published(feed, "episode")
+    assert str(feed) in str(error.value)
+
+
+def test_zero_length_placeholder_reports_invalid_enclosure(tmp_path) -> None:
     feed = tmp_path / "feed.xml"
     feed.write_text(
         """<rss><channel><item><guid>ai-builder-brief-2026-08-11</guid><enclosure url="https://example.com/a.mp3" length="0" type="audio/mpeg" /></item></channel></rss>""",
         encoding="utf-8",
     )
-    assert not is_published(feed, "ai-builder-brief-2026-08-11")
+    with pytest.raises(ValueError, match="enclosure"):
+        is_published(feed, "ai-builder-brief-2026-08-11")
 
 
 def test_collector_failure_returns_no_episode_without_feed_mutation(show_project, monkeypatch) -> None:
     feed = show_project / "docs" / "feed.xml"
     feed.parent.mkdir(parents=True, exist_ok=True)
-    feed.write_text("existing-feed", encoding="utf-8")
+    feed.write_text("<rss><channel /></rss>", encoding="utf-8")
     monkeypatch.setattr("ai_builder_brief.pipeline.collect_sources", lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("offline")))
     status = run_daily(
         config_path=show_project / "podcast.yaml",
@@ -130,7 +141,7 @@ def test_collector_failure_returns_no_episode_without_feed_mutation(show_project
         episode_date=date(2026, 8, 11),
     )
     assert status == "no-episode"
-    assert feed.read_text(encoding="utf-8") == "existing-feed"
+    assert feed.read_text(encoding="utf-8") == "<rss><channel /></rss>"
 
 
 def test_review_only_collector_failure_keeps_ledger_without_partial_review(show_project, monkeypatch) -> None:
@@ -210,12 +221,28 @@ def test_snapshot_deltas_measure_change_instead_of_lifetime_totals() -> None:
         )
 
     enriched = _apply_snapshot_deltas([
-        snapshot("2026-08-04", 100), snapshot("2026-08-10", 125), snapshot("2026-08-11", 130),
+        snapshot("2026-07-28", 10), snapshot("2026-08-04", 100), snapshot("2026-08-10", 125), snapshot("2026-08-11", 130),
     ])
     assert enriched[0].metadata["delta_24h"]["repository_stars"] == 5
     assert enriched[0].metadata["delta_7d"]["repository_stars"] == 30
     assert enriched[0].metadata["momentum_score"] == 2
     assert enriched[0].metadata["community_signal"] is True
+
+
+def test_rejected_candidate_is_not_recorded_as_prior_coverage(tmp_path) -> None:
+    editorial = tmp_path / "build" / "editorial"
+    editorial.mkdir(parents=True)
+    ledger = {
+        "candidates": [
+            {"cluster_id": "a", "theme_key": "skipped", "evidence": [{"url": "https://example.com/a"}]},
+            {"cluster_id": "b", "theme_key": "aired", "evidence": [{"url": "https://example.com/b"}]},
+        ],
+        "decisions": [{"cluster_id": "a", "decision": "reject"}],
+    }
+    (editorial / "2026-08-10.json").write_text(json.dumps(ledger), encoding="utf-8")
+    slugs, urls = _historical_story_keys(tmp_path, episode_date=date(2026, 8, 11))
+    assert slugs == {"aired"}
+    assert urls == {"example.com/b"}
 
 
 def test_editorial_window_is_strict_and_deduplicates_historical_snapshots() -> None:
