@@ -26,9 +26,7 @@ from ai_builder_brief.collectors import extract_youtube_video_id, fetch_youtube_
 
 DEFAULT_BASE_URL = "http://127.0.0.1:18455/v1"
 DEFAULT_API_KEY = "quotaswitch-local"
-DEFAULT_FACTCHECK_MODEL = "gpt-5.4-pro"
-QUOTASWITCH_AUTH_HEADER = "X-Quotaswitch-Auth"
-QUOTASWITCH_AUTH_VALUE = "api_key"
+DEFAULT_FACTCHECK_MODEL = "gpt-6.2-astra"
 LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
 
 VERDICTS = frozenset({"supported", "nuance_drift", "unsupported"})
@@ -863,7 +861,6 @@ def verify_item_claims(
             headers={
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {key}",
-                QUOTASWITCH_AUTH_HEADER: QUOTASWITCH_AUTH_VALUE,
             },
             method="POST",
         )

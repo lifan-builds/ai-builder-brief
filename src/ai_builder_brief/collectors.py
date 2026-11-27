@@ -8,6 +8,7 @@ import html
 import json
 import logging
 import math
+import os
 import re
 import shutil
 import ssl
@@ -1246,6 +1247,23 @@ def _extract_description_artifact_urls(description: str) -> list[str]:
     return urls
 
 
+def _resolve_cli(name: str) -> str | None:
+    """Locate a CLI binary on PATH or common user/Homebrew install directories."""
+    found = shutil.which(name)
+    if found:
+        return found
+    for directory in (
+        Path.home() / ".local/bin",
+        Path("/opt/homebrew/bin"),
+        Path("/opt/homebrew/Caskroom/miniconda/base/bin"),
+        Path("/usr/local/bin"),
+    ):
+        candidate = directory / name
+        if candidate.is_file() and os.access(candidate, os.X_OK):
+            return str(candidate)
+    return None
+
+
 def _fetch_youtube_transcript_fast(
     video_id: str,
     *,
@@ -1253,7 +1271,7 @@ def _fetch_youtube_transcript_fast(
     max_transcript_chars: int = 40_000,
 ) -> str:
     """Fetch clean, deduplicated English/Chinese transcript via youtube_transcript_api (~1.3s, avoids yt-dlp 429)."""
-    executable = shutil.which("youtube_transcript_api")
+    executable = _resolve_cli("youtube_transcript_api")
     if not executable or not video_id:
         return ""
     try:
@@ -1301,7 +1319,7 @@ def fetch_youtube_transcript_and_meta(
     """Fetch YouTube metadata/links and clean transcript concurrently (with oEmbed + yt-dlp fallbacks)."""
     canonical = canonical_source_url(video_url) or video_url
     vid = extract_youtube_video_id(canonical)
-    executable = shutil.which("yt-dlp")
+    executable = _resolve_cli("yt-dlp")
 
     def _run_ytdlp_meta() -> dict[str, Any]:
         if not executable:

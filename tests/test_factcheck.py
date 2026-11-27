@@ -11,8 +11,6 @@ from ai_builder_brief import cli, factcheck
 from ai_builder_brief.factcheck import (
     DEFAULT_FACTCHECK_MODEL,
     FACTCHECK_SCHEMA,
-    QUOTASWITCH_AUTH_HEADER,
-    QUOTASWITCH_AUTH_VALUE,
     ClaimVerdict,
     FactCheckError,
     FactCheckReport,
@@ -149,7 +147,7 @@ def test_verify_item_claims_uses_responses_api_header_and_verifies_quotes(monkey
 
     assert captured["url"] == "http://127.0.0.1:18455/v1/responses"
     headers = {k.lower(): v for k, v in captured["headers"].items()}  # type: ignore[union-attr]
-    assert headers[QUOTASWITCH_AUTH_HEADER.lower()] == QUOTASWITCH_AUTH_VALUE
+    assert "x-quotaswitch-auth" not in headers
     assert headers["authorization"] == "Bearer quotaswitch-local"
     body = captured["body"]
     assert body["model"] == DEFAULT_FACTCHECK_MODEL  # type: ignore[index]

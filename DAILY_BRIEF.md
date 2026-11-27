@@ -80,7 +80,7 @@ customer case studies, and waitlist vapourware.
 4. Score the draft with the multi-surface deterministic benchmark (Algolia HN +
    curated YouTube builder talks) and run the mechanical Source-vs-Claim
    citation verifier (including YouTube transcripts, via loopback Quotaswitch
-   `gpt-5.4-pro`) before publishing:
+   `gpt-6.2-astra`) before publishing:
    ```bash
    .venv/bin/ai-builder-brief benchmark --live-hn --live-youtube --brief history/YYYY-MM-DD.md
    .venv/bin/ai-builder-brief factcheck --brief history/YYYY-MM-DD.md

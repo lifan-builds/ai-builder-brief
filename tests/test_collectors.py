@@ -567,3 +567,19 @@ def test_x_panel_expands_builder_recommended_youtube_and_github_links() -> None:
     assert by_kind["builder_video"].metadata["recommended_by"] == ["@poteto"]
     assert by_kind["builder_recommendation"].url == "https://github.com/poteto/pstack"
     assert by_kind["builder_recommendation"].authority == "primary"
+
+
+def test_resolve_cli_falls_back_to_user_local_bin_when_path_empty(tmp_path, monkeypatch) -> None:
+    from ai_builder_brief.collectors import _resolve_cli
+
+    fake_home = tmp_path / "home"
+    bin_dir = fake_home / ".local" / "bin"
+    bin_dir.mkdir(parents=True)
+    fake_bin = bin_dir / "youtube_transcript_api"
+    fake_bin.write_text("#!/bin/sh\n", encoding="utf-8")
+    fake_bin.chmod(0o755)
+
+    monkeypatch.setattr("ai_builder_brief.collectors.shutil.which", lambda _name: None)
+    monkeypatch.setattr("ai_builder_brief.collectors.Path.home", lambda: fake_home)
+
+    assert _resolve_cli("youtube_transcript_api") == str(fake_bin)
