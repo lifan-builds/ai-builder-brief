@@ -571,6 +571,26 @@ def test_select_source_excerpt_preserves_opening_and_claim_anchored_paragraphs()
     assert "$2M" in excerpt
 
 
+def test_select_source_excerpt_splits_oversized_bullet_lists() -> None:
+    bullets = "\n".join(
+        [
+            "- Added skills from MCP servers (beta) as `server:skill` in `/`.",
+            "- Added `PreSkillShellCommand` hook event refusing inline shell commands on load.",
+            *[f"- Routine bug fix #{i} improving terminal redraw latency in edge cases." for i in range(120)],
+            "- Shortened oversized hook logs past 50,000 characters.",
+        ]
+    )
+    doc = "Release: v2.1.332\nTag: v2.1.332\nPublished: 2026-11-25T01:32:14Z\n\n## What's changed\n\n" + bullets
+    excerpt = factcheck._select_source_excerpt(
+        doc,
+        "v2.1.332 adds MCP server:skill, PreSkillShellCommand hook, and 50,000-char hook log truncation.",
+        2500,
+    )
+    assert len(excerpt) <= 2500
+    assert "PreSkillShellCommand" in excerpt
+    assert "50,000" in excerpt
+
+
 def test_fetch_source_text_reads_youtube_transcript_and_metadata() -> None:
     fetched = fetch_source_text(
         "https://youtu.be/O_zcc6Xl12g",

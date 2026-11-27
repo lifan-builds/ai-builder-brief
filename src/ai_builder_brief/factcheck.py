@@ -698,7 +698,13 @@ def _select_source_excerpt(source_text: str, claim_text: str, max_chars: int) ->
         return ""
 
     lead_budget = int(max_chars * 0.35)
-    paragraphs = [p.strip() for p in re.split(r"\n{2,}", source_text) if p.strip()]
+    chunk_limit = max(lead_budget, 1_200)
+    paragraphs: list[str] = []
+    for para in (p.strip() for p in re.split(r"\n{2,}", source_text) if p.strip()):
+        if len(para) > chunk_limit and "\n" in para:
+            paragraphs.extend(line.strip() for line in para.splitlines() if line.strip())
+        else:
+            paragraphs.append(para)
     if len(paragraphs) <= 2:
         paragraphs = [p.strip() for p in source_text.splitlines() if p.strip()]
     if len(paragraphs) <= 1:
