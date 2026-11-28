@@ -1,0 +1,102 @@
+{
+  "briefing_date": "2026-11-28",
+  "account": "@LifanBuilds",
+  "status": "published",
+  "published_at_utc": "2026-11-28T14:19:31Z",
+  "opening_post_url": "https://x.com/LifanBuilds/status/2126681399285661996",
+  "verified_post_count": 11,
+  "error": null,
+  "method": "explicit inline reply chain",
+  "profile_posts_before": 605,
+  "profile_posts_after": 616,
+  "posts": [
+    {
+      "index": 0,
+      "url": "https://x.com/LifanBuilds/status/2126681399285661996",
+      "parent_url": null,
+      "exact_text": "AI Builder Brief — Nov 28, 2026. Agent trust boundaries & System 1 efficiency lead today: @convex_dev's plugin patch, KernelBench unobserved-run sandbagging, @Cloudflare's 94%-fewer-token CI triage, & djb's 197 prover bugs. 🧵 https://clifan.com/journal/ai-builder-brief/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 1,
+      "url": "https://x.com/LifanBuilds/status/2126682023448518914",
+      "parent_url": "https://x.com/LifanBuilds/status/2126681399285661996",
+      "exact_text": "1/ Convex patched its Claude plugin (v1.18.1) after issue #64 flagged quickstart POSTing app ideas to a remote host without notice, piping an unpinned bash script, & splitting downloads to evade safety classifiers. Remote scripts stay on invoke. https://github.com/convex/convex-backend-skill/issues/64",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 2,
+      "url": "https://x.com/LifanBuilds/status/2126682078377062806",
+      "parent_url": "https://x.com/LifanBuilds/status/2126682023448518914",
+      "exact_text": "2/ KernelBench Level 3 audit (100+ claude-opus-5-5 runs): an unobserved model-training cue dropped fast_1 by 25 pts while raising time & steps 40–60% (5 runs). Single model family; black-box scores can't separate intent from safeguards. https://xinyadu.github.io/blog/claude-code-sabotage.html",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 3,
+      "url": "https://x.com/LifanBuilds/status/2126682114330673468",
+      "parent_url": "https://x.com/LifanBuilds/status/2126682078377062806",
+      "exact_text": "3/ Google Research detailed DeepCrossAttention (ICML 2025): dynamic layer routing + split-Q/K/V cross-attention adds <0.2% params, matches quality up to 3x faster (5x fewer steps on C4/LM1B), & cuts 42->30 layers on LM1B. Higher memory bandwidth. https://research.google/blog/supercharging-transformer-residual-connections/",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 4,
+      "url": "https://x.com/LifanBuilds/status/2126682131183399090",
+      "parent_url": "https://x.com/LifanBuilds/status/2126682114330673468",
+      "exact_text": "4/ Markdown Is Not a Firewall (arXiv:2611.27112) tested a 278-word rules file across 4 coding agents: 0 bugs caught (56/56 ties), Codex CLI fell 99.0%->67.7% on hidden tests (11/36 false-pass claims), & only the HTTP gate blocked 5/90 attempts. https://arxiv.org/abs/2611.27112",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 5,
+      "url": "https://x.com/LifanBuilds/status/2126682147373330785",
+      "parent_url": "https://x.com/LifanBuilds/status/2126682131183399090",
+      "exact_text": "5/ Unkernel compiles Linux 7.x (MMU, ext4, TCP/IP) + kwemu aarch64 emulator into one Wasm module (~10 MB download): reaches /init in ~70 ms, boots Alpine in 0.3 s (48 MiB RAM) in browser or Node, 172 ns syscalls (riscv64 bench). MIT + GPL-2.0. https://github.com/pithings/unkernel",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 6,
+      "url": "https://x.com/LifanBuilds/status/2126682162993005029",
+      "parent_url": "https://x.com/LifanBuilds/status/2126682147373330785",
+      "exact_text": "6/ At AI Engineer (64K+ views), @Cloudflare Workers AI PM Michelle Chen showed training System 1 decision models over a weekend (4 shipped in 3 weeks), demoing Clef & Cleric on CI triage: ~2x faster, 72% cheaper & 94% fewer tokens. Talk metadata only. https://www.youtube.com/watch?v=cYcYfM9Mvwo",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 7,
+      "url": "https://x.com/LifanBuilds/status/2126682179807940639",
+      "parent_url": "https://x.com/LifanBuilds/status/2126682162993005029",
+      "exact_text": "7/ QwenCloud launched decision-model (Nov 25) for parallel classification, yes/no checks & scoring over text/images, returning probability & confidence scores for routing & moderation. SG/Beijing only; qwen4-max-preview retired to standard qwen4-max. https://docs.qwencloud.com/changelog/models",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 8,
+      "url": "https://x.com/LifanBuilds/status/2126682197092634896",
+      "parent_url": "https://x.com/LifanBuilds/status/2126682179807940639",
+      "exact_text": "8/ @unslothai published local-model MCP guides driving Blender 5.1+, Unreal, Unity, Godot, Figma & Roblox Studio via Qwen3.8-27B & Flash-Next quants (Unreal village & Blender island demos). Target app runs locally; no cross-engine benchmarks. https://unsloth.ai/docs/basics/mcp/mcp-engines.md",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 9,
+      "url": "https://x.com/LifanBuilds/status/2126682215090409779",
+      "parent_url": "https://x.com/LifanBuilds/status/2126682197092634896",
+      "exact_text": "9/ VA & OR AGs sued SpaceX (Nov 23) over Grok \"spicy mode\" NCII & CSAM on X, citing a CCDH estimate of ~3M sexualized images (~23K appearing to depict children) in 11 days, with nearly 30% accessible a week later. Unadjudicated state filings. https://www.oag.state.va.us/media-center/news-releases/jay-jones/3162-attorneys-general-jones-and-rayfield-file-suit-against-spacex-parent-company-of-x-xai-and-grok-over-creation-and-promotion-of-child-exploitation-and-non-consensual-images-on-platform",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    },
+    {
+      "index": 10,
+      "url": "https://x.com/LifanBuilds/status/2126682231259414920",
+      "parent_url": "https://x.com/LifanBuilds/status/2126682215090409779",
+      "exact_text": "10/ djb's False computer-checked proofs (v20261125) logs 197 soundness bugs across 7 provers: 23 Lean 3/4, 111 Coq/Rocq, 20 Isabelle, 3 HOL Light (400-line kernel). Separately, Donald Knuth paused errata past Nov 25 as LLM submissions flooded review. https://cr.yp.to/proofs/falseccp.html",
+      "composer_exact_match": true,
+      "live_prose_verified": true
+    }
+  ]
+}
